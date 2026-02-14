@@ -1,0 +1,6 @@
+@Dzaba.HomeSecurity.LogsIngestion_HostAddress = http://localhost:5264
+
+GET {{Dzaba.HomeSecurity.LogsIngestion_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
