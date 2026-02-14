@@ -29,19 +29,18 @@ namespace Dzaba.HomeSecurity.LogsIngestion.Contracts {
             "IAEoCRIRCglkZXZpY2VfaWQYAyABKAkSNAoFbGV2ZWwYBCABKA4yJS5kemFi",
             "YS5ob21lLnNlY3VyaXR5LmxvZ3MudjEuTG9nTGV2ZWwSDwoHbWVzc2FnZRgF",
             "IAEoCSJKChFJbmdlc3RMb2dzUmVxdWVzdBI1CgZldmVudHMYASADKAsyJS5k",
-            "emFiYS5ob21lLnNlY3VyaXR5LmxvZ3MudjEuTG9nRXZlbnQiJgoSSW5nZXN0",
-            "TG9nc1Jlc3BvbnNlEhAKCGFjY2VwdGVkGAEgASgFKpIBCghMb2dMZXZlbBIZ",
-            "ChVMT0dfTEVWRUxfVU5TUEVDSUZJRUQQABITCg9MT0dfTEVWRUxfREVCVUcQ",
-            "ARISCg5MT0dfTEVWRUxfSU5GTxACEhUKEUxPR19MRVZFTF9XQVJOSU5HEAMS",
-            "EwoPTE9HX0xFVkVMX0VSUk9SEAQSFgoSTE9HX0xFVkVMX0NSSVRJQ0FMEAVC",
-            "LaoCKkR6YWJhLkhvbWVTZWN1cml0eS5Mb2dzSW5nZXN0aW9uLkNvbnRyYWN0",
-            "c2IGcHJvdG8z"));
+            "emFiYS5ob21lLnNlY3VyaXR5LmxvZ3MudjEuTG9nRXZlbnQiFAoSSW5nZXN0",
+            "TG9nc1Jlc3BvbnNlKpIBCghMb2dMZXZlbBIZChVMT0dfTEVWRUxfVU5TUEVD",
+            "SUZJRUQQABITCg9MT0dfTEVWRUxfREVCVUcQARISCg5MT0dfTEVWRUxfSU5G",
+            "TxACEhUKEUxPR19MRVZFTF9XQVJOSU5HEAMSEwoPTE9HX0xFVkVMX0VSUk9S",
+            "EAQSFgoSTE9HX0xFVkVMX0NSSVRJQ0FMEAVCLaoCKkR6YWJhLkhvbWVTZWN1",
+            "cml0eS5Mb2dzSW5nZXN0aW9uLkNvbnRyYWN0c2IGcHJvdG8z"));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Dzaba.HomeSecurity.LogsIngestion.Contracts.LogLevel), }, null, new pbr::GeneratedClrTypeInfo[] {
             new pbr::GeneratedClrTypeInfo(typeof(global::Dzaba.HomeSecurity.LogsIngestion.Contracts.LogEvent), global::Dzaba.HomeSecurity.LogsIngestion.Contracts.LogEvent.Parser, new[]{ "EventId", "HomeId", "DeviceId", "Level", "Message" }, null, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Dzaba.HomeSecurity.LogsIngestion.Contracts.IngestLogsRequest), global::Dzaba.HomeSecurity.LogsIngestion.Contracts.IngestLogsRequest.Parser, new[]{ "Events" }, null, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Dzaba.HomeSecurity.LogsIngestion.Contracts.IngestLogsResponse), global::Dzaba.HomeSecurity.LogsIngestion.Contracts.IngestLogsResponse.Parser, new[]{ "Accepted" }, null, null, null, null)
+            new pbr::GeneratedClrTypeInfo(typeof(global::Dzaba.HomeSecurity.LogsIngestion.Contracts.IngestLogsResponse), global::Dzaba.HomeSecurity.LogsIngestion.Contracts.IngestLogsResponse.Parser, null, null, null, null, null)
           }));
     }
     #endregion
@@ -628,7 +627,6 @@ namespace Dzaba.HomeSecurity.LogsIngestion.Contracts {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public IngestLogsResponse(IngestLogsResponse other) : this() {
-      accepted_ = other.accepted_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -636,18 +634,6 @@ namespace Dzaba.HomeSecurity.LogsIngestion.Contracts {
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public IngestLogsResponse Clone() {
       return new IngestLogsResponse(this);
-    }
-
-    /// <summary>Field number for the "accepted" field.</summary>
-    public const int AcceptedFieldNumber = 1;
-    private int accepted_;
-    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
-    [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
-    public int Accepted {
-      get { return accepted_; }
-      set {
-        accepted_ = value;
-      }
     }
 
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
@@ -665,7 +651,6 @@ namespace Dzaba.HomeSecurity.LogsIngestion.Contracts {
       if (ReferenceEquals(other, this)) {
         return true;
       }
-      if (Accepted != other.Accepted) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -673,7 +658,6 @@ namespace Dzaba.HomeSecurity.LogsIngestion.Contracts {
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public override int GetHashCode() {
       int hash = 1;
-      if (Accepted != 0) hash ^= Accepted.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -692,10 +676,6 @@ namespace Dzaba.HomeSecurity.LogsIngestion.Contracts {
     #if !GOOGLE_PROTOBUF_REFSTRUCT_COMPATIBILITY_MODE
       output.WriteRawMessage(this);
     #else
-      if (Accepted != 0) {
-        output.WriteRawTag(8);
-        output.WriteInt32(Accepted);
-      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -706,10 +686,6 @@ namespace Dzaba.HomeSecurity.LogsIngestion.Contracts {
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     void pb::IBufferMessage.InternalWriteTo(ref pb::WriteContext output) {
-      if (Accepted != 0) {
-        output.WriteRawTag(8);
-        output.WriteInt32(Accepted);
-      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(ref output);
       }
@@ -720,9 +696,6 @@ namespace Dzaba.HomeSecurity.LogsIngestion.Contracts {
     [global::System.CodeDom.Compiler.GeneratedCode("protoc", null)]
     public int CalculateSize() {
       int size = 0;
-      if (Accepted != 0) {
-        size += 1 + pb::CodedOutputStream.ComputeInt32Size(Accepted);
-      }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
       }
@@ -734,9 +707,6 @@ namespace Dzaba.HomeSecurity.LogsIngestion.Contracts {
     public void MergeFrom(IngestLogsResponse other) {
       if (other == null) {
         return;
-      }
-      if (other.Accepted != 0) {
-        Accepted = other.Accepted;
       }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
@@ -757,10 +727,6 @@ namespace Dzaba.HomeSecurity.LogsIngestion.Contracts {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
-          case 8: {
-            Accepted = input.ReadInt32();
-            break;
-          }
         }
       }
     #endif
@@ -780,10 +746,6 @@ namespace Dzaba.HomeSecurity.LogsIngestion.Contracts {
           default:
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, ref input);
             break;
-          case 8: {
-            Accepted = input.ReadInt32();
-            break;
-          }
         }
       }
     }

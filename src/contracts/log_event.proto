@@ -26,5 +26,4 @@ message IngestLogsRequest {
 }
 
 message IngestLogsResponse {
-  int32 accepted = 1;
 }
