@@ -2,7 +2,9 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "IngestLogsRequest",
   "type": "object",
-  "required": ["events"],
+  "required": [
+    "events"
+  ],
   "properties": {
     "events": {
       "type": "array",
@@ -41,7 +43,14 @@
           "maxLength": 128
         },
         "level": {
-          "$ref": "#/$defs/LogLevel"
+          "type": "string",
+          "enum": [
+            "debug",
+            "info",
+            "warning",
+            "error",
+            "critical"
+          ]
         },
         "message": {
           "type": "string",
@@ -50,17 +59,6 @@
         }
       },
       "additionalProperties": false
-    },
-
-    "LogLevel": {
-      "type": "string",
-      "enum": [
-        "debug",
-        "info",
-        "warning",
-        "error",
-        "critical"
-      ]
     }
   }
 }

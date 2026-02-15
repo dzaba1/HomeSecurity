@@ -1,7 +1,6 @@
 using Dzaba.HomeSecurity.LogsIngestion.Contracts;
-using Google.Protobuf;
 using Microsoft.AspNetCore.Mvc;
-using System.Net;
+using System.ComponentModel.DataAnnotations;
 
 namespace Dzaba.HomeSecurity.LogsIngestion.Controllers;
 
@@ -22,39 +21,17 @@ public class LogsController : ControllerBase
         this.eventPublisher = eventPublisher;
     }
 
-    private IngestLogsRequest GetRequest()
+    [HttpPost]
+    public async Task<IActionResult> Ingest([Required][FromBody] IngestLogsRequest request)
     {
         try
         {
-            return IngestLogsRequest.Parser.ParseFrom(Request.Body);
-        }
-        catch (InvalidProtocolBufferException ex)
-        {
-            throw new HttpResultException(HttpStatusCode.BadRequest, "Invalid protobuf payload", ex);
-        }
-    }
-
-    [HttpPost("ingest")]
-    [Consumes("application/x-protobuf")]
-    public async Task<IActionResult> Ingest(CancellationToken ct)
-    {
-        try
-        {
-            var requestBody = GetRequest();
-
-            if (requestBody.Events.Count == 0)
-            {
-                return BadRequest("Empty batch");
-            }
-
-            foreach (var evt in requestBody.Events)
+            foreach (var evt in request.Events)
             {
                 await eventPublisher.PublishAsync(evt).ConfigureAwait(false);
             }
 
-            var response = new IngestLogsResponse();
-
-            return Accepted(response);
+            return Accepted();
         }
         catch (HttpResultException ex)
         {

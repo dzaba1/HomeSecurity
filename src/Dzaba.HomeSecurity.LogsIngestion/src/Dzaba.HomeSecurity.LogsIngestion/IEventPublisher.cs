@@ -4,5 +4,5 @@ namespace Dzaba.HomeSecurity.LogsIngestion;
 
 public interface IEventPublisher
 {
-    Task PublishAsync(LogEvent evt);
+    Task PublishAsync(Events evt);
 }

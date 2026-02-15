@@ -1,3 +1,4 @@
 <Solution>
+  <Project Path="src/Dzaba.HomeSecurity.LogsIngestion.Contracts/Dzaba.HomeSecurity.LogsIngestion.Contracts.csproj" Id="6dae7861-4633-4d4b-9ef7-f4874e81aa2c" />
   <Project Path="src/Dzaba.HomeSecurity.LogsIngestion/Dzaba.HomeSecurity.LogsIngestion.csproj" />
 </Solution>
