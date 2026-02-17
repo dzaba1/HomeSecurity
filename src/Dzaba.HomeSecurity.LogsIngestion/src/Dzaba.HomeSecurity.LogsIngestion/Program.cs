@@ -1,14 +1,9 @@
-using Serilog;
+using Dzaba.HomeSecurity.LogsIngestion;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-var logger = new LoggerConfiguration()
-    .MinimumLevel.Information()
-    .WriteTo.Console()
-    .CreateLogger();
-
-builder.Services.AddLogging(l => l.AddSerilog(logger, true));
+builder.Services.AddLogsIngestionLogging();
 
 builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
