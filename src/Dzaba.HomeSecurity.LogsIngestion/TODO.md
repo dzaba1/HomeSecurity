@@ -1,5 +1,12 @@
 # List of things to implement
 
+## Purpose
+
+I want to have a system which receives home router logs and later sends back security notifications.
+
+Security event to notify:
+* new connected device with unknown ip / mac 
+
 ## Authentication and authorization
 
 The logs ingestion service should have a secure authentication and authorization mechanism to ensure that only authorized users can access the service and its data.
