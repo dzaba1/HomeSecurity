@@ -18,7 +18,7 @@ Implement a health check endpoint that can be used to monitor the status of the 
 
 Implement logging and monitoring for the logs ingestion service to track its performance and identify any issues that may arise. This can include logging important events, errors, and performance metrics.
 
-To consider later, expose metrics such as request latency, error rates, and throughput using a monitoring tool like Prometheus or Grafana.
+To consider later, expose metrics such as request latency, error rates, and throughput. Expose Prometheus endpoint.
 
 ## Cache management
 
