@@ -24,8 +24,13 @@ To consider later, expose metrics such as request latency, error rates, and thro
 
 Implement a cache management system to improve the performance of the logs ingestion service. Use Redis as a caching layer to store frequently accessed data and reduce the load on the PostgreSQL database.
 
-# Queue management
+## Queue management
 
 Implement a queue management system to handle incoming log data and ensure that it is processed efficiently. Use RabbitMQ as a message broker to manage the queues and ensure that log data is processed in a timely manner.
 
 Separate the `IEventPublisher` to a different library and implement RabbitMQ for that.
+
+## Logs reader
+
+## AWS, Azure, GCP
+
