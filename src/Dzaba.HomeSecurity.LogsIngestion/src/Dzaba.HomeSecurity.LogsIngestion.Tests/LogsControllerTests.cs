@@ -25,8 +25,7 @@ public class LogsControllerTests : ControllerUnitTestFixture
 
         var sut = CreateSut();
 
-        var result = await sut.Ingest(requestBody).ConfigureAwait(false);
-        result.Should().BeOfType<AcceptedResult>();
+        await sut.Ingest(requestBody).ConfigureAwait(false);
 
         foreach (var evt in requestBody.Events)
         {

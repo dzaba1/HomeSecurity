@@ -10,28 +10,23 @@ namespace Dzaba.HomeSecurity.LogsIngestion.Controllers;
 [HandleErrors]
 public class LogsController : ControllerBase
 {
-    private readonly ILogger<LogsController> logger;
     private readonly IEventPublisher eventPublisher;
 
     public LogsController(ILogger<LogsController> logger,
         IEventPublisher eventPublisher)
     {
-        ArgumentNullException.ThrowIfNull(logger);
         ArgumentNullException.ThrowIfNull(eventPublisher);
 
-        this.logger = logger;
         this.eventPublisher = eventPublisher;
     }
 
     [HttpPost]
     [ValidateModel]
-    public async Task<IActionResult> Ingest([Required][FromBody] IngestLogsRequest request)
+    public async Task Ingest([Required][FromBody] IngestLogsRequest request)
     {
         foreach (var evt in request.Events)
         {
             await eventPublisher.PublishAsync(evt).ConfigureAwait(false);
         }
-
-        return Accepted();
     }
 }
