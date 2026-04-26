@@ -1,5 +1,6 @@
 using Dzaba.AspNetUtils.ActionFilters;
 using Dzaba.HomeSecurity.LogsIngestion.Contracts;
+using Dzaba.HomeSecurity.MessageBroker.Contracts;
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
 

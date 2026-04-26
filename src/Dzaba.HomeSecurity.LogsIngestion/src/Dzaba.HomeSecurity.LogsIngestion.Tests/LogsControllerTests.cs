@@ -1,9 +1,8 @@
 ﻿using AutoFixture;
 using Dzaba.HomeSecurity.LogsIngestion.Contracts;
 using Dzaba.HomeSecurity.LogsIngestion.Controllers;
+using Dzaba.HomeSecurity.MessageBroker.Contracts;
 using Dzaba.TestUtils;
-using FluentAssertions;
-using Microsoft.AspNetCore.Mvc;
 using Moq;
 using NUnit.Framework;
 

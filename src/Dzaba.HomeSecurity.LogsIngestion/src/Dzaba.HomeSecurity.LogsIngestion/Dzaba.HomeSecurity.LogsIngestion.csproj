@@ -21,6 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\..\Dzaba.HomeSecurity.MessageBroker.Contracts\Dzaba.HomeSecurity.MessageBroker.Contracts.csproj" />
     <ProjectReference Include="..\Dzaba.HomeSecurity.LogsIngestion.Contracts\Dzaba.HomeSecurity.LogsIngestion.Contracts.csproj" />
   </ItemGroup>
 	

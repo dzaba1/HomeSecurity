@@ -1,6 +1,6 @@
 ﻿using Dzaba.HomeSecurity.LogsIngestion.Contracts;
 
-namespace Dzaba.HomeSecurity.LogsIngestion;
+namespace Dzaba.HomeSecurity.MessageBroker.Contracts;
 
 public interface IEventPublisher
 {
