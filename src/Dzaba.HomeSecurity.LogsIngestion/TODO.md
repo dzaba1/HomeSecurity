@@ -4,8 +4,12 @@
 
 I want to have a system which receives home router logs and later sends back security notifications.
 
+Home devices like PCs, telephones or TVs should be able to get router logs periodically and sends them to the system.
+
 Security event to notify:
 * new connected device with unknown ip / mac 
+
+Notifications should go to the mobile application.
 
 ## Authentication and authorization
 
