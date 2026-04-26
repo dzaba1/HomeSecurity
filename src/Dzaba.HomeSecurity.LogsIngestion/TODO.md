@@ -2,12 +2,12 @@
 
 ## Purpose
 
-I want to have a system which receives home router logs and later sends back security notifications.
+I want to have a system which receives home router logs and sends back security notifications.
 
-Home devices like PCs, telephones or TVs should be able to get router logs periodically and sends them to the system.
+Home devices like PCs, mobiles, or TVs should be able to get router logs periodically and send them to the system.
 
 Security event to notify:
-* new connected device with unknown ip / mac 
+* New connected device with unknown IP / MAC 
 
 Notifications should go to the mobile application.
 
@@ -41,7 +41,18 @@ Implement a queue management system to handle incoming log data and ensure that 
 
 Separate the `IEventPublisher` to a different library and implement RabbitMQ for that.
 
-## Logs reader
+## Logs consumer
+
+Implement a logs consumer microservice that can process the incoming log data and generate security notifications based on the defined rules. This consumer should be able to handle a high volume of log data and generate notifications in real-time.
+
+Try to implement that in Go.
+
+## docker compose
+
+Implement a Docker Compose file to test entire system locally.
+
+For production, consider using Kubernetes to manage the deployment and scaling of the logs ingestion service. This will allow for better scalability and reliability as the service grows.
 
 ## AWS, Azure, GCP
 
+Consider using cloud services such as AWS, Azure, or GCP to deploy and manage the logs ingestion service.
