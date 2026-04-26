@@ -1,8 +1,9 @@
 <Solution>
   <Folder Name="/Solution Items/">
-    <File Path="Directory.Packages.props" />
+    <File Path="../Directory.Packages.props" />
   </Folder>
   <Project Path="../Dzaba.HomeSecurity.MessageBroker.Contracts/Dzaba.HomeSecurity.MessageBroker.Contracts.csproj" Id="1610f1a5-9b7d-40fa-8edd-bf639fce35b2" />
+  <Project Path="../Dzaba.HomeSecurity.MessageBroker.RabbitMQ/Dzaba.HomeSecurity.MessageBroker.RabbitMQ.csproj" Id="8ae7811f-6193-42a0-817f-585de5c38c47" />
   <Project Path="src/Dzaba.HomeSecurity.LogsIngestion.Contracts/Dzaba.HomeSecurity.LogsIngestion.Contracts.csproj" Id="6dae7861-4633-4d4b-9ef7-f4874e81aa2c" />
   <Project Path="src/Dzaba.HomeSecurity.LogsIngestion.Tests/Dzaba.HomeSecurity.LogsIngestion.Tests.csproj" Id="5f8ab04f-6e01-4329-90b0-1fcf5ac59a2e" />
   <Project Path="src/Dzaba.HomeSecurity.LogsIngestion/Dzaba.HomeSecurity.LogsIngestion.csproj" />
