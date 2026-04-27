@@ -1,6 +1,8 @@
 using Dzaba.AspNetUtils.ActionFilters;
 using Dzaba.HomeSecurity.LogsIngestion.Contracts;
+using Dzaba.HomeSecurity.LogsIngestion.Contracts.Services;
 using Dzaba.HomeSecurity.MessageBroker.Contracts;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.DataAnnotations;
 
@@ -9,7 +11,7 @@ namespace Dzaba.HomeSecurity.LogsIngestion.Controllers;
 [ApiController]
 [Route("api/v1/logs")]
 [HandleErrors]
-public class LogsController : ControllerBase
+public class LogsController : ControllerBase, ILogsController
 {
     private readonly IEventPublisher eventPublisher;
 
@@ -23,7 +25,8 @@ public class LogsController : ControllerBase
 
     [HttpPost]
     [ValidateModel]
-    public async Task Ingest([Required][FromBody] IngestLogsRequest request)
+    [Authorize]
+    public async Task IngestAsync([Required][FromBody] IngestLogsRequest request)
     {
         foreach (var evt in request.Events)
         {

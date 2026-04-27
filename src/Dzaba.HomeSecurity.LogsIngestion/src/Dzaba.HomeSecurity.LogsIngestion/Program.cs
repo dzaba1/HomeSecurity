@@ -1,9 +1,21 @@
+using Dzaba.BasicAuthentication;
 using Dzaba.HomeSecurity.LogsIngestion;
+using Dzaba.HomeSecurity.LogsIngestion.Auth;
+using Dzaba.HomeSecurity.MessageBroker.RabbitMQ;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddLogsIngestionLogging();
+builder.Services.AddRabbitMQMessageBroker();
+
+builder.Services.AddBasicAuthentication<BasicAuthHandler>();
+builder.Services.AddAuthentication(o =>
+{
+    o.AddBasicAuthenticationScheme(true);
+});
+
+builder.Services.AddAuthorization();
 
 builder.Services.AddControllers();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi

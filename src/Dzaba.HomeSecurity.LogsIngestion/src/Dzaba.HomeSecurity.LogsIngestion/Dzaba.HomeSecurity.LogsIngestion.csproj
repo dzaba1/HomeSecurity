@@ -10,8 +10,10 @@
 
   <ItemGroup>
     <PackageReference Include="Dzaba.AspNetUtils" />
+    <PackageReference Include="Dzaba.BasicAuthentication" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
     <PackageReference Include="Serilog" />
     <PackageReference Include="Serilog.Enrichers.Thread" />
     <PackageReference Include="Serilog.Extensions.Logging" />

@@ -1,8 +1,8 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 
-namespace Dzaba.HomeSecurity.LogsIngestion;
+namespace Dzaba.HomeSecurity.MessageBroker.RabbitMQ;
 
-internal static class Bootstrapper
+public static class Bootstrapper
 {
     public static IServiceCollection AddRabbitMQMessageBroker(this IServiceCollection services)
     {

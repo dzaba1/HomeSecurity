@@ -17,14 +17,14 @@ public class LogsControllerTests : ControllerUnitTestFixture
     }
 
     [Test]
-    public async Task Ingest_WhenLogs_ThenThoseArePropagated()
+    public async Task IngestAsync_WhenLogs_ThenThoseArePropagated()
     {
         var eventPublisher = Fixture.FreezeMock<IEventPublisher>();
         var requestBody = Fixture.Create<IngestLogsRequest>();
 
         var sut = CreateSut();
 
-        await sut.Ingest(requestBody).ConfigureAwait(false);
+        await sut.IngestAsync(requestBody).ConfigureAwait(false);
 
         foreach (var evt in requestBody.Events)
         {
