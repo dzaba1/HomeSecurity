@@ -15,7 +15,9 @@ Notifications should go to the mobile application.
 
 The logs ingestion service should have a secure authentication and authorization mechanism to ensure that only authorized users can access the service and its data.
 
-As for prototype, implement basic authentication using username and password. Later, consider using more secure methods such as OAuth or JWT.
+As for prototype, implement basic authentication using username and password.
+
+Later, consider using more secure methods such as OAuth or JWT.
 
 Logs ingestion service should use now it's own PostgreSQL database to store user credentials and permissions. This will allow scalability as the service grows.
 

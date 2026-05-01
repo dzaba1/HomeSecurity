@@ -1,4 +1,5 @@
 ﻿using Dzaba.BasicAuthentication;
+using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
 namespace Dzaba.HomeSecurity.LogsIngestion.Auth;
@@ -6,31 +7,40 @@ namespace Dzaba.HomeSecurity.LogsIngestion.Auth;
 internal sealed class BasicAuthHandler : IBasicAuthenticationHandlerService
 {
     private readonly IPasswordHasher passwordHasher;
+    private readonly AuthDbContext authDbContext;
 
-    public BasicAuthHandler(IPasswordHasher passwordHasher)
+    public BasicAuthHandler(IPasswordHasher passwordHasher,
+        AuthDbContext authDbContext)
     {
         ArgumentNullException.ThrowIfNull(passwordHasher);
+        ArgumentNullException.ThrowIfNull(authDbContext);
 
         this.passwordHasher = passwordHasher;
+        this.authDbContext = authDbContext;
     }
 
     public async Task AddClaimsAsync(BasicAuthenticationCredentials credentials, HttpContext httpContext, ICollection<Claim> claims, object context)
     {
         ArgumentNullException.ThrowIfNull(credentials);
 
-        throw new NotImplementedException();
+        var user = (User)context;
+        claims.Add(new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()));
     }
 
     public async Task<CheckPasswordResult> CheckPasswordAsync(BasicAuthenticationCredentials credentials, HttpContext httpContext)
     {
         ArgumentNullException.ThrowIfNull(credentials);
 
-        if (await passwordHasher.VerifyPasswordAsync(credentials.UserName, credentials.Password).ConfigureAwait(false))
+        var user = await authDbContext.Users.FirstOrDefaultAsync(u => u.Name == credentials.UserName)
+            .ConfigureAwait(false);
+
+        if (user != null && passwordHasher.VerifyHashedPassword(user.PasswordHash, credentials.Password))
         {
-            return CheckPasswordResult.Success();
+            return CheckPasswordResult.Success(user);
         }
 
-        return new CheckPasswordResult("Invalid username or password.");
+        return new CheckPasswordResult("Invalid user name or password.");
+
     }
 
     public async Task HandleUnauthorizedAsync(HttpContext httpContext, string failReason)
