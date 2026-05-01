@@ -22,6 +22,8 @@ builder.Services.AddRabbitMQMessageBroker(c =>
     };
 });
 
+builder.Services.AddTransient<IPasswordHasher, IPasswordHasher>();
+
 builder.Services.AddBasicAuthentication<BasicAuthHandler>();
 builder.Services.AddAuthentication(o =>
 {

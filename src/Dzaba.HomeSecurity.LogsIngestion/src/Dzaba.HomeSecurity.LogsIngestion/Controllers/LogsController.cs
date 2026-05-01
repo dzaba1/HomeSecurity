@@ -1,3 +1,4 @@
+using Dzaba.AspNetUtils;
 using Dzaba.AspNetUtils.ActionFilters;
 using Dzaba.HomeSecurity.LogsIngestion.Auth;
 using Dzaba.HomeSecurity.LogsIngestion.Contracts;
@@ -38,9 +39,22 @@ public class LogsController : ControllerBase, ILogsController
         var userName = User.Identity?.Name;
         var userModel = await authDbContext.Users.FirstOrDefaultAsync(u => u.Name == userName).ConfigureAwait(false);
 
+        var modelErrors = new Dictionary<string, string>();
         foreach (var evt in request.Events)
         {
-            await eventPublisher.PublishAsync(evt).ConfigureAwait(false);
+            if (evt.HomeId != userModel.HomeId)
+            {
+                modelErrors.Add(evt.HomeId, $"Event with id {evt.EventId} has invalid HomeId.");
+            }
+            else
+            {
+                await eventPublisher.PublishAsync(evt).ConfigureAwait(false);
+            }
+        }
+
+        if (modelErrors.Any())
+        {
+            throw new ModelStateException(modelErrors);
         }
     }
 }
