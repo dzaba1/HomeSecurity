@@ -18,7 +18,5 @@ public class User
     [MaxLength(1024)]
     public string PasswordHash { get; set; }
 
-    [Required(AllowEmptyStrings = false)]
-    [MaxLength(64)]
-    public string HomeId { get; set; }
+    public int HomeId { get; set; }
 }

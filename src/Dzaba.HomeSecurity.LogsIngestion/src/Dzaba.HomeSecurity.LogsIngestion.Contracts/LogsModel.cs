@@ -32,15 +32,8 @@ namespace Dzaba.HomeSecurity.LogsIngestion.Contracts
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public System.Guid EventId { get; set; }
 
-        [System.Text.Json.Serialization.JsonPropertyName("homeId")]
-        [System.ComponentModel.DataAnnotations.Required]
-        [System.ComponentModel.DataAnnotations.StringLength(128, MinimumLength = 1)]
-        public string HomeId { get; set; }
-
         [System.Text.Json.Serialization.JsonPropertyName("deviceId")]
-        [System.ComponentModel.DataAnnotations.Required]
-        [System.ComponentModel.DataAnnotations.StringLength(128, MinimumLength = 1)]
-        public string DeviceId { get; set; }
+        public int DeviceId { get; set; }
 
         [System.Text.Json.Serialization.JsonPropertyName("level")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]

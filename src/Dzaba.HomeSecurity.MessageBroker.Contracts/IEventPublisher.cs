@@ -4,5 +4,5 @@ namespace Dzaba.HomeSecurity.MessageBroker.Contracts;
 
 public interface IEventPublisher
 {
-    Task PublishAsync(Events evt);
+    Task PublishAsync(int homeId, Events evt);
 }

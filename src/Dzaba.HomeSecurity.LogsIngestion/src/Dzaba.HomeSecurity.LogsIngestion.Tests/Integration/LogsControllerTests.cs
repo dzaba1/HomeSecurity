@@ -20,8 +20,7 @@ public class LogsControllerTests : ControllerTestFixture
                 new Events
                     {
                         EventId = Guid.NewGuid(),
-                        HomeId = "1",
-                        DeviceId = "2",
+                        DeviceId = 2,
                         Level = EventsLevel.Info,
                         Message = "Test message"
                     }

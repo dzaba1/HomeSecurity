@@ -20,7 +20,7 @@ internal sealed class RabbitMQEventPublisher : IEventPublisher
         this.bus = bus;
     }
 
-    public Task PublishAsync(Events evt)
+    public Task PublishAsync(int homeId, Events evt)
     {
         ArgumentNullException.ThrowIfNull(evt);
 

@@ -39,22 +39,9 @@ public class LogsController : ControllerBase, ILogsController
         var userName = User.Identity?.Name;
         var userModel = await authDbContext.Users.FirstOrDefaultAsync(u => u.Name == userName).ConfigureAwait(false);
 
-        var modelErrors = new Dictionary<string, string>();
         foreach (var evt in request.Events)
         {
-            if (evt.HomeId != userModel.HomeId)
-            {
-                modelErrors.Add(evt.HomeId, $"Event with id {evt.EventId} has invalid HomeId.");
-            }
-            else
-            {
-                await eventPublisher.PublishAsync(evt).ConfigureAwait(false);
-            }
-        }
-
-        if (modelErrors.Any())
-        {
-            throw new ModelStateException(modelErrors);
+            await eventPublisher.PublishAsync(userModel.HomeId, evt).ConfigureAwait(false);
         }
     }
 }

@@ -21,7 +21,6 @@
       "type": "object",
       "required": [
         "eventId",
-        "homeId",
         "deviceId",
         "level",
         "message"
@@ -32,15 +31,8 @@
           "format": "uuid",
           "description": "Unique event identifier for idempotency"
         },
-        "homeId": {
-          "type": "string",
-          "minLength": 1,
-          "maxLength": 128
-        },
         "deviceId": {
-          "type": "string",
-          "minLength": 1,
-          "maxLength": 128
+          "type": "integer"
         },
         "level": {
           "type": "string",

@@ -28,7 +28,7 @@ public class LogsControllerTests : ControllerUnitTestFixture
 
         foreach (var evt in requestBody.Events)
         {
-            eventPublisher.Verify(p => p.PublishAsync(evt), Times.Once());
+            eventPublisher.Verify(p => p.PublishAsync(0, evt), Times.Once());
         }
     }
 }
