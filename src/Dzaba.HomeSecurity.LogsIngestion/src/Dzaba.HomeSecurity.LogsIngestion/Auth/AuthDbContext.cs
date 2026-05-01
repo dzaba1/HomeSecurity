@@ -2,9 +2,9 @@
 
 namespace Dzaba.HomeSecurity.LogsIngestion.Auth;
 
-internal sealed class AuthDbContext : DbContext
+public sealed class AuthDbContext : DbContext
 {
-    public AuthDbContext(DbContextOptions options) : base(options)
+    public AuthDbContext(DbContextOptions<AuthDbContext> options) : base(options)
     {
     }
 
