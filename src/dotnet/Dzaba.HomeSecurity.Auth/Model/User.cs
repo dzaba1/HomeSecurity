@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace Dzaba.HomeSecurity.LogsIngestion.Auth;
+namespace Dzaba.HomeSecurity.Auth.Model;
 
 [Table("AuthUsers")]
 public class User
@@ -17,6 +17,4 @@ public class User
     [Required(AllowEmptyStrings = false)]
     [MaxLength(1024)]
     public string PasswordHash { get; set; }
-
-    public int HomeId { get; set; }
 }

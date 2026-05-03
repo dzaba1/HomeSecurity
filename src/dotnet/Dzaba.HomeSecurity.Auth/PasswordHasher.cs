@@ -1,6 +1,6 @@
 ﻿using System.Security.Cryptography;
 
-namespace Dzaba.HomeSecurity.LogsIngestion.Auth;
+namespace Dzaba.HomeSecurity.Auth;
 
 internal interface IPasswordHasher
 {

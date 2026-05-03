@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 
-namespace Dzaba.HomeSecurity.LogsIngestion.Auth;
+namespace Dzaba.HomeSecurity.Auth;
 
 public sealed class AuthDbContext : DbContext
 {

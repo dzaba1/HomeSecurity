@@ -2,7 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 
-namespace Dzaba.HomeSecurity.LogsIngestion.Auth;
+namespace Dzaba.HomeSecurity.Auth;
 
 internal sealed class BasicAuthHandler : IBasicAuthenticationHandlerService
 {
