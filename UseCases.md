@@ -32,8 +32,8 @@ flowchart TB
 
   subgraph Cloud[Kubernetes / Cloud Services]
     API[API Gateway / Ingress]
-    Auth[Auth & API-Key Service]
-    AuthDB[(Auth DB — Postgres)]
+    Keycloak["Keycloak (OIDC) — Identity Provider"]
+    KeycloakDB[(Keycloak DB — Postgres)]
     Ingest["Logs Ingestion Service (stateless)"]
     Redis["Redis Cache (optional)"]
     Queue[RabbitMQ / Event Bus]
@@ -48,12 +48,12 @@ flowchart TB
   end
 
   Client -->|HTTPS + API Key / mTLS| API
-  API --> Auth
-  Auth --> AuthDB
+  API --> Keycloak
+  Keycloak --> KeycloakDB
   API --> Ingest
-  AdminUI -->|HTTPS + OAuth2| Auth
+  AdminUI -->|HTTPS + OAuth2 / OIDC| Keycloak
   AdminUI --> Management
-  Management --> AuthDB
+  Management --> KeycloakDB
   Mobile -->|Register Device / View Alerts| Management
   Management --> DeviceDB
   Ingest -->|cache| Redis
@@ -74,7 +74,7 @@ flowchart TB
 Components & responsibilities
 
 - **API Gateway:** TLS termination, rate limiting, auth, ingress routing, request validation.
-- **Auth & API-Key Service:** Issue/manage API keys and tokens, support OAuth2 for users and API keys for routers, enforce scopes and rate-limits.
+- **Keycloak (OIDC):** Use Keycloak as the identity provider for users and machine identities. Keycloak provides OAuth2/OIDC flows, client credentials, roles, user federation, and an admin UI.
 - **Logs Ingestion Service:** Stateless HTTP/HTTPS front-end that validates and normalizes router logs and publishes messages to the event bus; keep minimal CPU work.
 - **Event Bus (RabbitMQ):** Durable queueing for decoupling ingestion from processing; use persistence and dead-letter queues.
 - **Processing Workers:** Consumer pool that enriches, deduplicates, classifies logs, applies detection rules (e.g., unknown device), writes events to archive and device DB, and emits notification events.
@@ -85,32 +85,28 @@ Components & responsibilities
 - **Cache (Redis):** Short-lifetime caches for lookups, rate-limiting counters, and locks (optional).
 - **Observability:** Metrics (Prometheus), logs (structured JSON to centralized store), distributed tracing (OpenTelemetry), health checks and alerting.
 
-- **Auth DB (Postgres):** Stores user identities, hashed credentials, API key metadata, refresh-token hashes and audit records for authentication/authorization operations.
+**Keycloak (self-hosted) + Postgres**
 
-Identity storage & options
+We will use a self-hosted Keycloak instance backed by Postgres (`KeycloakDB`). Keycloak handles user credentials, token issuance, client credentials for machine identities, roles, and the admin console — eliminating the need to implement a custom auth service.
 
-There are two common approaches for identity storage and authentication:
+Integration notes
 
-- **Managed Identity Provider (recommended for quick secure setup):** Use a managed service such as Auth0, Azure AD B2C, or AWS Cognito to handle user/password storage, MFA, password resets, and compliance features. The `Auth` service delegates authentication to the provider and stores only minimal mapping state (e.g., external id → org_id).
+- **API Gateway delegation:** The `API Gateway` validates tokens issued by Keycloak (JWT verification or token introspection) and forwards authenticated requests to services.
+- **Device identities & machine clients:** Prefer Keycloak `client credentials` or service accounts for routers/devices. For human-style API keys you can map keys to Keycloak clients or keep hashed API keys in `Device & Organization DB` and validate them at the gateway.
+- **Provisioning & sync:** `Management` provisions users, clients, and roles using Keycloak Admin API. Use user attributes or a small mapping table in `Device & Organization DB` to map Keycloak `user_id`/`client_id` → `org_id`.
+- **Revocation & rotation:** Rotate client secrets regularly; revoke via Keycloak admin APIs. If application services need to react, publish revocation events to the `Queue`.
 
-- **Self-hosted Auth service + Auth DB (Postgres):** Keep full control by running your own `Auth` service with a dedicated `AuthDB`. Store only hashed passwords and hashed API keys; never store plaintext secrets. Recommended schema sketches:
+Security & operational best-practices (Keycloak)
 
-  - `users` (id, org_id, email, password_hash, password_algo, is_active, created_at, last_login)
-  - `api_keys` (id, owner_id, key_hash, scopes, created_at, revoked_at)
-  - `refresh_tokens` (id, user_id, token_hash, issued_at, revoked_at)
-  - `audit_log` (id, actor_id, action, target, timestamp, details)
-
-Security best-practices (self-hosted)
-
-- Use Argon2id (or bcrypt if unavailable) with a unique salt per password; consider a global pepper in `Secrets` for defense-in-depth.
-- Hash API keys on issuance and only show the raw value once; compare using constant-time checks.
-- Store refresh tokens hashed and support immediate revocation paths; propagate revocation events via the `Queue` so `Worker`/`Auth` caches can invalidate.
-- Limit login attempts and enforce rate-limiting at the `API Gateway`.
-- Keep encryption keys and secrets in a centralized `Secrets` manager (Vault/KeyVault) and instrument audit logs for credential operations.
+- Run Keycloak with TLS behind your ingress; use Postgres with backups and point-in-time recovery.
+- Protect admin accounts with MFA and strict network controls; enable strong password policies and account lockout.
+- Prefer short-lived access tokens and validate signatures; use refresh tokens where appropriate and store them securely on clients.
+- Store Keycloak DB credentials and master keys in `Secrets` manager and restrict admin API access.
+- Monitor auth metrics (failed logins, token issuances) and alert on anomalies.
 
 Multi-tenant mapping
 
-Keep canonical organization metadata in `Device & Organization DB`. Store `org_id` in `AuthDB` as an FK (or keep a stable mapping field) so `Auth` can resolve user→org and apply org-scoped policies. Synchronize between DBs via transactional updates or via events published to `Queue` for eventual consistency.
+Keep canonical organization metadata in `Device & Organization DB`. Use Keycloak user attributes or a sync process to associate Keycloak users/clients with `org_id`. For devices you can represent each device as a Keycloak client or keep a device table in `Device & Organization DB` with hashed provisioning tokens.
 
 Management & device lifecycle dataflow
 
