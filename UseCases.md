@@ -33,6 +33,7 @@ flowchart TB
   subgraph Cloud[Kubernetes / Cloud Services]
     API[API Gateway / Ingress]
     Auth[Auth & API-Key Service]
+    AuthDB[(Auth DB — Postgres)]
     Ingest["Logs Ingestion Service (stateless)"]
     Redis["Redis Cache (optional)"]
     Queue[RabbitMQ / Event Bus]
@@ -48,9 +49,11 @@ flowchart TB
 
   Client -->|HTTPS + API Key / mTLS| API
   API --> Auth
+  Auth --> AuthDB
   API --> Ingest
   AdminUI -->|HTTPS + OAuth2| Auth
   AdminUI --> Management
+  Management --> AuthDB
   Mobile -->|Register Device / View Alerts| Management
   Management --> DeviceDB
   Ingest -->|cache| Redis
@@ -81,6 +84,33 @@ Components & responsibilities
 - **Management Service / UI:** Org and device management, token provisioning/rotation, device revocation, audit views and admin APIs.
 - **Cache (Redis):** Short-lifetime caches for lookups, rate-limiting counters, and locks (optional).
 - **Observability:** Metrics (Prometheus), logs (structured JSON to centralized store), distributed tracing (OpenTelemetry), health checks and alerting.
+
+- **Auth DB (Postgres):** Stores user identities, hashed credentials, API key metadata, refresh-token hashes and audit records for authentication/authorization operations.
+
+Identity storage & options
+
+There are two common approaches for identity storage and authentication:
+
+- **Managed Identity Provider (recommended for quick secure setup):** Use a managed service such as Auth0, Azure AD B2C, or AWS Cognito to handle user/password storage, MFA, password resets, and compliance features. The `Auth` service delegates authentication to the provider and stores only minimal mapping state (e.g., external id → org_id).
+
+- **Self-hosted Auth service + Auth DB (Postgres):** Keep full control by running your own `Auth` service with a dedicated `AuthDB`. Store only hashed passwords and hashed API keys; never store plaintext secrets. Recommended schema sketches:
+
+  - `users` (id, org_id, email, password_hash, password_algo, is_active, created_at, last_login)
+  - `api_keys` (id, owner_id, key_hash, scopes, created_at, revoked_at)
+  - `refresh_tokens` (id, user_id, token_hash, issued_at, revoked_at)
+  - `audit_log` (id, actor_id, action, target, timestamp, details)
+
+Security best-practices (self-hosted)
+
+- Use Argon2id (or bcrypt if unavailable) with a unique salt per password; consider a global pepper in `Secrets` for defense-in-depth.
+- Hash API keys on issuance and only show the raw value once; compare using constant-time checks.
+- Store refresh tokens hashed and support immediate revocation paths; propagate revocation events via the `Queue` so `Worker`/`Auth` caches can invalidate.
+- Limit login attempts and enforce rate-limiting at the `API Gateway`.
+- Keep encryption keys and secrets in a centralized `Secrets` manager (Vault/KeyVault) and instrument audit logs for credential operations.
+
+Multi-tenant mapping
+
+Keep canonical organization metadata in `Device & Organization DB`. Store `org_id` in `AuthDB` as an FK (or keep a stable mapping field) so `Auth` can resolve user→org and apply org-scoped policies. Synchronize between DBs via transactional updates or via events published to `Queue` for eventual consistency.
 
 Management & device lifecycle dataflow
 
