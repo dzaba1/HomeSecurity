@@ -1,3 +1,4 @@
+using Dzaba.HomeSecurity.Auth;
 using Dzaba.HomeSecurity.LogsIngestion;
 using Dzaba.HomeSecurity.MessageBroker.Contracts;
 using Dzaba.HomeSecurity.MessageBroker.RabbitMQ;
@@ -18,6 +19,12 @@ builder.Services.AddRabbitMQMessageBroker(c =>
         Password = settings.Password,
         VirtualHost = settings.VirtualHost
     };
+});
+
+builder.Services.AddAuthServices(() =>
+{
+    var section = builder.Configuration.GetSection("JwtAuth");
+    return section.Get<AuthSettings>();
 });
 
 builder.Services.AddAuthorization();
