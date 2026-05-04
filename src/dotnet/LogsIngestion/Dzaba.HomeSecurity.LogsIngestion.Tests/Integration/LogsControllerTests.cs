@@ -2,6 +2,7 @@
 using FluentAssertions;
 using NUnit.Framework;
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 
 namespace Dzaba.HomeSecurity.LogsIngestion.Tests.Integration;
@@ -14,7 +15,7 @@ public class LogsControllerTests : ControllerTestFixture
     {
         var client = CreateClient();
 
-        var request = new IngestLogsRequest
+        var requestBody = new IngestLogsRequest
         {
             Events = [
                 new Events
@@ -26,8 +27,13 @@ public class LogsControllerTests : ControllerTestFixture
                     }
                 ]
         };
-
-        var resp = await client.PostAsJsonAsync("/api/v1/logs", request);
+        
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/api/v1/logs")
+        {
+            Content = JsonContent.Create(requestBody),
+        };
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", "test-token");
+        var resp = await client.SendAsync(request);
         resp.StatusCode.Should().Be(HttpStatusCode.OK);
     }
 }
