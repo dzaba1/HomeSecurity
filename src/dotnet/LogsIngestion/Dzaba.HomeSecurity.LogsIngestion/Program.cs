@@ -1,6 +1,4 @@
-using Dzaba.BasicAuthentication;
 using Dzaba.HomeSecurity.LogsIngestion;
-using Dzaba.HomeSecurity.LogsIngestion.Auth;
 using Dzaba.HomeSecurity.MessageBroker.Contracts;
 using Dzaba.HomeSecurity.MessageBroker.RabbitMQ;
 using EasyNetQ;
@@ -20,14 +18,6 @@ builder.Services.AddRabbitMQMessageBroker(c =>
         Password = settings.Password,
         VirtualHost = settings.VirtualHost
     };
-});
-
-builder.Services.AddTransient<IPasswordHasher, IPasswordHasher>();
-
-builder.Services.AddBasicAuthentication<BasicAuthHandler>();
-builder.Services.AddAuthentication(o =>
-{
-    o.AddBasicAuthenticationScheme(true);
 });
 
 builder.Services.AddAuthorization();

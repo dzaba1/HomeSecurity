@@ -9,7 +9,7 @@ services:
       POSTGRES_USER: keycloak
       POSTGRES_PASSWORD: keycloakpass
     volumes:
-      - postgres_auth_data:/var/lib/postgresql/data
+      - postgres_auth_data:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U keycloak"]
       interval: 10s
@@ -45,6 +45,22 @@ services:
       - backend
     volumes:
       - keycloak_data:/opt/keycloak/data
+  
+  adminer:
+    image: adminer:5.4.2
+    container_name: adminer
+    ports:
+      - "8081:8080"
+    depends_on:
+      - postgres_auth
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://127.0.0.1:8080/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    networks:
+      - backend
 
 volumes:
   postgres_auth_data:

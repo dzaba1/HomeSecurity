@@ -7,7 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Dzaba.HomeSecurity.LogsIngestion\src\Dzaba.HomeSecurity.LogsIngestion.Contracts\Dzaba.HomeSecurity.LogsIngestion.Contracts.csproj" />
+    <ProjectReference Include="..\LogsIngestion\Dzaba.HomeSecurity.LogsIngestion.Contracts\Dzaba.HomeSecurity.LogsIngestion.Contracts.csproj" />
   </ItemGroup>
 
 </Project>
