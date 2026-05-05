@@ -10,14 +10,14 @@ namespace Dzaba.HomeSecurity.Org;
 public static class Bootstrapper
 {
     public static IServiceCollection AddOrgServices(this IServiceCollection services,
-        Func<string> connectionStringProvider)
+        Func<IServiceProvider, string> connectionStringProvider)
     {
         ArgumentNullException.ThrowIfNull(services);
         ArgumentNullException.ThrowIfNull(connectionStringProvider);
 
         services.AddTransient<IOrgService, OrgService>();
 
-        services.AddDbContext<OrgDbContext>(o => o.UseNpgsql(connectionStringProvider()));
+        services.AddDbContext<OrgDbContext>((c, o) => o.UseNpgsql(connectionStringProvider(c)));
 
         services.AddMultiTenant<OrgTenantInfo>()
             .WithHeaderStrategy(Constants.OrgHeaderName)

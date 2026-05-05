@@ -12,7 +12,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddLogsIngestionLogging();
 builder.Services.AddRabbitMQMessageBroker(c =>
 {
-    var section = builder.Configuration.GetSection("RabbitMQ");
+    var configuration = c.GetRequiredService<IConfiguration>();
+    var section = configuration.GetSection("RabbitMQ");
     var settings = section.Get<MessageBrokerSettings>();
     return new ConnectionConfiguration
     {
@@ -23,9 +24,10 @@ builder.Services.AddRabbitMQMessageBroker(c =>
     };
 });
 
-builder.Services.AddOrgServices(() =>
+builder.Services.AddOrgServices(c =>
 {
-    return builder.Configuration.GetConnectionString("OrgDatabase");
+    var configuration = c.GetRequiredService<IConfiguration>();
+    return configuration.GetConnectionString("OrgDatabase");
 });
 
 builder.Services.AddAuthServices(() =>
