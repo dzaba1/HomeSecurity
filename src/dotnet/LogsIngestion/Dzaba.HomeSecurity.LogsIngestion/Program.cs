@@ -2,6 +2,7 @@ using Dzaba.HomeSecurity.Auth;
 using Dzaba.HomeSecurity.LogsIngestion;
 using Dzaba.HomeSecurity.MessageBroker.Contracts;
 using Dzaba.HomeSecurity.MessageBroker.RabbitMQ;
+using Dzaba.HomeSecurity.Org;
 using EasyNetQ;
 using Finbuckle.MultiTenant.AspNetCore.Extensions;
 
@@ -20,6 +21,11 @@ builder.Services.AddRabbitMQMessageBroker(c =>
         Password = settings.Password,
         VirtualHost = settings.VirtualHost
     };
+});
+
+builder.Services.AddOrgServices(() =>
+{
+    return builder.Configuration.GetConnectionString("OrgDatabase");
 });
 
 builder.Services.AddAuthServices(() =>

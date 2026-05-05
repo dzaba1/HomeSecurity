@@ -18,7 +18,7 @@ public sealed class TenantAccessMiddleware
         ArgumentNullException.ThrowIfNull(orgService);
 
         var tenantId = await orgService.GetTenantIdAsync(context).ConfigureAwait(false);
-        var userId = context.User.FindFirst("sub").Value;
+        var userId = context.User.FindFirst("sub")?.Value;
 
         if (tenantId != null && userId != null)
         {
