@@ -23,7 +23,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Dzaba.HomeSecurity.Auth\Dzaba.HomeSecurity.Auth.csproj" />
     <ProjectReference Include="..\..\Dzaba.HomeSecurity.MessageBroker.RabbitMQ\Dzaba.HomeSecurity.MessageBroker.RabbitMQ.csproj" />
-    <ProjectReference Include="..\Dzaba.HomeSecurity.LogsIngestion.Contracts\Dzaba.HomeSecurity.LogsIngestion.Contracts.csproj" />
+    <ProjectReference Include="..\..\Dzaba.HomeSecurity.Org\Dzaba.HomeSecurity.Org.csproj" />
   </ItemGroup>
 	
 </Project>

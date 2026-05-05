@@ -3,6 +3,7 @@ using Dzaba.HomeSecurity.LogsIngestion;
 using Dzaba.HomeSecurity.MessageBroker.Contracts;
 using Dzaba.HomeSecurity.MessageBroker.RabbitMQ;
 using EasyNetQ;
+using Finbuckle.MultiTenant.AspNetCore.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -44,6 +45,10 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.UseMultiTenant();
+
+app.UseMiddleware<TenantAccessMiddleware>();
 
 app.UseHttpsRedirection();
 
