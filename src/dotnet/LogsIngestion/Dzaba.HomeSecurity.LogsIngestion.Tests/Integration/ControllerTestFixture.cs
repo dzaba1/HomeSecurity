@@ -3,6 +3,8 @@ using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using NUnit.Framework;
 
 namespace Dzaba.HomeSecurity.LogsIngestion.Tests.Integration;
@@ -26,6 +28,19 @@ public abstract class ControllerTestFixture
             })
             .ConfigureTestServices(services =>
             {
+                services.RemoveAll<IConfiguration>();
+
+                var config = new ConfigurationBuilder()
+                    .AddInMemoryCollection(new Dictionary<string, string>
+                    {
+                        ["JwtAuth:Authority"] = "http://test",
+                        ["JwtAuth:Audience"] = "home-security",
+                        ["JwtAuth:ValidateAudience"] = "false",
+                        ["JwtAuth:ValidateIssuer"] = "false",
+                    })
+                    .Build();
+                services.AddSingleton<IConfiguration>(config);
+
                 services.AddSerilogConsoleLogging();
             });
         });
