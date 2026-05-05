@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 namespace Dzaba.HomeSecurity.Auth;
 
@@ -28,6 +29,11 @@ public static class Bootstrapper
                     ValidAudience = options.Audience,
                     ValidateIssuer = options.ValidateIssuer
                 };
+
+                if (!string.IsNullOrWhiteSpace(options.IssuerSigningKey))
+                {
+                    jwtOptions.TokenValidationParameters.IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(options.IssuerSigningKey));
+                }
             });
 
         return services;

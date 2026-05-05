@@ -37,6 +37,7 @@ public abstract class ControllerTestFixture
                         ["JwtAuth:Audience"] = "home-security",
                         ["JwtAuth:ValidateAudience"] = "false",
                         ["JwtAuth:ValidateIssuer"] = "false",
+                        ["JwtAuth:IssuerSigningKey"] = "a-string-secret-at-least-256-bits-long",
                     })
                     .Build();
                 services.AddSingleton<IConfiguration>(config);

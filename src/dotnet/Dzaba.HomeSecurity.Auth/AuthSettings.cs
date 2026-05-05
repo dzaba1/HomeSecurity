@@ -7,4 +7,5 @@ public class AuthSettings
     public bool RequireHttps { get; set; }
     public bool ValidateAudience { get; set; } = true;
     public bool ValidateIssuer { get; set; } = true;
+    public string IssuerSigningKey { get; set; }
 }
