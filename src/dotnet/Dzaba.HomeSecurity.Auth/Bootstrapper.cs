@@ -24,9 +24,9 @@ public static class Bootstrapper
                 jwtOptions.RequireHttpsMetadata = options.RequireHttps;
                 jwtOptions.TokenValidationParameters = new TokenValidationParameters
                 {
-                    ValidateAudience = true,
+                    ValidateAudience = options.ValidateAudience,
                     ValidAudience = options.Audience,
-                    ValidateIssuer = true
+                    ValidateIssuer = options.ValidateIssuer
                 };
             });
 
