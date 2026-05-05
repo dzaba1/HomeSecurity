@@ -28,11 +28,13 @@ public class LogsControllerTests : ControllerTestFixture
                 ]
         };
         
+        var token = JwtTokenBuilder.CreateToken(IssuerSigningKey, Authority, Audience, "1234567890", "John Doe");
+
         using var request = new HttpRequestMessage(HttpMethod.Post, "/api/v1/logs")
         {
             Content = JsonContent.Create(requestBody),
         };
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", "test-token");
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
         var resp = await client.SendAsync(request);
         resp.StatusCode.Should().Be(HttpStatusCode.OK);
     }

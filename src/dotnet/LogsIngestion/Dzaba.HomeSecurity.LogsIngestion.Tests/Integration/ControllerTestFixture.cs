@@ -11,6 +11,10 @@ namespace Dzaba.HomeSecurity.LogsIngestion.Tests.Integration;
 
 public abstract class ControllerTestFixture
 {
+    public static readonly string Authority = "http://test";
+    public static readonly string Audience = "home-security";
+    public static readonly string IssuerSigningKey = "a-string-secret-at-least-256-bits-long";
+
     private WebApplicationFactory<Program> factory;
     private Action<IConfigurationBuilder> configBuilderCallback = null;
 
@@ -33,11 +37,11 @@ public abstract class ControllerTestFixture
                 var config = new ConfigurationBuilder()
                     .AddInMemoryCollection(new Dictionary<string, string>
                     {
-                        ["JwtAuth:Authority"] = "http://test",
-                        ["JwtAuth:Audience"] = "home-security",
+                        ["JwtAuth:Authority"] = Authority,
+                        ["JwtAuth:Audience"] = Audience,
                         ["JwtAuth:ValidateAudience"] = "false",
                         ["JwtAuth:ValidateIssuer"] = "false",
-                        ["JwtAuth:IssuerSigningKey"] = "a-string-secret-at-least-256-bits-long",
+                        ["JwtAuth:IssuerSigningKey"] = IssuerSigningKey,
                     })
                     .Build();
                 services.AddSingleton<IConfiguration>(config);
