@@ -1,4 +1,5 @@
 ﻿using Dzaba.HomeSecurity.Org.Contracts;
+using Finbuckle.MultiTenant.Abstractions;
 using Finbuckle.MultiTenant.AspNetCore.Extensions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
@@ -21,9 +22,24 @@ internal sealed class OrgService : IOrgService
         this.logger = logger;
     }
 
+    public async Task<string> CreateOrgAsync(string name)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(name);
+
+        var tenant = new TenantInfo
+        {
+            Id = Guid.NewGuid().ToString(),
+            Identifier = name,
+            Name = name
+        };
+        dbContext.TenantInfo.Add(tenant);
+        await dbContext.SaveChangesAsync();
+        return tenant.Id;
+    }
+
     public async Task<string> GetTenantIdAsync(HttpContext context)
     {
-        var tenant = context.GetMultiTenantContext<OrgTenantInfo>().TenantInfo;
+        var tenant = context.GetMultiTenantContext<TenantInfo>().TenantInfo;
         return tenant?.Id;
     }
 

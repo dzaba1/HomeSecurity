@@ -1,10 +1,11 @@
 ﻿using Dzaba.HomeSecurity.Org.Contracts;
+using Finbuckle.MultiTenant.Abstractions;
 using Finbuckle.MultiTenant.EntityFrameworkCore.Stores;
 using Microsoft.EntityFrameworkCore;
 
 namespace Dzaba.HomeSecurity.Org;
 
-internal class OrgDbContext : EFCoreStoreDbContext<OrgTenantInfo>
+internal class OrgDbContext : EFCoreStoreDbContext<TenantInfo>
 {
     public OrgDbContext(DbContextOptions<OrgDbContext> options) : base(options)
     {
@@ -21,7 +22,7 @@ internal class OrgDbContext : EFCoreStoreDbContext<OrgTenantInfo>
             entity.Property(e => e.TenantId).IsRequired();
         });
 
-        modelBuilder.Entity<OrgTenantInfo>(entity =>
+        modelBuilder.Entity<TenantInfo>(entity =>
         {
             entity.Property(e => e.Name).IsRequired();
         });

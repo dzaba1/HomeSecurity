@@ -1,5 +1,7 @@
 ﻿using Dzaba.HomeSecurity.LogsIngestion.Contracts;
+using Dzaba.HomeSecurity.Org.Contracts;
 using FluentAssertions;
+using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
 using System.Net;
 using System.Net.Http.Headers;
@@ -13,6 +15,10 @@ public class LogsControllerTests : ControllerTestFixture
     [Test]
     public async Task AAA()
     {
+        using var scope = CreateScope();
+        var orgService = scope.ServiceProvider.GetRequiredService<IOrgService>();
+        var newOrgId = await orgService.CreateOrgAsync("Test Org").ConfigureAwait(false);
+
         var client = CreateClient();
 
         var requestBody = new IngestLogsRequest

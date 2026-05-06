@@ -63,8 +63,6 @@ public partial class Program
 
         app.UseMultiTenant();
 
-        app.UseMiddleware<TenantAccessMiddleware>();
-
         app.UseHttpsRedirection();
 
         app.UseAuthorization();

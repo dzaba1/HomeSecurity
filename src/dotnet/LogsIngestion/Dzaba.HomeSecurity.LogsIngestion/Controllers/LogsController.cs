@@ -1,4 +1,5 @@
 using Dzaba.AspNetUtils.ActionFilters;
+using Dzaba.HomeSecurity.Auth.ActionFilters;
 using Dzaba.HomeSecurity.LogsIngestion.Contracts;
 using Dzaba.HomeSecurity.LogsIngestion.Contracts.Services;
 using Dzaba.HomeSecurity.MessageBroker.Contracts;
@@ -11,6 +12,7 @@ namespace Dzaba.HomeSecurity.LogsIngestion.Controllers;
 [ApiController]
 [Route("api/v1/logs")]
 [HandleErrors]
+[ValidateTenant]
 public class LogsController : ControllerBase, ILogsController
 {
     private readonly IEventPublisher eventPublisher;

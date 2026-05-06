@@ -26,6 +26,15 @@ public abstract class ControllerTestFixture
         {
             b.ConfigureAppConfiguration((context, builder) =>
             {
+                builder.AddInMemoryCollection(new Dictionary<string, string>
+                {
+                    ["JwtAuth:Authority"] = Authority,
+                    ["JwtAuth:Audience"] = Audience,
+                    ["JwtAuth:ValidateAudience"] = "false",
+                    ["JwtAuth:ValidateIssuer"] = "false",
+                    ["JwtAuth:IssuerSigningKey"] = IssuerSigningKey,
+                });
+
                 if (configBuilderCallback != null)
                 {
                     configBuilderCallback(builder);
@@ -33,21 +42,7 @@ public abstract class ControllerTestFixture
             })
             .ConfigureTestServices(services =>
             {
-                services.RemoveAll<IConfiguration>();
                 services.RemoveAll<IBus>();
-
-                var config = new ConfigurationBuilder()
-                    .AddInMemoryCollection(new Dictionary<string, string>
-                    {
-                        ["JwtAuth:Authority"] = Authority,
-                        ["JwtAuth:Audience"] = Audience,
-                        ["JwtAuth:ValidateAudience"] = "false",
-                        ["JwtAuth:ValidateIssuer"] = "false",
-                        ["JwtAuth:IssuerSigningKey"] = IssuerSigningKey,
-                    })
-                    .Build();
-                services.AddSingleton<IConfiguration>(config);
-
                 services.AddSingleton<IBus, InMemoryBus>();
 
                 services.AddSerilogConsoleLogging();
@@ -61,9 +56,13 @@ public abstract class ControllerTestFixture
         factory?.Dispose();
     }
 
-    protected HttpClient CreateClient(Action<IConfigurationBuilder> configBuilderCallback = null)
+    protected IServiceScope CreateScope()
     {
-        this.configBuilderCallback = configBuilderCallback;
+        return factory.Services.CreateScope();
+    }
+
+    protected HttpClient CreateClient()
+    {
         return factory.CreateClient();
     }
 
