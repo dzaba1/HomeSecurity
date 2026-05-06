@@ -8,5 +8,9 @@ public class Organization
 
     [Required(AllowEmptyStrings = false)]
     [MaxLength(64)]
+    public string Identifier { get; set; }
+
+    [Required(AllowEmptyStrings = false)]
+    [MaxLength(64)]
     public string Name { get; set; }
 }

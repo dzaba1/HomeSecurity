@@ -4,6 +4,7 @@ using Dzaba.HomeSecurity.MessageBroker.RabbitMQ;
 using Dzaba.HomeSecurity.Org;
 using EasyNetQ;
 using Finbuckle.MultiTenant.AspNetCore.Extensions;
+using Microsoft.EntityFrameworkCore;
 
 namespace Dzaba.HomeSecurity.LogsIngestion;
 
@@ -31,7 +32,12 @@ public partial class Program
             };
         });
 
-        builder.Services.AddOrgServices(c =>
+        builder.Services.AddOrgServices((c, d, cs) =>
+        {
+            var dbProvider = c.GetRequiredService<IDbServerProvider>();
+            dbProvider.Configure(d, cs);
+        },
+            c =>
         {
             var configuration = c.GetRequiredService<IConfiguration>();
             return configuration.GetConnectionString("OrgDatabase");
@@ -42,6 +48,8 @@ public partial class Program
             var section = Configuration.GetSection("JwtAuth");
             return section.Get<AuthSettings>();
         });
+
+        builder.Services.AddTransient<IDbServerProvider, PostgresDbServerProvider>();
 
         builder.Services.AddAuthorization();
 

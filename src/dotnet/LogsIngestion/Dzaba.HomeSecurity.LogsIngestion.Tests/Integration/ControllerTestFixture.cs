@@ -33,6 +33,7 @@ public abstract class ControllerTestFixture
                     ["JwtAuth:ValidateAudience"] = "false",
                     ["JwtAuth:ValidateIssuer"] = "false",
                     ["JwtAuth:IssuerSigningKey"] = IssuerSigningKey,
+                    ["ConnectionStrings:OrgDatabase"] = Guid.NewGuid().ToString()
                 });
 
                 if (configBuilderCallback != null)
@@ -42,6 +43,9 @@ public abstract class ControllerTestFixture
             })
             .ConfigureTestServices(services =>
             {
+                services.RemoveAll<IDbServerProvider>();
+                services.AddTransient<IDbServerProvider, InMemoryDbServerProvider>();
+
                 services.RemoveAll<IBus>();
                 services.AddSingleton<IBus, InMemoryBus>();
 

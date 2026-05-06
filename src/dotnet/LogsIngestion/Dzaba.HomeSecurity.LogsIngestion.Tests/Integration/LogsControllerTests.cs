@@ -17,7 +17,7 @@ public class LogsControllerTests : ControllerTestFixture
     {
         using var scope = CreateScope();
         var orgService = scope.ServiceProvider.GetRequiredService<IOrgService>();
-        var newOrgId = await orgService.CreateOrgAsync("Test Org").ConfigureAwait(false);
+        var newOrg = await orgService.CreateOrgAsync("Test Org").ConfigureAwait(false);
 
         var client = CreateClient();
 
@@ -41,6 +41,8 @@ public class LogsControllerTests : ControllerTestFixture
             Content = JsonContent.Create(requestBody),
         };
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        request.Headers.Add(Constants.OrgHeaderName, newOrg.Identifier);
+
         var resp = await client.SendAsync(request);
         resp.StatusCode.Should().Be(HttpStatusCode.OK);
     }
