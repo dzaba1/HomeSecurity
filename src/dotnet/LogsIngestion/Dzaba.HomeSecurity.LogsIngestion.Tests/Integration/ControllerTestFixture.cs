@@ -1,4 +1,5 @@
 ﻿using Dzaba.IntegrationTestUtils;
+using EasyNetQ;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
@@ -33,6 +34,7 @@ public abstract class ControllerTestFixture
             .ConfigureTestServices(services =>
             {
                 services.RemoveAll<IConfiguration>();
+                services.RemoveAll<IBus>();
 
                 var config = new ConfigurationBuilder()
                     .AddInMemoryCollection(new Dictionary<string, string>
@@ -45,6 +47,8 @@ public abstract class ControllerTestFixture
                     })
                     .Build();
                 services.AddSingleton<IConfiguration>(config);
+
+                services.AddSingleton<IBus, InMemoryBus>();
 
                 services.AddSerilogConsoleLogging();
             });

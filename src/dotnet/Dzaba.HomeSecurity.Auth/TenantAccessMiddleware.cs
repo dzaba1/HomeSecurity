@@ -1,5 +1,7 @@
 ﻿using Dzaba.HomeSecurity.Org.Contracts;
 using Microsoft.AspNetCore.Http;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 
 namespace Dzaba.HomeSecurity.Auth;
 
@@ -18,7 +20,7 @@ public sealed class TenantAccessMiddleware
         ArgumentNullException.ThrowIfNull(orgService);
 
         var tenantId = await orgService.GetTenantIdAsync(context).ConfigureAwait(false);
-        var userId = context.User.FindFirst("sub")?.Value;
+        var userId = GetUserId(context);
 
         if (tenantId != null && userId != null)
         {
@@ -35,5 +37,15 @@ public sealed class TenantAccessMiddleware
         {
             await _next(context).ConfigureAwait(false);
         }
+    }
+
+    private string GetUserId(HttpContext context)
+    {
+        var bySub = context.User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+        if (!string.IsNullOrEmpty(bySub))
+        {
+            return bySub;
+        }
+        return context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
     }
 }
