@@ -1,11 +1,11 @@
-﻿using Dzaba.HomeSecurity.Org.Contracts;
+﻿using Dzaba.Org.Contracts;
 using Finbuckle.MultiTenant.Abstractions;
 using Finbuckle.MultiTenant.AspNetCore.Extensions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
-namespace Dzaba.HomeSecurity.Org;
+namespace Dzaba.Org;
 
 internal sealed class OrgService : IOrgService
 {

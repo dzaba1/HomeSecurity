@@ -1,4 +1,4 @@
-﻿namespace Dzaba.HomeSecurity.Org.Contracts;
+﻿namespace Dzaba.Org.Contracts;
 
 public static class Constants
 {

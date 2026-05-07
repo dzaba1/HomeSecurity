@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path="../Directory.Packages.props" />
+  </Folder>
+  <Project Path="Dzaba.Org.Contracts/Dzaba.Org.Contracts.csproj" />
+  <Project Path="Dzaba.Org.Service/Dzaba.Org.Service.csproj" Id="b39810fe-444f-4a12-bb09-33c68259b759" />
+  <Project Path="Dzaba.Org/Dzaba.Org.csproj" />
+</Solution>

@@ -1,0 +1,6 @@
+@Dzaba.Org.Service_HostAddress = http://localhost:5127
+
+GET {{Dzaba.Org.Service_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

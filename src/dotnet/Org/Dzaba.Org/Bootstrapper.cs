@@ -1,4 +1,5 @@
-﻿using Dzaba.HomeSecurity.Org.Contracts;
+﻿using Dzaba.Org;
+using Dzaba.Org.Contracts;
 using Finbuckle.MultiTenant.Abstractions;
 using Finbuckle.MultiTenant.AspNetCore.Extensions;
 using Finbuckle.MultiTenant.EntityFrameworkCore.Extensions;
@@ -27,7 +28,7 @@ public static class Bootstrapper
         });
 
         services.AddMultiTenant<TenantInfo>()
-            .WithHeaderStrategy(Contracts.Constants.OrgHeaderName)
+            .WithHeaderStrategy(Dzaba.Org.Contracts.Constants.OrgHeaderName)
             .WithEFCoreStore<OrgDbContext, TenantInfo>();
 
         return services;

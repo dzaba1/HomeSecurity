@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace Dzaba.HomeSecurity.Org.Contracts;
+namespace Dzaba.Org.Contracts;
 
 public class Membership
 {

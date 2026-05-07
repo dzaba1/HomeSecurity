@@ -1,9 +1,9 @@
-﻿using Dzaba.HomeSecurity.Org.Contracts;
+﻿using Dzaba.Org.Contracts;
 using Finbuckle.MultiTenant.Abstractions;
 using Finbuckle.MultiTenant.EntityFrameworkCore.Stores;
 using Microsoft.EntityFrameworkCore;
 
-namespace Dzaba.HomeSecurity.Org;
+namespace Dzaba.Org;
 
 internal class OrgDbContext : EFCoreStoreDbContext<TenantInfo>
 {

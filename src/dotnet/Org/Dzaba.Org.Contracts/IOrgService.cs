@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 
-namespace Dzaba.HomeSecurity.Org.Contracts;
+namespace Dzaba.Org.Contracts;
 
 public interface IOrgService
 {
