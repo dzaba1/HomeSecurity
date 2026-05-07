@@ -1,0 +1,27 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <ItemDefinitionGroup>
+    <JsonSchema>
+      <Namespace>$(RootNamespace)</Namespace>
+      <JsonLibrary>SystemTextJson</JsonLibrary>
+    </JsonSchema>
+  </ItemDefinitionGroup>
+
+  <Target Name="GenerateJsonSchemaCode"
+          BeforeTargets="CoreCompile"
+          Inputs="@(JsonSchema)"
+          Outputs="@(JsonSchema->'%(OutputFile)')">
+
+    <Message Text="JsonSchema input: %(JsonSchema.Identity). Output file: %(JsonSchema.OutputFile). Name: %(JsonSchema.ClassName). Library %(JsonSchema.JsonLibrary)" Importance="High" />
+
+    <Exec Command="$(NSwagExe) jsonschema2csclient /input:%(JsonSchema.Identity) /output:%(JsonSchema.OutputFile) /namespace:%(JsonSchema.Namespace) /name:%(JsonSchema.ClassName) /jsonlibrary:%(JsonSchema.JsonLibrary)" ConsoleToMSBuild="true">
+      <Output TaskParameter="ConsoleOutput" PropertyName="OutputOfExec" />
+    </Exec>
+  </Target>
+
+  <Target Name="ForceJsonSchemaCodeReGenerationOnRebuild"
+          AfterTargets="CoreClean">
+    <Delete Files="@(JsonSchema->'%(OutputFile)')" />
+  </Target>
+
+</Project>

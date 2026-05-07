@@ -4,18 +4,12 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>disable</Nullable>
-    <PermissionSchema>$(MSBuildProjectDirectory)\..\..\..\contracts\json\permission.json</PermissionSchema>
-    <PermissionOutput>$(MSBuildProjectDirectory)\Permission.cs</PermissionOutput>
-    <OrganizationSchema>$(MSBuildProjectDirectory)\..\..\..\contracts\json\organization.json</OrganizationSchema>
-    <OrganizationOutput>$(MSBuildProjectDirectory)\Organization.cs</OrganizationOutput>
-    <RoleSchema>$(MSBuildProjectDirectory)\..\..\..\contracts\json\role.json</RoleSchema>
-    <RoleOutput>$(MSBuildProjectDirectory)\Role.cs</RoleOutput>
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="..\..\..\contracts\json\organization.json" Link="organization.json" />
-    <None Include="..\..\..\contracts\json\permission.json" Link="permission.json" />
-    <None Include="..\..\..\contracts\json\role.json" Link="role.json" />
+    <JsonSchema Include="..\..\..\contracts\json\organization.json" Link="organization.json" OutputFile="Organization.cs" ClassName="Organization" />
+    <JsonSchema Include="..\..\..\contracts\json\permission.json" Link="permission.json" OutputFile="Permission.cs" ClassName="Permission"  />
+    <JsonSchema Include="..\..\..\contracts\json\role.json" Link="role.json" OutputFile="Role.cs" ClassName="Role" />
   </ItemGroup>
 
   <ItemGroup>
@@ -26,27 +20,5 @@
     </PackageReference>
   </ItemGroup>
 
-  <Target Name="GeneratePermissionContracts" BeforeTargets="CoreCompile" Inputs="$(PermissionSchema)" Outputs="$(PermissionOutput)">
-    <Exec Command="$(NSwagExe) jsonschema2csclient /input:$(PermissionSchema) /output:$(PermissionOutput) /namespace:$(RootNameSpace) /name:Permission /jsonlibrary:SystemTextJson" ConsoleToMSBuild="true">
-      <Output TaskParameter="ConsoleOutput" PropertyName="OutputOfExec" />
-    </Exec>
-  </Target>
-
-  <Target Name="GenerateOrganizationContracts" BeforeTargets="CoreCompile" Inputs="$(OrganizationSchema)" Outputs="$(OrganizationOutput)">
-    <Exec Command="$(NSwagExe) jsonschema2csclient /input:$(OrganizationSchema) /output:$(OrganizationOutput) /namespace:$(RootNameSpace) /name:Organization /jsonlibrary:SystemTextJson" ConsoleToMSBuild="true">
-      <Output TaskParameter="ConsoleOutput" PropertyName="OutputOfExec" />
-    </Exec>
-  </Target>
-
-  <Target Name="GenerateRoleContracts" BeforeTargets="CoreCompile" Inputs="$(RoleSchema)" Outputs="$(RoleOutput)">
-    <Exec Command="$(NSwagExe) jsonschema2csclient /input:$(RoleSchema) /output:$(RoleOutput) /namespace:$(RootNameSpace) /name:Role /jsonlibrary:SystemTextJson" ConsoleToMSBuild="true">
-      <Output TaskParameter="ConsoleOutput" PropertyName="OutputOfExec" />
-    </Exec>
-  </Target>
-
-  <Target Name="ForceReGenerationOnRebuild" AfterTargets="CoreClean">
-    <Delete Files="$(OrganizationOutput)"></Delete>
-    <Delete Files="$(PermissionOutput)"></Delete>
-    <Delete Files="$(RoleOutput)"></Delete>
-  </Target>
+  <Import Project="..\..\..\..\build\JsonSchema.targets" />
 </Project>
