@@ -1,11 +1,23 @@
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-
+  
   <ItemDefinitionGroup>
     <JsonSchema>
       <Namespace>$(RootNamespace)</Namespace>
       <JsonLibrary>SystemTextJson</JsonLibrary>
     </JsonSchema>
   </ItemDefinitionGroup>
+
+  <ItemGroup>
+    <Compile Remove="@(JsonSchema->'%(OutputFile)')" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="@(JsonSchema->'%(OutputFile)')">
+      <DependentUpon>%(JsonSchema.Link)</DependentUpon>
+      <AutoGen>true</AutoGen>
+      <DesignTime>true</DesignTime>
+    </Compile>
+  </ItemGroup>
 
   <Target Name="GenerateJsonSchemaCode"
           BeforeTargets="CoreCompile"
@@ -23,5 +35,4 @@
           AfterTargets="CoreClean">
     <Delete Files="@(JsonSchema->'%(OutputFile)')" />
   </Target>
-
 </Project>
