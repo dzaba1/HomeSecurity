@@ -20,11 +20,17 @@ namespace Dzaba.Org.Contracts
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public System.Guid Id { get; set; }
 
+        /// <summary>
+        /// External identifier for the organization
+        /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("identifier")]
         [System.ComponentModel.DataAnnotations.Required]
         [System.ComponentModel.DataAnnotations.StringLength(64, MinimumLength = 1)]
         public string Identifier { get; set; }
 
+        /// <summary>
+        /// Friendly name for the organization
+        /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("name")]
         [System.ComponentModel.DataAnnotations.StringLength(64, MinimumLength = 1)]
         public string Name { get; set; }

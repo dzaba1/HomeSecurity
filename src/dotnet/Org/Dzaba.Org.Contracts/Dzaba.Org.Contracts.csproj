@@ -10,6 +10,7 @@
     <JsonSchema Include="..\..\..\contracts\json\organization.json" Link="organization.json" OutputFile="Organization.cs" ClassName="Organization" />
     <JsonSchema Include="..\..\..\contracts\json\permission.json" Link="permission.json" OutputFile="Permission.cs" ClassName="Permission"  />
     <JsonSchema Include="..\..\..\contracts\json\role.json" Link="role.json" OutputFile="Role.cs" ClassName="Role" />
+    <JsonSchema Include="..\..\..\contracts\json\create_organization.json" Link="create_organization.json" OutputFile="CreateOrganization.cs" ClassName="CreateOrganization" />
   </ItemGroup>
 
   <ItemGroup>

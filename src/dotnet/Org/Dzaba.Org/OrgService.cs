@@ -22,27 +22,6 @@ internal sealed class OrgService : IOrgService
         this.logger = logger;
     }
 
-    public async Task<Organization> CreateOrgAsync(string name)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(name);
-
-        var id = Guid.NewGuid();
-        var tenant = new TenantInfo
-        {
-            Id = id.ToString(),
-            Identifier = name.ToLowerInvariant().Replace(' ', '-'),
-            Name = name
-        };
-        dbContext.TenantInfo.Add(tenant);
-        await dbContext.SaveChangesAsync();
-        return new Organization
-        {
-            Id = id,
-            Identifier = tenant.Identifier,
-            Name = name
-        };
-    }
-
     public async Task<string> GetTenantIdAsync(HttpContext context)
     {
         var tenantContext = context.GetMultiTenantContext<TenantInfo>();
