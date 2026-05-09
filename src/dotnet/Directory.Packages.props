@@ -3,9 +3,10 @@
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>
   <ItemGroup>
-    <PackageVersion Include="Dzaba.AspNetUtils" Version="1.0.0" />
+    <PackageVersion Include="Dzaba.Utils.AspNet" Version="1.0.0" />
     <PackageVersion Include="Dzaba.BasicAuthentication" Version="1.0.1" />
-    <PackageVersion Include="Dzaba.IntegrationTestUtils" Version="1.0.2" />
+    <PackageVersion Include="Dzaba.TestUtils.Integration" Version="1.0.0" />
+    <PackageVersion Include="Dzaba.TestUtils.Integration.AspNet" Version="1.0.0" />
     <PackageVersion Include="EasyNetQ" Version="8.1.4" />
     <PackageVersion Include="Finbuckle.MultiTenant.AspNetCore" Version="10.0.7" />
     <PackageVersion Include="Finbuckle.MultiTenant.EntityFrameworkCore" Version="10.0.7" />
