@@ -1,6 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 
-namespace Dzaba.HomeSecurity.LogsIngestion;
+namespace Dzaba.ToMigrate;
 
 public interface IDbServerProvider
 {

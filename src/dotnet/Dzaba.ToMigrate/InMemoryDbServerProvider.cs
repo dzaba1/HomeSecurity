@@ -1,14 +1,14 @@
 ﻿using Microsoft.EntityFrameworkCore;
 
-namespace Dzaba.HomeSecurity.LogsIngestion;
+namespace Dzaba.ToMigrate;
 
-internal sealed class PostgresDbServerProvider : IDbServerProvider
+public sealed class InMemoryDbServerProvider : IDbServerProvider
 {
     public void Configure(DbContextOptionsBuilder optionsBuilder, string connectionString)
     {
         ArgumentNullException.ThrowIfNull(optionsBuilder);
         ArgumentException.ThrowIfNullOrWhiteSpace(connectionString);
 
-        optionsBuilder.UseNpgsql(connectionString);
+        optionsBuilder.UseInMemoryDatabase(connectionString);
     }
 }

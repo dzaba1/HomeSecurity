@@ -7,7 +7,7 @@ using Finbuckle.MultiTenant.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Dzaba.HomeSecurity.Org;
+namespace Dzaba.Org;
 
 public static class Bootstrapper
 {

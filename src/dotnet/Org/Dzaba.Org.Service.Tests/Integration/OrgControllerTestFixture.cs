@@ -4,7 +4,9 @@ using System.Text.Json;
 using Dzaba.Org.Contracts;
 using Dzaba.TestUtils.Integration.AspNet;
 using Dzaba.ToMigrate;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Dzaba.Org.Service.Tests.Integration;
 
@@ -12,8 +14,19 @@ public abstract class OrgControllerTestFixture : ControllerTestFixture<Program>
 {
     protected JwtMockedSettings JwtSettings { get; } = new JwtMockedSettings();
 
+    protected override void OnConfigureConfiguration(IConfigurationBuilder builder)
+    {
+        builder.AddInMemoryCollection(new Dictionary<string, string>
+        {
+            ["ConnectionStrings:OrgDatabase"] = Guid.NewGuid().ToString()
+        });
+    }
+
     protected override void OnConfigureServices(IServiceCollection services)
     {
+        services.RemoveAll<IDbServerProvider>();
+        services.AddTransient<IDbServerProvider, InMemoryDbServerProvider>();
+
         JwtSettings.AddMockedJwtSettings(services);
     }
 
