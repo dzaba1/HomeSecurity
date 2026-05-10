@@ -20,6 +20,7 @@ public static class Bootstrapper
         ArgumentNullException.ThrowIfNull(connectionStringProvider);
 
         services.AddTransient<IOrgService, OrgService>();
+        services.AddTransient<IOrganizationServiceInternal, OrganizationServiceInternal>();
 
         services.AddDbContext<OrgDbContext>((c, o) =>
         {

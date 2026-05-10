@@ -1,4 +1,5 @@
-﻿using Dzaba.AspNetUtils.ActionFilters;
+﻿using Dzaba.AspNetUtils;
+using Dzaba.AspNetUtils.ActionFilters;
 using Dzaba.Org.Contracts;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -24,6 +25,7 @@ public class OrganizationsController : ControllerBase, IOrganizationsService
     [ValidateModel]
     public async Task<Organization> CreateOrgAsync([FromBody, Required] CreateOrganization organization)
     {
-        return await impl.CreateOrgAsync(organization.Name, "").ConfigureAwait(false);
+        var userId = User.GetUserSubOrNameIdentifier();
+        return await impl.CreateOrgAsync(organization.Name, userId).ConfigureAwait(false);
     }
 }

@@ -27,6 +27,7 @@ public class JwtMockedSettings
         return new JwtTokenBuilder()
             .WithIssuer(Settings.Authority)
             .WithAudience(Settings.Audience)
-            .WithSecurityKey(Settings.IssuerSigningKey);
+            .WithSecurityKey(Settings.IssuerSigningKey)
+            .WithLifetime(TimeSpan.FromMinutes(30));
     }
 }
