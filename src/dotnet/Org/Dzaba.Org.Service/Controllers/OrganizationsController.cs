@@ -21,6 +21,7 @@ public class OrganizationsController : ControllerBase, IOrganizationsService
 
     [HttpPost]
     [Authorize]
+    [ValidateModel]
     public async Task<Organization> CreateOrgAsync([FromBody, Required] CreateOrganization organization)
     {
         return await impl.CreateOrgAsync(organization.Name, "").ConfigureAwait(false);

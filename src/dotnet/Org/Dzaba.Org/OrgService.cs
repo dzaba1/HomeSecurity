@@ -36,7 +36,11 @@ internal sealed class OrgService : IOrgService
 
         logger.LogDebug("Checking access for user {UserId} to tenant {TenantId}", userId, tenantId);
 
-        return await dbContext.Memberships.AnyAsync(m => m.UserId == userId && m.TenantId == tenantId)
-            .ConfigureAwait(false);
+        var query = from m in dbContext.Memberships
+                    join t in dbContext.TenantInfo on m.TenantId.ToString() equals t.Id
+                    where t.Identifier == tenantId
+                    where m.UserId == userId
+                    select 1;
+        return await query.AnyAsync().ConfigureAwait(false);
     }
 }

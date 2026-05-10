@@ -40,11 +40,18 @@ internal sealed class OrganizationServiceInternal : IOrganizationServiceInternal
         };
 
         dbContext.TenantInfo.Add(tenant);
+
+        var membership = new Membership
+        {
+            UserId = userId,
+            TenantId = id
+        };
+        dbContext.Memberships.Add(membership);
+
         await dbContext.SaveChangesAsync().ConfigureAwait(false);
 
         return new Organization
         {
-            Id = id,
             Identifier = tenant.Identifier,
             Name = orgName
         };

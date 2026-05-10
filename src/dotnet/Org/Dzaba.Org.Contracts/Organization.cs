@@ -14,13 +14,6 @@ namespace Dzaba.Org.Contracts
     {
 
         /// <summary>
-        /// Unique identifier for the organization
-        /// </summary>
-        [System.Text.Json.Serialization.JsonPropertyName("id")]
-        [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
-        public System.Guid Id { get; set; }
-
-        /// <summary>
         /// External identifier for the organization
         /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("identifier")]
