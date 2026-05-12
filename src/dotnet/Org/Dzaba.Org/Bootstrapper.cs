@@ -28,9 +28,11 @@ public static class Bootstrapper
             dbSetup(c, o, connectionString);
         });
 
-        services.AddMultiTenant<TenantInfo>()
+        services.AddTransient<Store>();
+
+        services.AddMultiTenant<GuidTenantInfo>()
             .WithHeaderStrategy(Dzaba.Org.Contracts.Constants.OrgHeaderName)
-            .WithEFCoreStore<OrgDbContext, TenantInfo>();
+            .WithStore<Store>(ServiceLifetime.Scoped);
 
         return services;
     }
