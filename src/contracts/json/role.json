@@ -18,12 +18,18 @@
       "type": "string",
       "format": "uuid",
       "description": "Unique identifier for the organization"
+    },
+    "isInternal": {
+      "type": "boolean",
+      "default": false,
+      "description": "Indicates if the role is internal (system-defined) and users can't modify it."
     }
   },
   "required": [
     "id",
     "organizationId",
-    "name"
+    "name",
+    "isInternal"
   ],
   "additionalProperties": false
 }

@@ -35,5 +35,11 @@ namespace Dzaba.Org.Contracts
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public System.Guid OrganizationId { get; set; }
 
+        /// <summary>
+        /// Indicates if the role is internal (system-defined) and users can't modify it.
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("isInternal")]
+        public bool IsInternal { get; set; } = false;
+
     }
 }

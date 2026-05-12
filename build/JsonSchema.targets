@@ -24,9 +24,14 @@
           Inputs="@(JsonSchema)"
           Outputs="@(JsonSchema->'%(OutputFile)')">
 
+    <PropertyGroup>
+      <NSwagInvoker Condition="'$(OS)' == 'Windows_NT'">$(NSwagExe)</NSwagInvoker>
+      <NSwagInvoker Condition="'$(OS)' != 'Windows_NT'">$(NSwagExe_Net100)</NSwagInvoker>
+    </PropertyGroup>
+
     <Message Text="JsonSchema input: %(JsonSchema.Identity). Output file: %(JsonSchema.OutputFile). Name: %(JsonSchema.ClassName). Library %(JsonSchema.JsonLibrary)" Importance="High" />
 
-    <Exec Command="$(NSwagExe) jsonschema2csclient /input:%(JsonSchema.Identity) /output:%(JsonSchema.OutputFile) /namespace:%(JsonSchema.Namespace) /name:%(JsonSchema.ClassName) /jsonlibrary:%(JsonSchema.JsonLibrary)" ConsoleToMSBuild="true">
+    <Exec Command="$(NSwagInvoker) jsonschema2csclient /input:%(JsonSchema.Identity) /output:%(JsonSchema.OutputFile) /namespace:%(JsonSchema.Namespace) /name:%(JsonSchema.ClassName) /jsonlibrary:%(JsonSchema.JsonLibrary)" ConsoleToMSBuild="true">
       <Output TaskParameter="ConsoleOutput" PropertyName="OutputOfExec" />
     </Exec>
   </Target>
