@@ -1,5 +1,4 @@
 ﻿using Dzaba.Org.Contracts;
-using Finbuckle.MultiTenant.Abstractions;
 using Microsoft.Extensions.Logging;
 
 namespace Dzaba.Org;
@@ -31,20 +30,19 @@ internal sealed class OrganizationServiceInternal : IOrganizationServiceInternal
 
         logger.LogInformation("User {UserId} is creating a new organization named {OrganizationName}", userId, orgName);
 
-        var id = Guid.NewGuid();
-        var tenant = new TenantInfo
+        var tenant = new GuidTenantInfo
         {
-            Id = id.ToString(),
+            GuidId = Guid.NewGuid(),
             Identifier = orgName.ToLowerInvariant().Replace(' ', '-'),
             Name = orgName
         };
 
-        dbContext.TenantInfo.Add(tenant);
+        dbContext.Tenants.Add(tenant);
 
         var membership = new Membership
         {
             UserId = userId,
-            TenantId = id
+            TenantId = tenant.GuidId
         };
         dbContext.Memberships.Add(membership);
 

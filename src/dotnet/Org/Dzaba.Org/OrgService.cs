@@ -37,7 +37,7 @@ internal sealed class OrgService : IOrgService
         logger.LogDebug("Checking access for user {UserId} to tenant {TenantId}", userId, tenantId);
 
         var query = from m in dbContext.Memberships
-                    join t in dbContext.TenantInfo on m.TenantId.ToString() equals t.Id
+                    join t in dbContext.Tenants on m.TenantId equals t.GuidId
                     where t.Identifier == tenantId
                     where m.UserId == userId
                     select 1;
