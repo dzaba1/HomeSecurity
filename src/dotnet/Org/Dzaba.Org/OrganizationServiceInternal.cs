@@ -46,6 +46,22 @@ internal sealed class OrganizationServiceInternal : IOrganizationServiceInternal
         };
         dbContext.Memberships.Add(membership);
 
+        var adminRole = new Role
+        {
+            IsInternal = true,
+            Id = Guid.NewGuid(),
+            Name = "Admin",
+            OrganizationId = tenant.GuidId
+        };
+        dbContext.Roles.Add(adminRole);
+
+        var roleMembership = new RoleMembership
+        {
+            RoleId = adminRole.Id,
+            UserId = userId
+        };
+        dbContext.RoleMemberships.Add(roleMembership);
+
         await dbContext.SaveChangesAsync().ConfigureAwait(false);
 
         return new Organization

@@ -18,6 +18,7 @@ internal class OrgDbContext : DbContext
         ConfigureMembership(modelBuilder.Entity<Membership>());
         ConfigureTenant(modelBuilder.Entity<TenantInfo>());
         ConfigureRole(modelBuilder.Entity<Role>());
+        ConfigureRoleMemberships(modelBuilder.Entity<RoleMembership>());
     }
 
     private void ConfigureMembership(EntityTypeBuilder<Membership> builder)
@@ -50,9 +51,25 @@ internal class OrgDbContext : DbContext
         builder.Property(e => e.Name).IsRequired();
     }
 
+    private void ConfigureRoleMemberships(EntityTypeBuilder<RoleMembership> builder)
+    {
+        builder.HasKey(e => new { e.RoleId, e.UserId});
+        builder.HasOne<Role>()
+            .WithMany()
+            .HasForeignKey(e => e.RoleId)
+            .HasPrincipalKey(e => e.Id)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.HasIndex(e => e.UserId)
+            .IsUnique(false)
+            .HasDatabaseName("IX_RoleMembership_UserId");
+    }
+
     public DbSet<GuidTenantInfo> Tenants => Set<GuidTenantInfo>();
 
     public DbSet<Membership> Memberships => Set<Membership>();
 
     public DbSet<Role> Roles => Set<Role>();
+
+    public DbSet<RoleMembership> RoleMemberships => Set<RoleMembership>();
 }
