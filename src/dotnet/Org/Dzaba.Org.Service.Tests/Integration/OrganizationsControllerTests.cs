@@ -1,4 +1,4 @@
-using Dzaba.ToMigrate;
+using Dzaba.AspNetUtils;
 using FluentAssertions;
 using NUnit.Framework;
 

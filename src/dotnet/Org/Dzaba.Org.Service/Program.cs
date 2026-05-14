@@ -1,4 +1,5 @@
 using Dzaba.ToMigrate;
+using Dzaba.Utils.AspNet;
 using Finbuckle.MultiTenant.AspNetCore.Extensions;
 
 namespace Dzaba.Org.Service;
@@ -22,7 +23,7 @@ public partial class Program
             return configuration.GetConnectionString("OrgDatabase");
         });
 
-        builder.Services.AddJwtAuthServices(() => Container.GetRequiredService<JwtSettings>());
+        builder.Services.AddJwtAuthentication(() => Container.GetRequiredService<JwtSettings>());
 
         builder.Services.AddTransient<IDbServerProvider, PostgresDbServerProvider>();
 
