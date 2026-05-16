@@ -10,9 +10,5 @@
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
   </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\Dzaba.HomeSecurity.Org.Contracts\Dzaba.HomeSecurity.Org.Contracts.csproj" />
-  </ItemGroup>
 	
 </Project>

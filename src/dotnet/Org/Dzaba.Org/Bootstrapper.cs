@@ -1,8 +1,4 @@
-﻿using Dzaba.Org;
-using Dzaba.Org.Contracts;
-using Finbuckle.MultiTenant.Abstractions;
-using Finbuckle.MultiTenant.AspNetCore.Extensions;
-using Finbuckle.MultiTenant.EntityFrameworkCore.Extensions;
+﻿using Finbuckle.MultiTenant.AspNetCore.Extensions;
 using Finbuckle.MultiTenant.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -19,7 +15,6 @@ public static class Bootstrapper
         ArgumentNullException.ThrowIfNull(dbSetup);
         ArgumentNullException.ThrowIfNull(connectionStringProvider);
 
-        services.AddTransient<IOrgService, OrgService>();
         services.AddTransient<IOrganizationServiceInternal, OrganizationServiceInternal>();
 
         services.AddDbContext<OrgDbContext>((c, o) =>

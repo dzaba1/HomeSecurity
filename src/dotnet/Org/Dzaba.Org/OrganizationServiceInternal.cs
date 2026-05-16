@@ -1,4 +1,8 @@
-﻿using Dzaba.Org.Contracts;
+﻿using Dzaba.AspNetUtils;
+using Dzaba.Org.Contracts;
+using Finbuckle.MultiTenant.AspNetCore.Extensions;
+using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace Dzaba.Org;
@@ -6,15 +10,18 @@ namespace Dzaba.Org;
 public interface IOrganizationServiceInternal
 {
     Task<Organization> CreateOrgAsync(string orgName, string userId);
+    Task<bool> HasAccessAsync(string userId, GuidTenantInfo tenant);
+    GuidTenantInfo GetTenant(HttpContext context);
+    Task<GuidTenantInfo> TryGetTenantWithAccessAsync(HttpContext context);
 }
 
 internal sealed class OrganizationServiceInternal : IOrganizationServiceInternal
 {
     private readonly OrgDbContext dbContext;
-    private readonly ILogger<OrgService> logger;
+    private readonly ILogger<OrganizationServiceInternal> logger;
 
     public OrganizationServiceInternal(OrgDbContext dbContext,
-        ILogger<OrgService> logger)
+        ILogger<OrganizationServiceInternal> logger)
     {
         ArgumentNullException.ThrowIfNull(dbContext);
         ArgumentNullException.ThrowIfNull(logger);
@@ -69,6 +76,51 @@ internal sealed class OrganizationServiceInternal : IOrganizationServiceInternal
             Identifier = tenant.Identifier,
             Name = orgName
         };
+    }
 
+    public GuidTenantInfo GetTenant(HttpContext context)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+
+        logger.LogDebug("Checking tenant identifier from HTTP header.");
+
+        var tenantContext = context.GetMultiTenantContext<GuidTenantInfo>();
+        return tenantContext.TenantInfo;
+    }
+
+    public async Task<bool> HasAccessAsync(string userId, GuidTenantInfo tenant)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(userId);
+        ArgumentNullException.ThrowIfNull(tenant);
+
+        logger.LogDebug("Checking access for user {UserId} to tenant {TenantIdentifier}", userId, tenant.Identifier);
+
+        return await dbContext.Memberships.AnyAsync(m => m.UserId == userId && m.TenantId == tenant.GuidId)
+            .ConfigureAwait(false);
+    }
+
+    public async Task<GuidTenantInfo> TryGetTenantWithAccessAsync(HttpContext context)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+
+        var userId = context.GetUserSubOrNameIdentifier();
+        if (string.IsNullOrEmpty(userId))
+        {
+            return null;
+        }
+
+        var tenant = GetTenant(context);
+        if (tenant == null)
+        {
+            return null;
+        }
+
+        var hasAccess = await HasAccessAsync(userId, tenant).ConfigureAwait(false);
+        if (!hasAccess)
+        {
+            return null;
+        }
+
+        return tenant;
     }
 }
