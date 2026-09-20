@@ -24,6 +24,8 @@ These apply to every decision recorded here:
 
 ## Contents
 
+- [`product/mvp-features.md`](product/mvp-features.md) — what the product does,
+  written for potential users/customers rather than engineers.
 - [`architecture/01-overview.md`](architecture/01-overview.md) — system context,
   high-level components, and how they fit together.
 - [`architecture/02-multi-tenancy.md`](architecture/02-multi-tenancy.md) — tenant
