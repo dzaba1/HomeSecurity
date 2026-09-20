@@ -29,6 +29,7 @@ flowchart TB
     Ingestion["Logs Ingestion API"]
     Queue["RabbitMQ"]
     Workers["Processing Workers"]
+    Cache[("Redis")]
     DB[(Tenant / Device / Logs DB)]
     Notifier["Notification Service"]
   end
@@ -39,6 +40,7 @@ flowchart TB
   Agent -->|"HTTPS + short-lived device token"| Ingestion
   Ingestion --> Queue
   Queue --> Workers
+  Workers <--> Cache
   Workers --> DB
   Workers --> Notifier
   Notifier --> Push
@@ -48,6 +50,7 @@ flowchart TB
   BFF --> AdminUI
   AdminUI -->|"HTTPS + user session"| Ingestion
   Ingestion -->|validate JWT| IdP
+  AdminUI <--> Cache
 ```
 
 ## Components
@@ -58,7 +61,8 @@ flowchart TB
 | oauth2-proxy | Backend-for-Frontend: does the OIDC login dance so the browser never holds a raw token | Ready container, config only |
 | Admin UI | Lets a user manage their organization, devices, and view alerts | Custom (this is the product) |
 | Logs Ingestion API | Accepts log batches from agents, validates, publishes to the queue | Custom, thin |
-| RabbitMQ | Decouples ingestion from processing | Ready container |
+| RabbitMQ | Message bus: decouples ingestion from processing, carries domain events | Ready container |
+| Redis | Caches computed permissions; gives the Processing Worker idempotency against redelivered messages | Ready container |
 | Processing Workers | Enrich, deduplicate, apply detection rules, raise incidents | Custom (this is the product) |
 | Notification Service | Turns incidents into push notifications | Custom, thin, delegates to FCM/APNs |
 | Tenant / Device / Logs DB | Canonical store for organizations, devices, events | Postgres |
@@ -74,3 +78,5 @@ devices, or detection logic, it's the actual product and we write it.**
 - Auth for humans and for agents: [`03-security-and-identity.md`](03-security-and-identity.md)
 - Roles/permissions: [`04-roles-and-permissions.md`](04-roles-and-permissions.md)
 - Agents and ingestion: [`05-agents-and-ingestion.md`](05-agents-and-ingestion.md)
+- Notifications: [`06-notifications.md`](06-notifications.md)
+- Caching and idempotency (Redis): [`07-caching-and-idempotency.md`](07-caching-and-idempotency.md)

@@ -38,6 +38,8 @@ These apply to every decision recorded here:
   the router-log agent applications and the ingestion pipeline.
 - [`architecture/06-notifications.md`](architecture/06-notifications.md) — the
   MVP feature: push notifications for unknown devices on the network.
+- [`architecture/07-caching-and-idempotency.md`](architecture/07-caching-and-idempotency.md) —
+  Redis: permission caching and idempotent event processing.
 - [`decisions/`](decisions) — individual ADRs, one decision per file, numbered in
   the order they were made.
 
