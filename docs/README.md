@@ -34,6 +34,8 @@ These apply to every decision recorded here:
   the permission catalog / custom roles model.
 - [`architecture/05-agents-and-ingestion.md`](architecture/05-agents-and-ingestion.md) —
   the router-log agent applications and the ingestion pipeline.
+- [`architecture/06-notifications.md`](architecture/06-notifications.md) — the
+  MVP feature: push notifications for unknown devices on the network.
 - [`decisions/`](decisions) — individual ADRs, one decision per file, numbered in
   the order they were made.
 
