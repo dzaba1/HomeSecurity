@@ -21,6 +21,12 @@ These apply to every decision recorded here:
    assumed.
 4. **Document the "why", not just the "what".** See [`decisions/`](decisions) for
    the individual Architecture Decision Records (ADRs).
+5. **HTTPS-only for anything public-facing**, in every environment including
+   local dev — see [ADR-0008](decisions/0008-https-everywhere.md).
+6. **Contract-first, JSON Schema as the source of truth** for every
+   public-facing model, with client code generated from it rather than
+   hand-written — see
+   [`architecture/08-api-contracts-and-codegen.md`](architecture/08-api-contracts-and-codegen.md).
 
 ## Contents
 
@@ -40,6 +46,9 @@ These apply to every decision recorded here:
   MVP feature: push notifications for unknown devices on the network.
 - [`architecture/07-caching-and-idempotency.md`](architecture/07-caching-and-idempotency.md) —
   Redis: permission caching and idempotent event processing.
+- [`architecture/08-api-contracts-and-codegen.md`](architecture/08-api-contracts-and-codegen.md) —
+  JSON Schema as the source of truth for public contracts, and generating
+  client libraries from it.
 - [`decisions/`](decisions) — individual ADRs, one decision per file, numbered in
   the order they were made.
 
