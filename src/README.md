@@ -41,6 +41,11 @@ out of `src/.env` after running the script.
 | rabbitmq | http://localhost:15672 (UI), `5672` (AMQP) | Message broker |
 | redis | `localhost:6379` | Permission cache / idempotency store |
 | adminer | http://localhost:8081 | Postgres browser — connect using either postgres service's host/credentials from `.env` |
+| grafana | http://localhost:3000 | Dashboards — Prometheus/Loki/Tempo pre-provisioned as data sources; log in with `GRAFANA_ADMIN_USER`/`GRAFANA_ADMIN_PASSWORD` from `.env` |
+| prometheus | http://localhost:9090 | Metrics storage/query, scrapes otel-collector |
+| loki | `localhost:3100` | Log storage (nothing ships logs into it yet — see "Not included") |
+| tempo | `localhost:3200` | Trace storage |
+| otel-collector | `localhost:4317` (OTLP gRPC), `localhost:4318` (OTLP HTTP) | Receives OTLP metrics/traces from services, fans out to Prometheus/Tempo |
 
 ## Keycloak realm
 
@@ -69,3 +74,10 @@ per ADR-0008 and `docs/architecture/06-notifications.md` — not modeled here.
 Realm SSL is set to `none` for plain-HTTP local dev convenience; this compose
 stack does not attempt local HTTPS (see ADR-0008 for the `mkcert` approach if
 that's ever needed for this stack too).
+
+Log **shipping** into Loki (a stdout-tailing agent like Promtail or Fluent
+Bit) is deferred per [ADR-0009](../docs/decisions/0009-observability-stack.md) —
+Serilog writes structured JSON to console only today, and nothing forwards
+it into Loki yet. Loki is provisioned now so the backend exists ahead of
+that piece, consistent with how the rest of this stack was provisioned
+ahead of application code.

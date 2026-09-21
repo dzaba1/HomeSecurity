@@ -142,6 +142,85 @@ services:
     networks:
       - backend
 
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.161.0
+    volumes:
+      - ./config/otel/otel-collector-config.yaml:/etc/otelcol-contrib/config.yaml:ro
+    ports:
+      - "4317:4317" # OTLP gRPC
+      - "4318:4318" # OTLP HTTP
+    # No healthcheck: this image is distroless (no shell, no wget/curl), so
+    # none of this stack's usual healthcheck styles apply, and `validate
+    # --config=...` only checks config syntax, not that the process is
+    # actually up and receiving data.
+    depends_on:
+      - tempo
+    networks:
+      - backend
+
+  prometheus:
+    image: prom/prometheus:v3.14.0
+    volumes:
+      - ./config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9090/-/healthy"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - backend
+
+  loki:
+    image: grafana/loki:3.7.8
+    volumes:
+      - ./config/loki/loki-config.yaml:/etc/loki/local-config.yaml:ro
+      - loki_data:/loki
+    ports:
+      - "3100:3100"
+    networks:
+      - backend
+
+  tempo:
+    image: grafana/tempo:3.0.3
+    # The image's entrypoint takes no default args/config path - it must be
+    # passed explicitly or Tempo starts with an empty config (and fails with
+    # "unknown backend").
+    command: ["-config.file=/etc/tempo.yaml"]
+    volumes:
+      - ./config/tempo/tempo.yaml:/etc/tempo.yaml:ro
+      - tempo_data:/var/tempo
+    ports:
+      - "3200:3200"
+    # No healthcheck: this image has no shell, no wget/curl, and no
+    # built-in healthcheck subcommand.
+    networks:
+      - backend
+
+  grafana:
+    image: grafana/grafana:13.2.2
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
+    volumes:
+      - ./config/grafana/provisioning/datasources/datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml:ro
+      - grafana_data:/var/lib/grafana
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+      - loki
+      - tempo
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - backend
+
 networks:
   backend:
 
@@ -150,3 +229,7 @@ volumes:
   postgres_app_data:
   rabbitmq_data:
   redis_data:
+  prometheus_data:
+  loki_data:
+  tempo_data:
+  grafana_data:
