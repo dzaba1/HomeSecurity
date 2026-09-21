@@ -1,0 +1,32 @@
+{
+  "realm": "home-security",
+  "enabled": true,
+  "sslRequired": "none",
+  "clients": [
+    {
+      "clientId": "oauth2-proxy",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "secret": "__OAUTH2_PROXY_CLIENT_SECRET__",
+      "redirectUris": [
+        "http://localhost:4180/oauth2/callback"
+      ],
+      "webOrigins": [
+        "http://localhost:4180"
+      ]
+    },
+    {
+      "clientId": "home-security-api",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true,
+      "bearerOnly": true
+    }
+  ]
+}
