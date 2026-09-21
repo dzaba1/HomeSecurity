@@ -82,3 +82,4 @@ devices, or detection logic, it's the actual product and we write it.**
 - Caching and idempotency (Redis): [`07-caching-and-idempotency.md`](07-caching-and-idempotency.md)
 - API contracts and client codegen (JSON Schema): [`08-api-contracts-and-codegen.md`](08-api-contracts-and-codegen.md)
 - Logging, health checks, metrics, and tracing: [`09-observability.md`](09-observability.md)
+- Frontend (Admin UI): [`10-frontend.md`](10-frontend.md)
