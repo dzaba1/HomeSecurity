@@ -1,0 +1,63 @@
+<Project>
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- EF Core / data (MIT / PostgreSQL license) -->
+    <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="10.0.12" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.12" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.InMemory" Version="10.0.12" />
+    <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
+
+    <!-- Multi-tenancy: tenant resolution + EF global query filter wiring (Apache-2.0) -->
+    <PackageVersion Include="Finbuckle.MultiTenant.AspNetCore" Version="10.1.4" />
+    <PackageVersion Include="Finbuckle.MultiTenant.EntityFrameworkCore" Version="10.1.4" />
+
+    <!-- Auth / JWT (MIT) -->
+    <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.12" />
+    <PackageVersion Include="Microsoft.IdentityModel.Tokens" Version="8.23.0" />
+    <PackageVersion Include="System.IdentityModel.Tokens.Jwt" Version="8.23.0" />
+    <PackageVersion Include="Keycloak.Net.Core" Version="1.0.41" />
+
+    <!-- Caching (MIT) -->
+    <PackageVersion Include="StackExchange.Redis" Version="3.3.0" />
+
+    <!-- Logging (Serilog, per CLAUDE.md) (Apache-2.0) -->
+    <PackageVersion Include="Serilog.AspNetCore" Version="10.0.0" />
+    <PackageVersion Include="Serilog.Sinks.Console" Version="6.1.1" />
+    <PackageVersion Include="Serilog.Enrichers.Thread" Version="4.0.0" />
+
+    <!-- Observability: OpenTelemetry, ADR-0009 (Apache-2.0) -->
+    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.19.1" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.19.0" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.19.0" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.19.0" />
+    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.19.1" />
+
+    <!-- Observability: health checks, ADR-0009 (Apache-2.0) -->
+    <PackageVersion Include="AspNetCore.HealthChecks.NpgSql" Version="9.0.0" />
+    <PackageVersion Include="AspNetCore.HealthChecks.Redis" Version="9.0.0" />
+
+    <!-- Contract codegen (MIT) -->
+    <PackageVersion Include="NSwag.MSBuild" Version="14.7.1" />
+
+    <!-- Ready-made utilities (CLAUDE.md: prefer Dzaba.Utils over hand-rolled equivalents) (MIT) -->
+    <PackageVersion Include="Dzaba.Utils.AspNet" Version="1.1.0" />
+
+    <!--
+      Testing.
+      FluentAssertions is deliberately pinned at 7.2.2, the last version
+      under the Apache-2.0 license - 8.0+ moved to a paid/commercial license
+      (nuspec license type flips from an SPDX expression to a bundled
+      LICENSE file), which doesn't fit this project's licensing.
+    -->
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.10.1" />
+    <PackageVersion Include="NUnit" Version="4.6.1" />
+    <PackageVersion Include="NUnit3TestAdapter" Version="6.3.0" />
+    <PackageVersion Include="FluentAssertions" Version="7.2.2" />
+    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.12" />
+
+    <!-- API docs (MIT) -->
+    <PackageVersion Include="Swashbuckle.AspNetCore" Version="10.2.3" />
+  </ItemGroup>
+</Project>

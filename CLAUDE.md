@@ -49,6 +49,12 @@ evaluated.
    first; C# (and eventually TS/Kotlin/Swift) clients are generated from it,
    never hand-written.
 5. **HTTPS-only**, in every environment including local dev.
+6. **Every microservice must be independently buildable.** Each service gets
+   its own solution file containing only its own projects plus the shared
+   library projects it references — never a mono solution that every
+   service's build/CI depends on. A repo-root convenience solution covering
+   everything may still exist for local IDE use, but pipelines target each
+   service's own solution, never the repo-root one.
 
 ## C# guidance
 
@@ -66,3 +72,9 @@ evaluated.
 - Use **Microsoft.Extensions.DependencyInjection** for DI.
 - Prefer utilities from [Dzaba.Utils](https://github.com/dzaba1/Dzaba.Utils)
   over hand-rolling equivalents, when applicable.
+- **Scaffold new projects with the `dotnet` CLI**, not hand-written files —
+  `dotnet new sln --format slnx`/`classlib`/`webapi`/`nunit`, then
+  `dotnet sln add` and `dotnet add reference`/`dotnet add package`. Use the
+  `.slnx` (XML) solution format, not the legacy `.sln` format. Hand-edit the
+  generated files afterward as needed, but let the SDK generate the initial
+  `.csproj`/`.slnx` so they match what the installed SDK actually expects.
