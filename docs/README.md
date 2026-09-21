@@ -52,6 +52,8 @@ These apply to every decision recorded here:
 - [`architecture/09-observability.md`](architecture/09-observability.md) —
   logging, health checks, metrics, and distributed tracing across every
   service.
+- [`architecture/10-frontend.md`](architecture/10-frontend.md) — the Admin
+  UI: framework choice, project structure, and how it talks to the backend.
 - [`decisions/`](decisions) — individual ADRs, one decision per file, numbered in
   the order they were made.
 
