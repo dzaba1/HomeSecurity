@@ -178,3 +178,5 @@ Kept here so the reasoning isn't lost, not because they're needed on day one:
   [ADR-0008](../decisions/0008-https-everywhere.md)
 - Zero-downtime deployment (how `/health/ready` gates a rolling update):
   [`11-deployment-and-availability.md`](11-deployment-and-availability.md)
+- Horizontal scalability (the metrics an HPA/KEDA scaler acts on):
+  [`14-scalability.md`](14-scalability.md)

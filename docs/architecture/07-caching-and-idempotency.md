@@ -116,3 +116,8 @@ Kept here so the reasoning isn't lost, not because they're needed yet:
   [`06-notifications.md`](06-notifications.md) doesn't hit Postgres for every
   reported device on every poll cycle. Worth adding once real device volume
   makes the DB lookup show up as a cost.
+
+## Related documents
+
+- Why a single Redis instance is enough for both uses today, and what
+  Redis Cluster would be for: [`14-scalability.md`](14-scalability.md#the-real-bottleneck-stateful-dependencies-not-the-stateless-pods)
