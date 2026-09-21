@@ -54,6 +54,12 @@ public sealed class AppDbContext : DbContext
         modelBuilder.Entity<Permission>(e =>
         {
             e.HasKey(p => p.Key);
+
+            e.HasData(
+                new Permission { Key = PermissionKeys.DeviceView, Description = "View devices" },
+                new Permission { Key = PermissionKeys.DeviceDelete, Description = "Delete devices" },
+                new Permission { Key = PermissionKeys.LogsView, Description = "View logs" },
+                new Permission { Key = PermissionKeys.OrgManageMembers, Description = "Manage organization members" });
         });
 
         modelBuilder.Entity<Role>(e =>
@@ -62,6 +68,12 @@ public sealed class AppDbContext : DbContext
             e.HasOne<Organization>().WithMany().HasForeignKey(r => r.TenantId);
             // Null TenantId = system-default role, visible to every tenant.
             e.HasQueryFilter(r => r.TenantId == null || r.TenantId == _tenantId);
+
+            e.HasData(
+                new Role { Id = SystemRoles.OwnerId, TenantId = null, Name = SystemRoles.OwnerName },
+                new Role { Id = SystemRoles.AdminId, TenantId = null, Name = SystemRoles.AdminName },
+                new Role { Id = SystemRoles.MemberId, TenantId = null, Name = SystemRoles.MemberName },
+                new Role { Id = SystemRoles.ViewerId, TenantId = null, Name = SystemRoles.ViewerName });
         });
 
         modelBuilder.Entity<RolePermission>(e =>
@@ -71,6 +83,23 @@ public sealed class AppDbContext : DbContext
             e.HasOne(rp => rp.Permission).WithMany().HasForeignKey(rp => rp.PermissionKey);
             // No TenantId column of its own - isolation flows through Role.
             e.HasQueryFilter(rp => rp.Role.TenantId == null || rp.Role.TenantId == _tenantId);
+
+            // Anonymous objects (FK scalars only) - Role/Permission are
+            // non-null navigations, and HasData seed instances must not
+            // carry navigation state.
+            e.HasData(
+                new { RoleId = SystemRoles.OwnerId, PermissionKey = PermissionKeys.DeviceView },
+                new { RoleId = SystemRoles.OwnerId, PermissionKey = PermissionKeys.DeviceDelete },
+                new { RoleId = SystemRoles.OwnerId, PermissionKey = PermissionKeys.LogsView },
+                new { RoleId = SystemRoles.OwnerId, PermissionKey = PermissionKeys.OrgManageMembers },
+                new { RoleId = SystemRoles.AdminId, PermissionKey = PermissionKeys.DeviceView },
+                new { RoleId = SystemRoles.AdminId, PermissionKey = PermissionKeys.DeviceDelete },
+                new { RoleId = SystemRoles.AdminId, PermissionKey = PermissionKeys.LogsView },
+                new { RoleId = SystemRoles.AdminId, PermissionKey = PermissionKeys.OrgManageMembers },
+                new { RoleId = SystemRoles.MemberId, PermissionKey = PermissionKeys.DeviceView },
+                new { RoleId = SystemRoles.MemberId, PermissionKey = PermissionKeys.LogsView },
+                new { RoleId = SystemRoles.ViewerId, PermissionKey = PermissionKeys.DeviceView },
+                new { RoleId = SystemRoles.ViewerId, PermissionKey = PermissionKeys.LogsView });
         });
 
         modelBuilder.Entity<UserRole>(e =>

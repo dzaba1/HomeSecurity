@@ -1,4 +1,5 @@
 using Dzaba.HomeSecurity.Data.Entities;
+using Dzaba.HomeSecurity.Domain;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using NUnit.Framework;
@@ -16,17 +17,19 @@ public class AppDbContextTests : DataTestFixture
         // SQL, but EnsureCreatedAsync builds the store from the exact same
         // OnModelCreating configuration the migration was generated from, so a
         // broken model (bad keys/relationships) fails here the same way it
-        // would fail `dotnet ef migrations add`.
+        // would fail `dotnet ef migrations add`. CreateContext already calls
+        // EnsureCreated() (see DataTestFixture) so the seed data below is
+        // populated - this second call is a no-op confirming that.
         using var context = CreateContext(Guid.NewGuid());
 
         var created = await context.Database.EnsureCreatedAsync();
 
-        created.Should().BeTrue();
+        created.Should().BeFalse();
         (await context.Organizations.ToListAsync()).Should().BeEmpty();
         (await context.Memberships.ToListAsync()).Should().BeEmpty();
-        (await context.Permissions.ToListAsync()).Should().BeEmpty();
-        (await context.Roles.ToListAsync()).Should().BeEmpty();
-        (await context.RolePermissions.ToListAsync()).Should().BeEmpty();
+        (await context.Permissions.ToListAsync()).Should().HaveCount(4);
+        (await context.Roles.ToListAsync()).Should().HaveCount(4);
+        (await context.RolePermissions.ToListAsync()).Should().HaveCount(12);
         (await context.UserRoles.ToListAsync()).Should().BeEmpty();
         (await context.Devices.ToListAsync()).Should().BeEmpty();
     }
@@ -39,11 +42,10 @@ public class AppDbContextTests : DataTestFixture
         using (var context = CreateContext(tenantId))
         {
             context.Organizations.Add(new Organization { Id = tenantId, Identifier = "acme", Name = "Acme" });
-            context.Permissions.Add(new Permission { Key = "device.view", Description = "View devices" });
 
             var role = new Role { Id = Guid.NewGuid(), TenantId = tenantId, Name = "Custom" };
             context.Roles.Add(role);
-            context.RolePermissions.Add(new RolePermission { RoleId = role.Id, PermissionKey = "device.view" });
+            context.RolePermissions.Add(new RolePermission { RoleId = role.Id, PermissionKey = PermissionKeys.DeviceView });
             context.UserRoles.Add(new UserRole { UserId = "user-1", TenantId = tenantId, RoleId = role.Id });
             context.Memberships.Add(new Membership { OrganizationId = tenantId, UserId = "user-1" });
             context.Devices.Add(new Device
@@ -63,8 +65,8 @@ public class AppDbContextTests : DataTestFixture
         {
             (await context.Organizations.FindAsync(tenantId)).Should().NotBeNull();
             (await context.Permissions.FindAsync("device.view")).Should().NotBeNull();
-            (await context.Roles.CountAsync()).Should().Be(1);
-            (await context.RolePermissions.CountAsync()).Should().Be(1);
+            (await context.Roles.CountAsync()).Should().Be(5); // 4 system + 1 custom
+            (await context.RolePermissions.CountAsync()).Should().Be(13); // 12 system + 1 custom
             (await context.UserRoles.CountAsync()).Should().Be(1);
             (await context.Memberships.CountAsync()).Should().Be(1);
             (await context.Devices.CountAsync()).Should().Be(1);
@@ -72,7 +74,7 @@ public class AppDbContextTests : DataTestFixture
     }
 
     [Test]
-    public async Task Roles_WhenQueriedFromAnotherTenant_ThenCustomRoleIsHiddenButSystemRoleIsVisible()
+    public async Task Roles_WhenQueriedFromAnotherTenant_ThenCustomRoleIsHiddenButSystemRolesAreVisible()
     {
         var tenantA = Guid.NewGuid();
         var tenantB = Guid.NewGuid();
@@ -80,20 +82,19 @@ public class AppDbContextTests : DataTestFixture
         using (var context = CreateContext(tenantA))
         {
             context.Roles.Add(new Role { Id = Guid.NewGuid(), TenantId = tenantA, Name = "Custom-A" });
-            context.Roles.Add(new Role { Id = Guid.NewGuid(), TenantId = null, Name = "Owner" });
             await context.SaveChangesAsync();
         }
 
         using (var context = CreateContext(tenantA))
         {
             var names = (await context.Roles.Select(r => r.Name).ToListAsync());
-            names.Should().BeEquivalentTo("Custom-A", "Owner");
+            names.Should().BeEquivalentTo("Custom-A", "Owner", "Admin", "Member", "Viewer");
         }
 
         using (var context = CreateContext(tenantB))
         {
             var names = (await context.Roles.Select(r => r.Name).ToListAsync());
-            names.Should().BeEquivalentTo("Owner");
+            names.Should().BeEquivalentTo("Owner", "Admin", "Member", "Viewer");
         }
     }
 
@@ -106,20 +107,19 @@ public class AppDbContextTests : DataTestFixture
 
         using (var context = CreateContext(tenantA))
         {
-            context.Permissions.Add(new Permission { Key = "device.delete", Description = "Delete devices" });
             context.Roles.Add(new Role { Id = roleId, TenantId = tenantA, Name = "Custom-A" });
-            context.RolePermissions.Add(new RolePermission { RoleId = roleId, PermissionKey = "device.delete" });
+            context.RolePermissions.Add(new RolePermission { RoleId = roleId, PermissionKey = PermissionKeys.DeviceDelete });
             await context.SaveChangesAsync();
         }
 
         using (var context = CreateContext(tenantA))
         {
-            (await context.RolePermissions.CountAsync()).Should().Be(1);
+            (await context.RolePermissions.CountAsync()).Should().Be(13); // 12 system + 1 custom
         }
 
         using (var context = CreateContext(tenantB))
         {
-            (await context.RolePermissions.CountAsync()).Should().Be(0);
+            (await context.RolePermissions.CountAsync()).Should().Be(12); // system only
         }
     }
 
@@ -217,5 +217,93 @@ public class AppDbContextTests : DataTestFixture
         {
             (await context.Memberships.CountAsync()).Should().Be(0);
         }
+    }
+
+    [Test]
+    public async Task Permissions_WhenQueried_ThenTheFixedCatalogIsSeeded()
+    {
+        using var context = CreateContext(Guid.NewGuid());
+
+        var keys = await context.Permissions.Select(p => p.Key).ToListAsync();
+
+        keys.Should().BeEquivalentTo(
+            PermissionKeys.DeviceView,
+            PermissionKeys.DeviceDelete,
+            PermissionKeys.LogsView,
+            PermissionKeys.OrgManageMembers);
+    }
+
+    [Test]
+    public async Task Roles_WhenQueried_ThenTheFourSystemDefaultRolesAreSeededWithFixedIds()
+    {
+        using var context = CreateContext(Guid.NewGuid());
+
+        var roles = await context.Roles.ToListAsync();
+
+        roles.Should().OnlyContain(r => r.TenantId == null);
+        roles.Select(r => r.Id).Should().BeEquivalentTo(
+            new[] { SystemRoles.OwnerId, SystemRoles.AdminId, SystemRoles.MemberId, SystemRoles.ViewerId });
+        roles.Select(r => r.Name).Should().BeEquivalentTo(
+            SystemRoles.OwnerName, SystemRoles.AdminName, SystemRoles.MemberName, SystemRoles.ViewerName);
+    }
+
+    [Test]
+    public async Task RolePermissions_WhenQueried_ThenOwnerGrantsAllFourPermissions()
+    {
+        using var context = CreateContext(Guid.NewGuid());
+
+        var keys = await context.RolePermissions
+            .Where(rp => rp.RoleId == SystemRoles.OwnerId)
+            .Select(rp => rp.PermissionKey)
+            .ToListAsync();
+
+        keys.Should().BeEquivalentTo(
+            PermissionKeys.DeviceView,
+            PermissionKeys.DeviceDelete,
+            PermissionKeys.LogsView,
+            PermissionKeys.OrgManageMembers);
+    }
+
+    [Test]
+    public async Task RolePermissions_WhenQueried_ThenAdminGrantsAllFourPermissions()
+    {
+        using var context = CreateContext(Guid.NewGuid());
+
+        var keys = await context.RolePermissions
+            .Where(rp => rp.RoleId == SystemRoles.AdminId)
+            .Select(rp => rp.PermissionKey)
+            .ToListAsync();
+
+        keys.Should().BeEquivalentTo(
+            PermissionKeys.DeviceView,
+            PermissionKeys.DeviceDelete,
+            PermissionKeys.LogsView,
+            PermissionKeys.OrgManageMembers);
+    }
+
+    [Test]
+    public async Task RolePermissions_WhenQueried_ThenMemberGrantsDeviceViewAndLogsViewOnly()
+    {
+        using var context = CreateContext(Guid.NewGuid());
+
+        var keys = await context.RolePermissions
+            .Where(rp => rp.RoleId == SystemRoles.MemberId)
+            .Select(rp => rp.PermissionKey)
+            .ToListAsync();
+
+        keys.Should().BeEquivalentTo(PermissionKeys.DeviceView, PermissionKeys.LogsView);
+    }
+
+    [Test]
+    public async Task RolePermissions_WhenQueried_ThenViewerGrantsDeviceViewAndLogsViewOnly()
+    {
+        using var context = CreateContext(Guid.NewGuid());
+
+        var keys = await context.RolePermissions
+            .Where(rp => rp.RoleId == SystemRoles.ViewerId)
+            .Select(rp => rp.PermissionKey)
+            .ToListAsync();
+
+        keys.Should().BeEquivalentTo(PermissionKeys.DeviceView, PermissionKeys.LogsView);
     }
 }

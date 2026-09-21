@@ -42,6 +42,15 @@ public abstract class DataTestFixture : IocTestFixture
     protected AppDbContext CreateContext(Guid tenantId)
     {
         var options = Container.GetRequiredService<DbContextOptions<AppDbContext>>();
-        return new AppDbContext(options, new StaticTenantContext(tenantId));
+        var context = new AppDbContext(options, new StaticTenantContext(tenantId));
+
+        // Unlike relational providers (which apply HasData via migrations),
+        // the InMemory provider only materializes HasData seed rows when the
+        // store is explicitly created - it does not seed lazily on first
+        // SaveChanges/query. EnsureCreated() is a no-op once the shared
+        // InMemory database for this test has already been created.
+        context.Database.EnsureCreated();
+
+        return context;
     }
 }
