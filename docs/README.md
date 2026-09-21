@@ -49,6 +49,9 @@ These apply to every decision recorded here:
 - [`architecture/08-api-contracts-and-codegen.md`](architecture/08-api-contracts-and-codegen.md) —
   JSON Schema as the source of truth for public contracts, and generating
   client libraries from it.
+- [`architecture/09-observability.md`](architecture/09-observability.md) —
+  logging, health checks, metrics, and distributed tracing across every
+  service.
 - [`decisions/`](decisions) — individual ADRs, one decision per file, numbered in
   the order they were made.
 

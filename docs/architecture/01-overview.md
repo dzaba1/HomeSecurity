@@ -81,3 +81,4 @@ devices, or detection logic, it's the actual product and we write it.**
 - Notifications: [`06-notifications.md`](06-notifications.md)
 - Caching and idempotency (Redis): [`07-caching-and-idempotency.md`](07-caching-and-idempotency.md)
 - API contracts and client codegen (JSON Schema): [`08-api-contracts-and-codegen.md`](08-api-contracts-and-codegen.md)
+- Logging, health checks, metrics, and tracing: [`09-observability.md`](09-observability.md)
