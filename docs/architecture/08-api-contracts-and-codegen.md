@@ -61,7 +61,12 @@ The plan for that layer:
 1. Describe each public API's endpoints (paths, methods, status codes) as an
    **OpenAPI document**, with each request/response body referencing the
    *same* JSON Schema files under `src/contracts/json/` as its component
-   schemas — not a second, separately maintained copy of the shapes.
+   schemas — not a second, separately maintained copy of the shapes. Each
+   major API version ([`12-api-versioning.md`](12-api-versioning.md)) gets
+   its own OpenAPI document; for the Org API, that document also carries the
+   HATEOAS `_links` envelope ([`13-hateoas-public-api.md`](13-hateoas-public-api.md)),
+   which lives at the OpenAPI layer rather than in the per-model JSON Schema
+   files.
 2. Feed that OpenAPI document into **`openapi-generator`** (a mature,
    widely-used, ready-made tool) to produce a client SDK in whichever
    language a given integration needs — TypeScript, Kotlin, Swift, another
