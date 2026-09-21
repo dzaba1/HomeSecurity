@@ -72,6 +72,11 @@ evaluated.
 - Use **Microsoft.Extensions.DependencyInjection** for DI.
 - Prefer utilities from [Dzaba.Utils](https://github.com/dzaba1/Dzaba.Utils)
   over hand-rolling equivalents, when applicable.
+- On every public method/constructor, validate arguments with the
+  `Argument...` exception helpers (`ArgumentNullException.ThrowIfNull`,
+  `ArgumentException.ThrowIfNullOrEmpty`,
+  `ArgumentOutOfRangeException.ThrowIfNegative`, etc.) for nullability,
+  emptiness, and range — not hand-written `if`/`throw` checks.
 - **Scaffold new projects with the `dotnet` CLI**, not hand-written files —
   `dotnet new sln --format slnx`/`classlib`/`webapi`/`nunit`, then
   `dotnet sln add` and `dotnet add reference`/`dotnet add package`. Use the
