@@ -11,6 +11,13 @@ public API design: [`12-api-versioning.md`](12-api-versioning.md) and
 [`13-hateoas-public-api.md`](13-hateoas-public-api.md) both exist because of
 what's decided here.
 
+This document is about staying up at whatever replica count a service
+already runs at — it fixes a *floor* (at least 2 replicas, never dropping
+below it during a rollout or a node drain). It is not about handling more
+load by adding replicas beyond that floor, or removing them when load drops
+— that's [`14-scalability.md`](14-scalability.md), which builds on the same
+stateless-`Deployment` foundation this document establishes.
+
 ## Deployment target: Kubernetes rolling updates
 
 Every custom service already assumes a Kubernetes-shaped runtime —
@@ -29,7 +36,9 @@ rather than introducing a separate mechanism:
   up or can't reach Postgres/RabbitMQ/Redis yet.
 - Every service runs at **least 2 replicas** in any environment that needs to
   stay up during a deploy. A single-replica service can't roll without a gap,
-  no matter what the update strategy says.
+  no matter what the update strategy says. This is a floor, not a cap — see
+  [`14-scalability.md`](14-scalability.md) for how (and on what signal) each
+  service scales beyond it under load.
 - A **`PodDisruptionBudget`** (`minAvailable: 1` at minimum, tuned per
   service's replica count) protects the same guarantee against *involuntary*
   disruption — node drains, cluster autoscaling, node upgrades — not just
@@ -113,6 +122,7 @@ actually tolerate it:
 - API versioning (the direct consequence for public contracts):
   [`12-api-versioning.md`](12-api-versioning.md)
 - HATEOAS for the public integratable API: [`13-hateoas-public-api.md`](13-hateoas-public-api.md)
+- Horizontal scalability beyond the HA floor: [`14-scalability.md`](14-scalability.md)
 - HTTPS-only edge: [ADR-0008](../decisions/0008-https-everywhere.md)
 - RabbitMQ as the message bus: [ADR-0007](../decisions/0007-rabbitmq-as-message-bus.md)
 - Decision record: [ADR-0011](../decisions/0011-zero-downtime-rolling-deployments.md)

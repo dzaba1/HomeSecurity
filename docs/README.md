@@ -34,6 +34,9 @@ These apply to every decision recorded here:
    against (the Org/Admin-Tenant API) is HATEOAS — see
    [`architecture/12-api-versioning.md`](architecture/12-api-versioning.md) and
    [`architecture/13-hateoas-public-api.md`](architecture/13-hateoas-public-api.md).
+9. **Every service scales out horizontally, on a signal that fits its own
+   load shape**, not just up — see
+   [`architecture/14-scalability.md`](architecture/14-scalability.md).
 
 ## Contents
 
@@ -68,6 +71,9 @@ These apply to every decision recorded here:
   URI-based versioning for every public API.
 - [`architecture/13-hateoas-public-api.md`](architecture/13-hateoas-public-api.md) —
   HATEOAS (HAL) for the Org (Admin/Tenant) API.
+- [`architecture/14-scalability.md`](architecture/14-scalability.md) —
+  horizontal autoscaling per service, and the stateful dependencies that
+  actually limit it.
 - [`decisions/`](decisions) — individual ADRs, one decision per file, numbered in
   the order they were made.
 

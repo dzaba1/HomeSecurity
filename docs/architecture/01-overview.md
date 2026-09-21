@@ -86,3 +86,4 @@ devices, or detection logic, it's the actual product and we write it.**
 - Zero-downtime deployment and high availability: [`11-deployment-and-availability.md`](11-deployment-and-availability.md)
 - API versioning: [`12-api-versioning.md`](12-api-versioning.md)
 - HATEOAS for the public integratable API: [`13-hateoas-public-api.md`](13-hateoas-public-api.md)
+- Horizontal scalability (autoscaling per service, stateful bottlenecks): [`14-scalability.md`](14-scalability.md)
