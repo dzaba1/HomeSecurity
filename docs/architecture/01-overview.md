@@ -83,3 +83,6 @@ devices, or detection logic, it's the actual product and we write it.**
 - API contracts and client codegen (JSON Schema): [`08-api-contracts-and-codegen.md`](08-api-contracts-and-codegen.md)
 - Logging, health checks, metrics, and tracing: [`09-observability.md`](09-observability.md)
 - Frontend (Admin UI): [`10-frontend.md`](10-frontend.md)
+- Zero-downtime deployment and high availability: [`11-deployment-and-availability.md`](11-deployment-and-availability.md)
+- API versioning: [`12-api-versioning.md`](12-api-versioning.md)
+- HATEOAS for the public integratable API: [`13-hateoas-public-api.md`](13-hateoas-public-api.md)

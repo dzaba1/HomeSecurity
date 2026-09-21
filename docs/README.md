@@ -27,6 +27,13 @@ These apply to every decision recorded here:
    public-facing model, with client code generated from it rather than
    hand-written — see
    [`architecture/08-api-contracts-and-codegen.md`](architecture/08-api-contracts-and-codegen.md).
+7. **High availability by default.** Every service deploys via rolling
+   updates without stopping the system — see
+   [`architecture/11-deployment-and-availability.md`](architecture/11-deployment-and-availability.md).
+8. **Every public API is versioned**, and the API meant to be integrated
+   against (the Org/Admin-Tenant API) is HATEOAS — see
+   [`architecture/12-api-versioning.md`](architecture/12-api-versioning.md) and
+   [`architecture/13-hateoas-public-api.md`](architecture/13-hateoas-public-api.md).
 
 ## Contents
 
@@ -54,6 +61,13 @@ These apply to every decision recorded here:
   service.
 - [`architecture/10-frontend.md`](architecture/10-frontend.md) — the Admin
   UI: framework choice, project structure, and how it talks to the backend.
+- [`architecture/11-deployment-and-availability.md`](architecture/11-deployment-and-availability.md) —
+  zero-downtime rolling deployments and what every service needs to tolerate
+  them.
+- [`architecture/12-api-versioning.md`](architecture/12-api-versioning.md) —
+  URI-based versioning for every public API.
+- [`architecture/13-hateoas-public-api.md`](architecture/13-hateoas-public-api.md) —
+  HATEOAS (HAL) for the Org (Admin/Tenant) API.
 - [`decisions/`](decisions) — individual ADRs, one decision per file, numbered in
   the order they were made.
 
