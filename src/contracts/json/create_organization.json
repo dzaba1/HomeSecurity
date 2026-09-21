@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "CreateOrganization",
+  "type": "object",
+  "properties": {
+    "identifier": { "type": "string", "minLength": 1, "maxLength": 64, "description": "External identifier for the organization" },
+    "name": { "type": "string", "minLength": 1, "maxLength": 64, "description": "Friendly name for the organization" }
+  },
+  "required": ["identifier", "name"],
+  "additionalProperties": false
+}

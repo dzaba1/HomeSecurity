@@ -1,0 +1,10 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "CreateMembership",
+  "type": "object",
+  "properties": {
+    "userId": { "type": "string", "minLength": 1, "description": "Keycloak subject (sub claim) of the user to add to the organization" }
+  },
+  "required": ["userId"],
+  "additionalProperties": false
+}

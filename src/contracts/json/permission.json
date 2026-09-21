@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Permission",
+  "type": "object",
+  "properties": {
+    "key": { "type": "string", "minLength": 1, "maxLength": 255, "description": "Opaque permission key from the fixed catalog, e.g. device.view" },
+    "description": { "type": "string", "minLength": 1, "maxLength": 1024, "description": "Human-readable description of what the permission grants" }
+  },
+  "required": ["key", "description"],
+  "additionalProperties": false
+}

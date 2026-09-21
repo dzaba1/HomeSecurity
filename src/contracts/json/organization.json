@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Organization",
+  "type": "object",
+  "properties": {
+    "id": { "type": "string", "format": "uuid", "description": "Unique identifier for the organization" },
+    "identifier": { "type": "string", "minLength": 1, "maxLength": 64, "description": "External identifier for the organization" },
+    "name": { "type": "string", "minLength": 1, "maxLength": 64, "description": "Friendly name for the organization" }
+  },
+  "required": ["id", "identifier", "name"],
+  "additionalProperties": false
+}

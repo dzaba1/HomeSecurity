@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Membership",
+  "type": "object",
+  "properties": {
+    "organizationId": { "type": "string", "format": "uuid", "description": "The organization this membership belongs to" },
+    "userId": { "type": "string", "minLength": 1, "description": "Keycloak subject (sub claim) of the member" }
+  },
+  "required": ["organizationId", "userId"],
+  "additionalProperties": false
+}

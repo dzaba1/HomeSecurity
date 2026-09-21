@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Role",
+  "type": "object",
+  "properties": {
+    "id": { "type": "string", "format": "uuid", "description": "Unique identifier for the role" },
+    "tenantId": { "type": ["string", "null"], "format": "uuid", "description": "Owning organization; null for system-default roles (Owner/Admin/Member/Viewer)" },
+    "name": { "type": "string", "minLength": 1, "maxLength": 64, "description": "Name of the role" },
+    "permissionKeys": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Permission catalog keys granted by this role"
+    }
+  },
+  "required": ["id", "tenantId", "name", "permissionKeys"],
+  "additionalProperties": false
+}

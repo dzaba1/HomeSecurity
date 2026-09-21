@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="Dzaba.HomeSecurity.Org.Contracts.Tests/Dzaba.HomeSecurity.Org.Contracts.Tests.csproj" />
+  <Project Path="Dzaba.HomeSecurity.Org.Contracts/Dzaba.HomeSecurity.Org.Contracts.csproj" />
+</Solution>

@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "UserRoleAssignment",
+  "type": "object",
+  "properties": {
+    "userId": { "type": "string", "minLength": 1, "description": "Keycloak subject (sub claim) of the assigned user" },
+    "tenantId": { "type": "string", "format": "uuid", "description": "Organization the assignment is scoped to" },
+    "roleId": { "type": "string", "format": "uuid", "description": "The assigned role" }
+  },
+  "required": ["userId", "tenantId", "roleId"],
+  "additionalProperties": false
+}
