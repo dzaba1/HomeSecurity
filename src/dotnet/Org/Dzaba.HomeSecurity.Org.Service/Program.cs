@@ -163,7 +163,17 @@ if (app.Environment.IsDevelopment() && builder.Configuration.GetValue("Database:
 }
 
 app.UseSerilogRequestLogging();
-app.UseHttpsRedirection();
+
+// Defaults to true (secure by default per docs/README.md's HTTPS-only
+// principle). Overridable via config/env var so environments that
+// terminate TLS in front of this service - e.g. the local docker-compose
+// stack, where nothing yet sits in front of it - can disable the redirect
+// instead of 307-looping to a TLS port the container doesn't serve.
+if (builder.Configuration.GetValue("Security:UseHttpsRedirection", true))
+{
+    app.UseHttpsRedirection();
+}
+
 app.UseRouting();
 app.UseAuthentication();
 app.UseMiddleware<TenantResolutionMiddleware>();

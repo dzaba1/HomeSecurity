@@ -130,6 +130,41 @@ services:
     networks:
       - backend
 
+  org-service:
+    build:
+      context: ..
+      dockerfile: src/dotnet/Org/Dzaba.HomeSecurity.Org.Service/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_HTTP_PORTS: "8080"
+      # No TLS termination in front of this service in the local stack -
+      # see the comment on Security:UseHttpsRedirection in Program.cs.
+      Security__UseHttpsRedirection: "false"
+      ConnectionStrings__AppDatabase: Host=postgres-app;Port=5432;Database=${POSTGRES_APP_DB};Username=${POSTGRES_APP_USER};Password=${POSTGRES_APP_PASSWORD}
+      ConnectionStrings__Redis: redis:6379
+      # appsettings.Development.json points this at localhost:8080 (for
+      # running the app bare on the host); that's unreachable from inside
+      # this container's network, so it's overridden back to the in-network
+      # hostname the base appsettings.json already uses.
+      Authentication__Keycloak__Authority: http://keycloak:8080/realms/home-security
+    ports:
+      - "8082:8080"
+    depends_on:
+      postgres-app:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - backend
+
   adminer:
     image: adminer:6.0.1
     ports:
