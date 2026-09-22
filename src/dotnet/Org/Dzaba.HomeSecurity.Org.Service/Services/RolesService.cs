@@ -129,19 +129,22 @@ internal sealed class RolesService : IRolesService
 
         ThrowIfSystemRole(entity);
 
-        // Must be queried before the delete: EF's FK cascade removes the
-        // RolePermission/UserRole rows automatically, which would otherwise
-        // make the affected-user set unrecoverable afterwards.
-        var affectedUserIds = await db.UserRoles
+        // Loaded (not just projected) and explicitly removed rather than
+        // relying on the database's FK cascade: that's real behavior on
+        // Postgres, but EF Core only cascades through the change tracker
+        // for navigations it has actually loaded, which a relational FK
+        // cascade is not - relying on it silently depends on which
+        // IDbServerProvider is configured.
+        var affectedUserRoles = await db.UserRoles
             .Where(ur => ur.RoleId == roleId && ur.TenantId == tenantContext.TenantId)
-            .Select(ur => ur.UserId)
             .ToArrayAsync(cancellationToken)
             .ConfigureAwait(false);
+        db.UserRoles.RemoveRange(affectedUserRoles);
 
         db.Roles.Remove(entity);
         await db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
 
-        foreach (var userId in affectedUserIds)
+        foreach (var userId in affectedUserRoles.Select(ur => ur.UserId).Distinct())
         {
             await permissionEvaluator.InvalidateAsync(tenantContext.TenantId, userId, cancellationToken).ConfigureAwait(false);
         }

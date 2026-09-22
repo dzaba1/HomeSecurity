@@ -3,7 +3,9 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace Dzaba.HomeSecurity.Data.Migrations
+#pragma warning disable CA1814 // Prefer jagged arrays over multidimensional
+
+namespace Dzaba.HomeSecurity.Org.Service.Migrations
 {
     /// <inheritdoc />
     public partial class InitialCreate : Migration
@@ -142,6 +144,47 @@ namespace Dzaba.HomeSecurity.Data.Migrations
                         principalTable: "Roles",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.InsertData(
+                table: "Permissions",
+                columns: new[] { "Key", "Description" },
+                values: new object[,]
+                {
+                    { "device.delete", "Delete devices" },
+                    { "device.view", "View devices" },
+                    { "logs.view", "View logs" },
+                    { "org.manage_members", "Manage organization members" }
+                });
+
+            migrationBuilder.InsertData(
+                table: "Roles",
+                columns: new[] { "Id", "Name", "TenantId" },
+                values: new object[,]
+                {
+                    { new Guid("00000000-0000-0000-0000-000000000001"), "Owner", null },
+                    { new Guid("00000000-0000-0000-0000-000000000002"), "Admin", null },
+                    { new Guid("00000000-0000-0000-0000-000000000003"), "Member", null },
+                    { new Guid("00000000-0000-0000-0000-000000000004"), "Viewer", null }
+                });
+
+            migrationBuilder.InsertData(
+                table: "RolePermissions",
+                columns: new[] { "PermissionKey", "RoleId" },
+                values: new object[,]
+                {
+                    { "device.delete", new Guid("00000000-0000-0000-0000-000000000001") },
+                    { "device.view", new Guid("00000000-0000-0000-0000-000000000001") },
+                    { "logs.view", new Guid("00000000-0000-0000-0000-000000000001") },
+                    { "org.manage_members", new Guid("00000000-0000-0000-0000-000000000001") },
+                    { "device.delete", new Guid("00000000-0000-0000-0000-000000000002") },
+                    { "device.view", new Guid("00000000-0000-0000-0000-000000000002") },
+                    { "logs.view", new Guid("00000000-0000-0000-0000-000000000002") },
+                    { "org.manage_members", new Guid("00000000-0000-0000-0000-000000000002") },
+                    { "device.view", new Guid("00000000-0000-0000-0000-000000000003") },
+                    { "logs.view", new Guid("00000000-0000-0000-0000-000000000003") },
+                    { "device.view", new Guid("00000000-0000-0000-0000-000000000004") },
+                    { "logs.view", new Guid("00000000-0000-0000-0000-000000000004") }
                 });
 
             migrationBuilder.CreateIndex(

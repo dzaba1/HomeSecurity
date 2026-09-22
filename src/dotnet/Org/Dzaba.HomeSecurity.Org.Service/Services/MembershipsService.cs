@@ -5,7 +5,6 @@ using Dzaba.HomeSecurity.Data;
 using Dzaba.HomeSecurity.Domain;
 using Dzaba.HomeSecurity.Org.Service.Mapping;
 using Microsoft.EntityFrameworkCore;
-using Npgsql;
 using MembershipEntity = Dzaba.HomeSecurity.Data.Entities.Membership;
 using Membership = Dzaba.HomeSecurity.Org.Contracts.Membership;
 using CreateMembership = Dzaba.HomeSecurity.Org.Contracts.CreateMembership;
@@ -55,8 +54,17 @@ internal sealed class MembershipsService : IMembershipsService
         {
             await db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         }
-        catch (DbUpdateException ex) when (IsUniqueViolation(ex))
+        // DbUpdateException is what a real relational provider (Npgsql)
+        // throws for a PK violation; ArgumentException ("An item with the
+        // same key has already been added") is what EF Core's InMemory
+        // provider throws instead for the exact same case - a real quirk of
+        // that provider, not wrapped as DbUpdateException at all. Both are
+        // handled, narrowly, only around this one Add+SaveChanges: the only
+        // realistic failure here is the (OrganizationId, UserId) primary key.
+        catch (Exception ex) when (ex is DbUpdateException or ArgumentException)
         {
+            logger.LogWarning(ex, "AddAsync SaveChanges failed ({ExceptionType}): {Message}", ex.GetType().FullName, ex.Message);
+
             throw new HttpResponseException(HttpStatusCode.Conflict,
                 $"User '{request.UserId}' is already a member of this organization.", ex);
         }
@@ -97,7 +105,4 @@ internal sealed class MembershipsService : IMembershipsService
 
         return true;
     }
-
-    private static bool IsUniqueViolation(DbUpdateException ex) =>
-        ex.InnerException is PostgresException { SqlState: PostgresErrorCodes.UniqueViolation };
 }

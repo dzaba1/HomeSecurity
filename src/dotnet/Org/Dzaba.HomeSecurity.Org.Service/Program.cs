@@ -1,6 +1,7 @@
 using Dzaba.HomeSecurity.Data;
 using Dzaba.HomeSecurity.Domain;
 using Dzaba.HomeSecurity.Org.Service.Authorization;
+using Dzaba.HomeSecurity.Org.Service.Data;
 using Dzaba.HomeSecurity.Org.Service.Hal;
 using Dzaba.HomeSecurity.Org.Service.Logging;
 using Dzaba.HomeSecurity.Org.Service.Services;
@@ -84,8 +85,18 @@ builder.Services.AddScoped<HttpRequestTenantContext>();
 builder.Services.AddScoped<ITenantContext>(sp => sp.GetRequiredService<HttpRequestTenantContext>());
 builder.Services.AddScoped<IMutableTenantContext>(sp => sp.GetRequiredService<HttpRequestTenantContext>());
 
+// IDbServerProvider is the one seam AppDbContext's EF Core provider is
+// configured through - lets integration tests swap in the InMemory
+// provider via DI (Org.Service.Tests registers its own implementation)
+// without a second, competing AddDbContext(UseInMemoryDatabase(...)) call
+// in ConfigureTestServices, which would leave both providers' services
+// registered in the same container and make EF Core's provider
+// auto-detection throw. It also keeps the
+// Microsoft.EntityFrameworkCore.InMemory package out of this project
+// entirely - only the test project references it.
+builder.Services.AddSingleton<IDbServerProvider, NpgsqlDbServerProvider>();
 builder.Services.AddDzabaHomeSecurityDataServices(
-    (_, options, connectionString) => options.UseNpgsql(connectionString),
+    (sp, options, connectionString) => sp.GetRequiredService<IDbServerProvider>().Configure(options, connectionString),
     sp => sp.GetRequiredService<IConfiguration>().GetConnectionString("AppDatabase")
         ?? throw new InvalidOperationException("Missing ConnectionStrings:AppDatabase"));
 
@@ -129,15 +140,18 @@ builder.Services.AddOpenTelemetry()
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
+// Dev-only convenience: a single local instance can't race itself.
+// Everywhere else, applying migrations is a deliberate, separate
+// deployment step (e.g. a CI/CD migration job) - not something Program.cs
+// does on every pod start, since concurrent Database.Migrate() calls
+// across the >=2 replicas ADR-0011 requires would race on the same schema
+// change. Also gated by config (default true), not just environment, so
+// WebApplicationFactory-based integration tests - which default to
+// "Development" - can opt out via Database:AutoMigrate=false when running
+// against a non-relational provider (e.g. EF Core InMemory) that doesn't
+// support Migrate() at all.
+if (app.Environment.IsDevelopment() && builder.Configuration.GetValue("Database:AutoMigrate", true))
 {
-    // Dev-only convenience: a single local instance can't race itself.
-    // Everywhere else, applying migrations is a deliberate, separate
-    // deployment step (e.g. a CI/CD migration job) - not something
-    // Program.cs does on every pod start, since concurrent Database.Migrate()
-    // calls across the >=2 replicas ADR-0011 requires would race on the
-    // same schema change.
-    //
     // Constructed directly with StaticTenantContext, not resolved from DI:
     // there's no HTTP request during startup to have set the scoped
     // HttpRequestTenantContext, and migrations don't run through the

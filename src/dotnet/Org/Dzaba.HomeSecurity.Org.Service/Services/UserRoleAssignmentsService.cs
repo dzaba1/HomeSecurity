@@ -5,7 +5,6 @@ using Dzaba.HomeSecurity.Data;
 using Dzaba.HomeSecurity.Domain;
 using Dzaba.HomeSecurity.Org.Service.Mapping;
 using Microsoft.EntityFrameworkCore;
-using Npgsql;
 using UserRoleEntity = Dzaba.HomeSecurity.Data.Entities.UserRole;
 using UserRoleAssignment = Dzaba.HomeSecurity.Org.Contracts.UserRoleAssignment;
 using AssignUserRole = Dzaba.HomeSecurity.Org.Contracts.AssignUserRole;
@@ -56,11 +55,19 @@ internal sealed class UserRoleAssignmentsService : IUserRoleAssignmentsService
         {
             await db.SaveChangesAsync(cancellationToken).ConfigureAwait(false);
         }
-        catch (DbUpdateException ex) when (IsViolation(ex))
+        // DbUpdateException is what a real relational provider (Npgsql)
+        // throws for a PK/unique violation. ArgumentException ("An item
+        // with the same key has already been added") is what EF Core's
+        // InMemory provider throws instead for the exact same case - not
+        // wrapped as a DbUpdateException at all, a real quirk of that
+        // provider, not a hypothetical. Both are handled, narrowly, only
+        // around this one Add+SaveChanges: the only realistic failure here
+        // is the (user, tenant, role) primary key, or roleId not
+        // referencing a role visible to this tenant.
+        catch (Exception ex) when (ex is DbUpdateException or ArgumentException)
         {
-            // Either the (user, tenant, role) assignment already exists, or
-            // roleId doesn't reference a role visible to this tenant - both
-            // are the caller sending a request that can't be satisfied as-is.
+            logger.LogWarning(ex, "AssignAsync SaveChanges failed ({ExceptionType}): {Message}", ex.GetType().FullName, ex.Message);
+
             throw new HttpResponseException(HttpStatusCode.Conflict,
                 $"User '{request.UserId}' already holds role '{request.RoleId}' in this organization, or the role does not exist.", ex);
         }
@@ -98,7 +105,4 @@ internal sealed class UserRoleAssignmentsService : IUserRoleAssignmentsService
 
         return true;
     }
-
-    private static bool IsViolation(DbUpdateException ex) =>
-        ex.InnerException is PostgresException;
 }

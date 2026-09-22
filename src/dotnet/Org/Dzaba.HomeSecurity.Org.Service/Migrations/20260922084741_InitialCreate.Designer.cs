@@ -9,10 +9,10 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace Dzaba.HomeSecurity.Data.Migrations
+namespace Dzaba.HomeSecurity.Org.Service.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260921112802_InitialCreate")]
+    [Migration("20260922084741_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -105,6 +105,28 @@ namespace Dzaba.HomeSecurity.Data.Migrations
                     b.HasKey("Key");
 
                     b.ToTable("Permissions");
+
+                    b.HasData(
+                        new
+                        {
+                            Key = "device.view",
+                            Description = "View devices"
+                        },
+                        new
+                        {
+                            Key = "device.delete",
+                            Description = "Delete devices"
+                        },
+                        new
+                        {
+                            Key = "logs.view",
+                            Description = "View logs"
+                        },
+                        new
+                        {
+                            Key = "org.manage_members",
+                            Description = "Manage organization members"
+                        });
                 });
 
             modelBuilder.Entity("Dzaba.HomeSecurity.Data.Entities.Role", b =>
@@ -125,6 +147,28 @@ namespace Dzaba.HomeSecurity.Data.Migrations
                     b.HasIndex("TenantId");
 
                     b.ToTable("Roles");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0000-000000000001"),
+                            Name = "Owner"
+                        },
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0000-000000000002"),
+                            Name = "Admin"
+                        },
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0000-000000000003"),
+                            Name = "Member"
+                        },
+                        new
+                        {
+                            Id = new Guid("00000000-0000-0000-0000-000000000004"),
+                            Name = "Viewer"
+                        });
                 });
 
             modelBuilder.Entity("Dzaba.HomeSecurity.Data.Entities.RolePermission", b =>
@@ -140,6 +184,68 @@ namespace Dzaba.HomeSecurity.Data.Migrations
                     b.HasIndex("PermissionKey");
 
                     b.ToTable("RolePermissions");
+
+                    b.HasData(
+                        new
+                        {
+                            RoleId = new Guid("00000000-0000-0000-0000-000000000001"),
+                            PermissionKey = "device.view"
+                        },
+                        new
+                        {
+                            RoleId = new Guid("00000000-0000-0000-0000-000000000001"),
+                            PermissionKey = "device.delete"
+                        },
+                        new
+                        {
+                            RoleId = new Guid("00000000-0000-0000-0000-000000000001"),
+                            PermissionKey = "logs.view"
+                        },
+                        new
+                        {
+                            RoleId = new Guid("00000000-0000-0000-0000-000000000001"),
+                            PermissionKey = "org.manage_members"
+                        },
+                        new
+                        {
+                            RoleId = new Guid("00000000-0000-0000-0000-000000000002"),
+                            PermissionKey = "device.view"
+                        },
+                        new
+                        {
+                            RoleId = new Guid("00000000-0000-0000-0000-000000000002"),
+                            PermissionKey = "device.delete"
+                        },
+                        new
+                        {
+                            RoleId = new Guid("00000000-0000-0000-0000-000000000002"),
+                            PermissionKey = "logs.view"
+                        },
+                        new
+                        {
+                            RoleId = new Guid("00000000-0000-0000-0000-000000000002"),
+                            PermissionKey = "org.manage_members"
+                        },
+                        new
+                        {
+                            RoleId = new Guid("00000000-0000-0000-0000-000000000003"),
+                            PermissionKey = "device.view"
+                        },
+                        new
+                        {
+                            RoleId = new Guid("00000000-0000-0000-0000-000000000003"),
+                            PermissionKey = "logs.view"
+                        },
+                        new
+                        {
+                            RoleId = new Guid("00000000-0000-0000-0000-000000000004"),
+                            PermissionKey = "device.view"
+                        },
+                        new
+                        {
+                            RoleId = new Guid("00000000-0000-0000-0000-000000000004"),
+                            PermissionKey = "logs.view"
+                        });
                 });
 
             modelBuilder.Entity("Dzaba.HomeSecurity.Data.Entities.UserRole", b =>
