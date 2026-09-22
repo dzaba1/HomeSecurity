@@ -1,0 +1,57 @@
+@Dzaba.HomeSecurity.Org.Service_HostAddress = http://localhost:5299
+@Keycloak_HostAddress = http://localhost:8080
+
+### Get a bearer token (requires `pwsh ./init.ps1 -DevTestUser`, local dev only)
+# @name login
+POST {{Keycloak_HostAddress}}/realms/home-security/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=password&client_id=dev-test-client&username=dev-test-user&password=dev-test-password
+
+###
+@token = {{login.response.body.access_token}}
+
+### Discovery entry point
+GET {{Dzaba.HomeSecurity.Org.Service_HostAddress}}/api/v1/
+Authorization: Bearer {{token}}
+
+### Create an organization
+# @name createOrg
+POST {{Dzaba.HomeSecurity.Org.Service_HostAddress}}/api/v1/orgs
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "identifier": "acme",
+  "name": "Acme Corp"
+}
+
+###
+@orgId = {{createOrg.response.body.id}}
+
+### List my organizations
+GET {{Dzaba.HomeSecurity.Org.Service_HostAddress}}/api/v1/orgs
+Authorization: Bearer {{token}}
+
+### Get an organization (creator holds Owner, so addMember should be linked)
+GET {{Dzaba.HomeSecurity.Org.Service_HostAddress}}/api/v1/orgs/{{orgId}}
+Authorization: Bearer {{token}}
+
+### List members
+GET {{Dzaba.HomeSecurity.Org.Service_HostAddress}}/api/v1/orgs/{{orgId}}/members
+Authorization: Bearer {{token}}
+
+### List roles (system-default + custom)
+GET {{Dzaba.HomeSecurity.Org.Service_HostAddress}}/api/v1/orgs/{{orgId}}/roles
+Authorization: Bearer {{token}}
+
+### Global permission catalog
+GET {{Dzaba.HomeSecurity.Org.Service_HostAddress}}/api/v1/permissions
+Authorization: Bearer {{token}}
+
+### A nonexistent/non-member org should 404, not 403 (leak prevention)
+GET {{Dzaba.HomeSecurity.Org.Service_HostAddress}}/api/v1/orgs/00000000-0000-0000-0000-000000000099
+Authorization: Bearer {{token}}
+
+### Health
+GET {{Dzaba.HomeSecurity.Org.Service_HostAddress}}/health/ready

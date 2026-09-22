@@ -6,7 +6,14 @@ committed to git - re-run this on every fresh clone/environment.
 #>
 [CmdletBinding()]
 param(
-    [switch]$Force
+    [switch]$Force,
+    # Adds a throwaway public client ("dev-test-client", direct access
+    # grants enabled) and a matching user ("dev-test-user") to the
+    # generated realm-export.json only - never to the committed .template.
+    # Lets you fetch a real bearer token locally via the OIDC password
+    # grant (curl/Postman) without driving the full oauth2-proxy browser
+    # flow. Not for anything beyond local manual testing.
+    [switch]$DevTestUser
 )
 
 $ErrorActionPreference = 'Stop'
@@ -63,8 +70,46 @@ Set-Content -Path $envPath -Value $envContent -NoNewline
 
 $realmTemplate = Get-Content -Path $realmTemplatePath -Raw
 $realmContent = $realmTemplate.Replace('__OAUTH2_PROXY_CLIENT_SECRET__', $oauth2ProxyClientSecret)
+
+if ($DevTestUser) {
+    $realm = $realmContent | ConvertFrom-Json
+
+    $realm.clients += [PSCustomObject]@{
+        clientId                  = 'dev-test-client'
+        enabled                   = $true
+        protocol                  = 'openid-connect'
+        publicClient              = $true
+        standardFlowEnabled       = $false
+        directAccessGrantsEnabled = $true
+        defaultClientScopes       = @('home-security-api-audience')
+    }
+
+    $realm | Add-Member -NotePropertyName 'users' -NotePropertyValue @(
+        [PSCustomObject]@{
+            username      = 'dev-test-user'
+            enabled       = $true
+            firstName     = 'Dev'
+            lastName      = 'Test'
+            email         = 'dev-test-user@example.local'
+            emailVerified = $true
+            credentials   = @(
+                [PSCustomObject]@{
+                    type      = 'password'
+                    value     = 'dev-test-password'
+                    temporary = $false
+                }
+            )
+        }
+    ) -Force
+
+    $realmContent = $realm | ConvertTo-Json -Depth 10
+}
+
 Set-Content -Path $realmOutputPath -Value $realmContent -NoNewline
 
 Write-Host "Wrote $envPath"
 Write-Host "Wrote $realmOutputPath"
+if ($DevTestUser) {
+    Write-Host "Dev test login: username 'dev-test-user', password 'dev-test-password', client_id 'dev-test-client' (password grant, local testing only)"
+}
 Write-Host "Next: docker compose up -d"

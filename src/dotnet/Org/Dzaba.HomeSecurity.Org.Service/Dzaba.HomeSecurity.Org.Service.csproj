@@ -1,0 +1,43 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>b4b061dd-118a-4f27-8076-c8f0d3460f17</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Lets Org.Service.Tests unit-test internal implementation classes
+         (services, tenancy, authorization) directly, not only through the
+         public HTTP surface. -->
+    <InternalsVisibleTo Include="Dzaba.HomeSecurity.Org.Service.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Dzaba.HomeSecurity.Org.Contracts\Dzaba.HomeSecurity.Org.Contracts.csproj" />
+    <ProjectReference Include="..\..\Common\Dzaba.HomeSecurity.Domain\Dzaba.HomeSecurity.Domain.csproj" />
+    <ProjectReference Include="..\..\Data\Dzaba.HomeSecurity.Data\Dzaba.HomeSecurity.Data.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Asp.Versioning.Mvc" />
+    <PackageReference Include="Asp.Versioning.Mvc.ApiExplorer" />
+    <PackageReference Include="AspNetCore.HealthChecks.NpgSql" />
+    <PackageReference Include="AspNetCore.HealthChecks.Redis" />
+    <PackageReference Include="Dzaba.Utils.AspNet" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+    <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" />
+    <PackageReference Include="OpenTelemetry.Extensions.Hosting" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.Http" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.Runtime" />
+    <PackageReference Include="Serilog.AspNetCore" />
+    <PackageReference Include="Serilog.Enrichers.Thread" />
+    <PackageReference Include="Serilog.Sinks.Console" />
+    <PackageReference Include="StackExchange.Redis" />
+    <PackageReference Include="Swashbuckle.AspNetCore" />
+  </ItemGroup>
+
+</Project>

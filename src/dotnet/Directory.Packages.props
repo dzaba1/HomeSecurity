@@ -44,6 +44,16 @@
     <PackageVersion Include="AspNetCore.HealthChecks.NpgSql" Version="9.0.0" />
     <PackageVersion Include="AspNetCore.HealthChecks.Redis" Version="9.0.0" />
 
+    <!-- API versioning, ADR-0012 (Apache-2.0) -->
+    <!-- Asp.Versioning.Http is newer than Asp.Versioning.Mvc's own release train
+         (10.2.3 vs 10.2.1) - the packages aren't released in lockstep, and
+         Mvc's dependency on Http is a >= floor, so pinning the transitive dep
+         to its own latest is safe. -->
+    <PackageVersion Include="Asp.Versioning.Http" Version="10.2.3" />
+    <PackageVersion Include="Asp.Versioning.Mvc" Version="10.2.1" />
+    <PackageVersion Include="Asp.Versioning.Mvc.ApiExplorer" Version="10.2.1" />
+    <PackageVersion Include="Asp.Versioning.Abstractions" Version="10.2.1" />
+
     <!-- Contract codegen (MIT) -->
     <PackageVersion Include="NSwag.MSBuild" Version="14.7.1" />
 
@@ -66,6 +76,8 @@
     <PackageVersion Include="Dzaba.TestUtils.Integration" Version="1.1.0" />
     <!-- Transitive-only, pinned per CLAUDE.md (dependency of Dzaba.TestUtils.Integration) -->
     <PackageVersion Include="Dzaba.TestUtils" Version="2.0.1" />
+    <PackageVersion Include="Dzaba.TestUtils.Integration.AspNet" Version="1.1.0" />
+    <PackageVersion Include="coverlet.collector" Version="10.0.1" />
 
     <!-- API docs (MIT) -->
     <PackageVersion Include="Swashbuckle.AspNetCore" Version="10.2.3" />
