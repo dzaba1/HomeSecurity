@@ -38,7 +38,9 @@ erDiagram
 ```
 
 - **Permission** — the fixed catalog: atomic, opaque strings like
-  `device.view`, `device.delete`, `logs.view`, `org.manage_members`. Seeded
+  `device.view`, `device.delete`, `logs.view`, `org.manage_members`,
+  `router.view`, `router.manage` (see
+  [`15-router-credentials.md`](15-router-credentials.md)). Seeded
   once at deploy time (a migration/seed script), owned by whoever builds the
   product feature that needs a new permission.
 - **Role** — just a name. A handful of **system-default roles** ship out of
