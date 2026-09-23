@@ -24,8 +24,34 @@ An admin adds a router by giving it:
   [`05-agents-and-ingestion.md`](05-agents-and-ingestion.md) for why syslog
   forwarding doesn't need a login at all: the router pushes to the agent
   instead of the agent pulling),
+- an auth mode, only meaningful for `WebScrape` (see below),
 - a username, and
 - a password / SNMP community string.
+
+### `WebScrape` auth modes
+
+`WebScrape` is expected to be the common case, not a fallback: plenty of
+real consumer routers — e.g. the ones bundled by ISPs like Orange Poland —
+expose nothing but their own HTTP admin page, with no SNMP at all. That page
+is typically protected one of a small number of ways, so `Router` carries an
+explicit `AuthMode` alongside `Protocol` rather than assuming one:
+
+- **`HttpBasic`** — the router challenges with `WWW-Authenticate: Basic`
+  and expects an `Authorization: Basic base64(username:password)` header on
+  every request. This is exactly what the Orange router above does.
+- **`HttpDigest`** — same idea, RFC 7616 digest challenge/response instead
+  of a plain base64 header.
+- **`FormLogin`** — the router has an actual HTML login form; the agent
+  POSTs the username/password to it and reuses the session cookie the
+  router sets for subsequent scrape requests within that polling run.
+
+All three still store credentials as a plain username + password on
+`Router` — `AuthMode` only changes how the agent *presents* them to the
+router, not what's stored or how it's transported from our backend to the
+agent. And all three are handled by .NET's own `HttpClient` /
+`HttpClientHandler` (`CredentialCache` for Basic/Digest, a
+`CookieContainer` for FormLogin) — no bespoke HTTP or session-handling code,
+in keeping with principle #1.
 
 This is deliberately centralized rather than left agent-local, because the
 person running the Admin UI (the household's account owner) and the person
@@ -47,6 +73,7 @@ erDiagram
     string Name
     string Host
     string Protocol "WebScrape | SNMP"
+    string AuthMode "HttpBasic | HttpDigest | FormLogin; WebScrape only"
     string Username
     bytes EncryptedSecret "ciphertext only"
     datetime UpdatedAt
@@ -131,8 +158,8 @@ sequenceDiagram
   A->>BE: GET /devices/{deviceId}/router-config (JWT)
   BE->>DB: Resolve device -> router (tenant-scoped)
   BE->>BE: Decrypt secret
-  BE-->>A: host, protocol, username, password (HTTPS response body)
-  A->>R: Log in with those credentials, poll for connected devices
+  BE-->>A: host, protocol, authMode, username, password (HTTPS response body)
+  A->>R: Authenticate per authMode (Basic/Digest header or form login), poll for connected devices
 ```
 
 Notes on this flow:
