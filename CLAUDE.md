@@ -2,21 +2,6 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Repository state (important)
-
-This repo is currently **design-first, not implementation-first**. All
-previously-written code lives under `old/` and predates the architecture now
-recorded in `docs/`. Treat `docs/` as the target design and `old/` as
-**read-only reference material** — useful for seeing patterns already tried
-(multi-tenancy via EF Core global query filters, JSON-Schema-driven
-contracts, NUnit test style), but not a codebase to build on top of or modify.
-`old/TODO.md` and `old/UseCases.md` are earlier, rougher drafts of what
-`docs/` now formalizes more precisely — prefer `docs/` when the two disagree.
-
-Before writing new application code, check whether the work should start
-fresh (matching the target architecture in `docs/`) rather than touching
-`old/`.
-
 ## Documentation map
 
 Read `docs/README.md` first — it states the guiding principles (prefer

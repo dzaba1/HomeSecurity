@@ -8,6 +8,5 @@
 **/Dockerfile*
 **/.env
 **/*.user
-old/
 .claude/
 docs/
