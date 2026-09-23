@@ -4,9 +4,9 @@ using System.Text;
 using System.Text.Json;
 using Dzaba.AspNetUtils;
 using Dzaba.HomeSecurity.Data;
+using Dzaba.HomeSecurity.DbServer;
 using Dzaba.HomeSecurity.Domain;
 using Dzaba.HomeSecurity.MessageBroker.Contracts;
-using Dzaba.HomeSecurity.Org.Service.Data;
 using Dzaba.HomeSecurity.TestUtils;
 using Dzaba.TestUtils.Integration.AspNet;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -23,9 +23,9 @@ namespace Dzaba.HomeSecurity.Org.Service.Tests;
 
 /// <summary>
 /// Base fixture for every controller test: selects the InMemory EF Core
-/// provider by swapping IDbServerProvider (Org.Service's own DI seam - see
-/// its doc comment for why this exists instead of a second, competing
-/// AddDbContext(UseInMemoryDatabase(...)) call) with a fresh database name
+/// provider by swapping IDbServerProvider (the shared DbServer library's DI
+/// seam - see its doc comment for why this exists instead of a second,
+/// competing AddDbContext(UseInMemoryDatabase(...)) call) with a fresh database name
 /// per test, and swaps IConnectionMultiplexer for FakeRedis's in-memory
 /// double - no real Redis instance needed. JWT bearer options are overridden
 /// with a symmetric test key (ControllerTestFixture's own AddMockedJwtSettings

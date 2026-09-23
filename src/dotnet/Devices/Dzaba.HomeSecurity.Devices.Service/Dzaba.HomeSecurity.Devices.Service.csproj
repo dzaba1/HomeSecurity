@@ -1,29 +1,24 @@
-﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <UserSecretsId>b4b061dd-118a-4f27-8076-c8f0d3460f17</UserSecretsId>
+    <UserSecretsId>6f0c3a52-8d4e-4b0a-9c5e-2a7b1f3d9e64</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- Lets Org.Service.Tests unit-test internal implementation classes
-         (services, tenancy, authorization) directly, not only through the
-         public HTTP surface. -->
-    <InternalsVisibleTo Include="Dzaba.HomeSecurity.Org.Service.Tests" />
+    <!-- Lets Devices.Service.Tests unit-test internal implementation classes
+         (DevicesDbContext, its entities, tenancy) directly, not only through
+         the public HTTP surface. -->
+    <InternalsVisibleTo Include="Dzaba.HomeSecurity.Devices.Service.Tests" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Dzaba.HomeSecurity.Org.Contracts\Dzaba.HomeSecurity.Org.Contracts.csproj" />
-    <ProjectReference Include="..\..\Common\Dzaba.HomeSecurity.Authorization\Dzaba.HomeSecurity.Authorization.csproj" />
-    <ProjectReference Include="..\..\Common\Dzaba.HomeSecurity.Caching.Redis\Dzaba.HomeSecurity.Caching.Redis.csproj" />
-    <ProjectReference Include="..\..\Common\Dzaba.HomeSecurity.MessageBroker.Contracts\Dzaba.HomeSecurity.MessageBroker.Contracts.csproj" />
-    <ProjectReference Include="..\..\Common\Dzaba.HomeSecurity.MessageBroker.RabbitMQ\Dzaba.HomeSecurity.MessageBroker.RabbitMQ.csproj" />
     <ProjectReference Include="..\..\Common\Dzaba.HomeSecurity.Domain\Dzaba.HomeSecurity.Domain.csproj" />
-    <ProjectReference Include="..\..\Data\Dzaba.HomeSecurity.Data\Dzaba.HomeSecurity.Data.csproj" />
     <ProjectReference Include="..\..\Common\Dzaba.HomeSecurity.Observability\Dzaba.HomeSecurity.Observability.csproj" />
     <ProjectReference Include="..\..\Common\Dzaba.HomeSecurity.WebApi\Dzaba.HomeSecurity.WebApi.csproj" />
+    <ProjectReference Include="..\..\Common\Dzaba.HomeSecurity.Authorization\Dzaba.HomeSecurity.Authorization.csproj" />
     <ProjectReference Include="..\..\Common\Dzaba.HomeSecurity.DbServer\Dzaba.HomeSecurity.DbServer.csproj" />
   </ItemGroup>
 

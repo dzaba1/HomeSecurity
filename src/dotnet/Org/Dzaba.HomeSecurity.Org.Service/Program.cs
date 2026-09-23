@@ -1,10 +1,10 @@
 using Dzaba.HomeSecurity.Authorization;
 using Dzaba.HomeSecurity.Caching.Redis;
 using Dzaba.HomeSecurity.Data;
+using Dzaba.HomeSecurity.DbServer;
 using Dzaba.HomeSecurity.Domain;
 using Dzaba.HomeSecurity.MessageBroker.RabbitMQ;
 using Dzaba.HomeSecurity.Observability;
-using Dzaba.HomeSecurity.Org.Service.Data;
 using Dzaba.HomeSecurity.Org.Service.Services;
 using Dzaba.HomeSecurity.Org.Service.Tenancy;
 using Dzaba.HomeSecurity.WebApi;
@@ -40,24 +40,25 @@ builder.Services.AddDzabaHomeSecurityPermissionAuthorization(builder.Configurati
 // doc comment for how a service that doesn't own this data would differ.
 builder.Services.AddTransient<IPermissionSourceLoader, LocalDbPermissionSourceLoader>();
 
-// One scoped HttpRequestTenantContext instance behind both interfaces - the
-// write side (IMutableTenantContext) is used only by
+// The write side (IMutableTenantContext) is used only by
 // TenantResolutionMiddleware and org creation; everything else, including
 // AppDbContext itself, only ever sees the read side (ITenantContext).
-builder.Services.AddScoped<HttpRequestTenantContext>();
-builder.Services.AddScoped<ITenantContext>(sp => sp.GetRequiredService<HttpRequestTenantContext>());
-builder.Services.AddScoped<IMutableTenantContext>(sp => sp.GetRequiredService<HttpRequestTenantContext>());
+builder.Services.AddDzabaHomeSecurityTenancy();
+// Org.Service owns Membership directly, so tenant resolution just queries it.
+builder.Services.AddTransient<ITenantMembershipChecker, DbTenantMembershipChecker>();
 
 // IDbServerProvider is the one seam AppDbContext's EF Core provider is
 // configured through - lets integration tests swap in the InMemory
-// provider via DI (Org.Service.Tests registers its own implementation)
+// provider via DI (Dzaba.HomeSecurity.TestUtils' InMemoryDbServerProvider)
 // without a second, competing AddDbContext(UseInMemoryDatabase(...)) call
 // in ConfigureTestServices, which would leave both providers' services
 // registered in the same container and make EF Core's provider
 // auto-detection throw. It also keeps the
 // Microsoft.EntityFrameworkCore.InMemory package out of this project
-// entirely - only the test project references it.
-builder.Services.AddTransient<IDbServerProvider, NpgsqlDbServerProvider>();
+// entirely - only the test project references it. Migrations live in this
+// assembly, not in Dzaba.HomeSecurity.Data (where AppDbContext itself is
+// defined), which keeps that shared project provider-agnostic.
+builder.Services.AddDzabaHomeSecurityNpgsqlDbServer(typeof(Program).Assembly);
 builder.Services.AddDzabaHomeSecurityDataServices(
     (sp, options, connectionString) => sp.GetRequiredService<IDbServerProvider>().Configure(options, connectionString),
     sp => sp.GetRequiredService<IConfiguration>().GetConnectionString("AppDatabase")
@@ -115,7 +116,7 @@ if (app.Environment.IsDevelopment() && builder.Configuration.GetValue("Database:
 {
     // Constructed directly with StaticTenantContext, not resolved from DI:
     // there's no HTTP request during startup to have set the scoped
-    // HttpRequestTenantContext, and migrations don't run through the
+    // MutableTenantContext, and migrations don't run through the
     // model's query filters anyway - same reasoning as AppDbContextFactory.
     using var scope = app.Services.CreateScope();
     var dbOptions = scope.ServiceProvider.GetRequiredService<DbContextOptions<AppDbContext>>();

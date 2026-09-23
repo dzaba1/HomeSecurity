@@ -30,6 +30,7 @@
 
   <ItemGroup>
     <PackageReference Include="Dzaba.Utils.AspNet" />
+    <PackageReference Include="Serilog" />
   </ItemGroup>
 
 </Project>

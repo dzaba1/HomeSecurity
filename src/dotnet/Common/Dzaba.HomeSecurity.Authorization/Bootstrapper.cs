@@ -34,4 +34,39 @@ public static class Bootstrapper
 
         return services;
     }
+
+    /// <summary>
+    /// Registers the per-request tenant context: one scoped
+    /// <see cref="MutableTenantContext"/> behind both
+    /// <see cref="ITenantContext"/> (what tenant-scoped DbContexts and
+    /// application code see) and <see cref="IMutableTenantContext"/> (only
+    /// <see cref="TenantResolutionMiddleware"/> and org creation write it).
+    /// Scoped, not transient, since it holds real per-request state.
+    /// </summary>
+    public static IServiceCollection AddDzabaHomeSecurityTenancy(this IServiceCollection services)
+    {
+        ArgumentNullException.ThrowIfNull(services);
+
+        services.AddScoped<MutableTenantContext>();
+        services.AddScoped<ITenantContext>(sp => sp.GetRequiredService<MutableTenantContext>());
+        services.AddScoped<IMutableTenantContext>(sp => sp.GetRequiredService<MutableTenantContext>());
+
+        return services;
+    }
+
+    /// <summary>
+    /// For a service that doesn't own Membership directly: answers
+    /// <see cref="TenantResolutionMiddleware"/>'s membership check from the
+    /// shared access-context cache, via <see cref="IPermissionEvaluator"/>.
+    /// A service that does own it registers its own
+    /// <see cref="ITenantMembershipChecker"/> instead.
+    /// </summary>
+    public static IServiceCollection AddDzabaHomeSecurityCachedTenantMembership(this IServiceCollection services)
+    {
+        ArgumentNullException.ThrowIfNull(services);
+
+        services.AddTransient<ITenantMembershipChecker, PermissionEvaluatorTenantMembershipChecker>();
+
+        return services;
+    }
 }

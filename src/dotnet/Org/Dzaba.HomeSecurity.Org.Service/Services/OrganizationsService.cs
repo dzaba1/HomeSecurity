@@ -4,7 +4,6 @@ using Dzaba.AspNetUtils;
 using Dzaba.HomeSecurity.Data;
 using Dzaba.HomeSecurity.Domain;
 using Dzaba.HomeSecurity.Org.Service.Mapping;
-using Dzaba.HomeSecurity.Org.Service.Tenancy;
 using Microsoft.EntityFrameworkCore;
 using OrganizationEntity = Dzaba.HomeSecurity.Data.Entities.Organization;
 using UserRoleEntity = Dzaba.HomeSecurity.Data.Entities.UserRole;
