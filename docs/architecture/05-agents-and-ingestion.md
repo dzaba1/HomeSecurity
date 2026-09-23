@@ -16,6 +16,12 @@ never needs router vendor cooperation or a public API. It is the *agent* that
 initiates outbound contact with our cloud, never the other way around, so
 nothing needs to be exposed on the home network's firewall/NAT.
 
+Where SNMP or web-page scraping is used, the agent needs the router's *own*
+login (or SNMP community string) to authenticate to it. That credential is
+entered by an org admin in the Admin UI, not typed into the agent — see
+[`15-router-credentials.md`](15-router-credentials.md) for how it's stored
+and how the agent fetches it.
+
 ## Agent design principles
 
 - **Boring on purpose.** A background service (`.NET` worker/`IHostedService`,
@@ -25,7 +31,9 @@ nothing needs to be exposed on the home network's firewall/NAT.
 - **One credential per device**, paired once during setup (see
   [`03-security-and-identity.md`](03-security-and-identity.md)), used to mint
   short-lived tokens for each upload — never a long-lived token sitting on
-  disk.
+  disk. The *router's* login is a separate concern, entered centrally by an
+  org admin and fetched by the agent at runtime — see
+  [`15-router-credentials.md`](15-router-credentials.md).
 - **Reuses the ingestion API contract** — the agent doesn't get its own
   bespoke wire format; it normalizes whatever it scrapes from the router into
   the same log-entry shape the Ingestion API already accepts.
@@ -37,11 +45,15 @@ nothing needs to be exposed on the home network's firewall/NAT.
 
 ## Pairing a new device
 
-1. User adds a device in the Admin UI, scoped to their organization.
-2. Backend generates a device secret and displays/downloads it once (or via
+1. An admin adds a router in the Admin UI (host, protocol, login) if one
+   doesn't already exist for the organization — see
+   [`15-router-credentials.md`](15-router-credentials.md).
+2. User adds a device in the Admin UI, scoped to their organization and
+   linked to that router.
+3. Backend generates a device secret and displays/downloads it once (or via
    QR code, for the mobile case).
-3. User enters that secret into the agent app on first run.
-4. Agent stores the secret locally (OS credential store where available —
+4. User enters that secret into the agent app on first run.
+5. Agent stores the secret locally (OS credential store where available —
    Keychain / Windows Credential Manager / Android Keystore) and never
    transmits it again except to mint a new short-lived token when needed.
 
@@ -52,15 +64,18 @@ sequenceDiagram
   participant R as Router
   participant A as Agent (PC/laptop/phone)
   participant T as Device Token Endpoint
+  participant C as Router Config Endpoint
   participant I as Logs Ingestion API
   participant Q as RabbitMQ
   participant W as Processing Worker
   participant N as Notification Service
 
-  A->>R: Poll for logs (SNMP / syslog / scrape)
-  R-->>A: Raw log data
   A->>T: Authenticate with device secret
-  T-->>A: Short-lived JWT (tenant_id, device_id, scope=logs:write)
+  T-->>A: Short-lived JWT (tenant_id, device_id, scope=logs:write router:read)
+  A->>C: Fetch router config (JWT)
+  C-->>A: Decrypted host/username/password
+  A->>R: Log in and poll for logs (SNMP / syslog / scrape)
+  R-->>A: Raw log data
   A->>I: POST normalized logs + JWT
   I->>Q: Publish log batch
   Q->>W: Consume

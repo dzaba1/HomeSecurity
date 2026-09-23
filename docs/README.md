@@ -74,6 +74,9 @@ These apply to every decision recorded here:
 - [`architecture/14-scalability.md`](architecture/14-scalability.md) —
   horizontal autoscaling per service, and the stateful dependencies that
   actually limit it.
+- [`architecture/15-router-credentials.md`](architecture/15-router-credentials.md) —
+  how an org admin provisions a router's login in the Admin UI, and how
+  agents fetch it, encrypted at rest, to log into the router themselves.
 - [`decisions/`](decisions) — individual ADRs, one decision per file, numbered in
   the order they were made.
 
