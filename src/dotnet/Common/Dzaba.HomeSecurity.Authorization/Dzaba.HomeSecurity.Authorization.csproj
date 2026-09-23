@@ -7,6 +7,23 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- Lets Authorization.Tests unit-test internal implementation classes
+         (PermissionEvaluator, PermissionRequirement, PermissionAuthorizationHandler)
+         directly, not only through the public IPermissionEvaluator/Bootstrapper surface. -->
+    <InternalsVisibleTo Include="Dzaba.HomeSecurity.Authorization.Tests" />
+    <!-- Moq/Castle DynamicProxy generates ILogger<PermissionEvaluator>'s mock
+         proxy into its own dynamic assembly, which otherwise can't legally
+         reference PermissionEvaluator as a generic type argument since it's
+         internal - without this, Fixture.FreezeMock<ILogger<...>>-style
+         auto-mocking of any internal type fails at proxy-creation time. -->
+    <InternalsVisibleTo Include="DynamicProxyGenAssembly2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Dzaba.HomeSecurity.Domain\Dzaba.HomeSecurity.Domain.csproj" />
     <ProjectReference Include="..\Dzaba.HomeSecurity.Caching.Contracts\Dzaba.HomeSecurity.Caching.Contracts.csproj" />
   </ItemGroup>

@@ -80,9 +80,12 @@
     <PackageVersion Include="FluentAssertions" Version="7.2.2" />
     <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.12" />
     <PackageVersion Include="Dzaba.TestUtils.Integration" Version="1.1.0" />
-    <!-- Transitive-only, pinned per CLAUDE.md (dependency of Dzaba.TestUtils.Integration) -->
     <PackageVersion Include="Dzaba.TestUtils" Version="2.0.1" />
     <PackageVersion Include="Dzaba.TestUtils.Integration.AspNet" Version="1.1.0" />
+    <!-- AutoFixtureTestFixture/TestFixture/FreezeMock (Dzaba.TestUtils) build
+         on AutoFixture + Moq to auto-wire a SUT's constructor dependencies
+         as mocks. -->
+    <PackageVersion Include="AutoFixture" Version="4.18.1" />
     <PackageVersion Include="coverlet.collector" Version="10.0.1" />
     <!-- API docs (MIT) -->
     <PackageVersion Include="Swashbuckle.AspNetCore" Version="10.2.3" />
