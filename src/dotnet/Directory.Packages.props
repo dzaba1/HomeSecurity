@@ -13,6 +13,7 @@
          explicitly to avoid a resolved-version conflict. -->
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.12" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.12" />
+    <PackageVersion Include="Moq" Version="4.20.72" />
     <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
     <!-- Multi-tenancy: tenant resolution + EF global query filter wiring (Apache-2.0) -->
     <PackageVersion Include="Finbuckle.MultiTenant.AspNetCore" Version="10.1.4" />

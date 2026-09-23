@@ -15,8 +15,9 @@ namespace Dzaba.HomeSecurity.Org.Service.Tests;
 
 /// <summary>
 /// Exercises PermissionEvaluator directly - no HTTP, no WebApplicationFactory
-/// - against a real local Redis (fresh tenant/user GUIDs per test, so no
-/// explicit isolation/flush is needed) and an EF Core InMemory AppDbContext.
+/// - against FakeRedis's in-memory double (fresh tenant/user GUIDs per test,
+/// so no explicit isolation/flush is needed) and an EF Core InMemory
+/// AppDbContext.
 /// </summary>
 [TestFixture]
 public class PermissionEvaluatorTests
@@ -27,7 +28,7 @@ public class PermissionEvaluatorTests
     [SetUp]
     public async Task SetUpAsync()
     {
-        redis = ConnectionMultiplexer.Connect("localhost:6379");
+        redis = FakeRedis.CreateConnectionMultiplexer();
         dbOptions = new DbContextOptionsBuilder<AppDbContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .Options;
@@ -43,7 +44,10 @@ public class PermissionEvaluatorTests
     }
 
     private PermissionEvaluator CreateEvaluator(int ttlMinutes = 15) =>
-        new(redis, dbOptions, Options.Create(new PermissionCacheOptions { TtlMinutes = ttlMinutes }),
+        CreateEvaluator(redis, ttlMinutes);
+
+    private PermissionEvaluator CreateEvaluator(IConnectionMultiplexer redisMultiplexer, int ttlMinutes = 15) =>
+        new(redisMultiplexer, dbOptions, Options.Create(new PermissionCacheOptions { TtlMinutes = ttlMinutes }),
             NullLogger<PermissionEvaluator>.Instance);
 
     private async Task SeedRoleAssignmentAsync(Guid tenantId, string userId, Guid roleId, params string[] permissionKeys)
@@ -150,6 +154,43 @@ public class PermissionEvaluatorTests
     public async Task InvalidateAsync_WhenNoCacheEntryExists_ThenDoesNotThrow()
     {
         var evaluator = CreateEvaluator();
+
+        var act = async () => await evaluator.InvalidateAsync(Guid.NewGuid(), Guid.NewGuid().ToString(), CancellationToken.None);
+
+        await act.Should().NotThrowAsync();
+    }
+
+    [Test]
+    public async Task HasPermissionAsync_WhenRedisIsUnavailableAndUserHoldsRole_ThenFallsBackToTheDatabaseAndReturnsTrue()
+    {
+        var tenantId = Guid.NewGuid();
+        var userId = Guid.NewGuid().ToString();
+        await SeedRoleAssignmentAsync(tenantId, userId, Guid.NewGuid(), PermissionKeys.DeviceView);
+
+        var evaluator = CreateEvaluator(FakeRedis.CreateUnavailableConnectionMultiplexer());
+
+        var result = await evaluator.HasPermissionAsync(userId, tenantId, PermissionKeys.DeviceView, CancellationToken.None);
+
+        result.Should().BeTrue();
+    }
+
+    [Test]
+    public async Task HasPermissionAsync_WhenRedisIsUnavailableAndUserHoldsNoRoles_ThenReturnsFalse()
+    {
+        var tenantId = Guid.NewGuid();
+        var userId = Guid.NewGuid().ToString();
+
+        var evaluator = CreateEvaluator(FakeRedis.CreateUnavailableConnectionMultiplexer());
+
+        var result = await evaluator.HasPermissionAsync(userId, tenantId, PermissionKeys.DeviceView, CancellationToken.None);
+
+        result.Should().BeFalse();
+    }
+
+    [Test]
+    public async Task InvalidateAsync_WhenRedisIsUnavailable_ThenDoesNotThrow()
+    {
+        var evaluator = CreateEvaluator(FakeRedis.CreateUnavailableConnectionMultiplexer());
 
         var act = async () => await evaluator.InvalidateAsync(Guid.NewGuid(), Guid.NewGuid().ToString(), CancellationToken.None);
 

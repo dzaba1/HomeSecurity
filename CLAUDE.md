@@ -91,3 +91,5 @@ evaluated.
   `.slnx` (XML) solution format, not the legacy `.sln` format. Hand-edit the
   generated files afterward as needed, but let the SDK generate the initial
   `.csproj`/`.slnx` so they match what the installed SDK actually expects.
+- **Assembly-level attributes go in the `.csproj`** (as `<AssemblyAttribute>`
+  items), not in a hand-written `AssemblyInfo.cs`.

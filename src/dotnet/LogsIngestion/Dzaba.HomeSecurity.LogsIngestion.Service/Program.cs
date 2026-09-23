@@ -2,15 +2,13 @@ using Dzaba.HomeSecurity.LogsIngestion.Service.Authorization;
 using Dzaba.HomeSecurity.LogsIngestion.Service.Services;
 using Dzaba.HomeSecurity.MessageBroker.RabbitMQ;
 using Dzaba.HomeSecurity.Observability;
+using Dzaba.HomeSecurity.WebApi;
 using Dzaba.Utils.AspNet;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.OpenApi;
-using OpenTelemetry.Metrics;
-using OpenTelemetry.Resources;
-using OpenTelemetry.Trace;
 using Serilog;
 
 const string ServiceName = "Dzaba.HomeSecurity.LogsIngestion.Service";
+var apiVersion = new Version(1, 0);
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,29 +17,8 @@ builder.Host.UseDzabaHomeSecuritySerilog(ServiceName);
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddControllers();
 
-builder.Services.AddApiVersioning(options =>
-{
-    options.DefaultApiVersion = new Asp.Versioning.ApiVersion(1, 0);
-    // URI path versioning per ADR-0012 - explicit rather than the reflection-based
-    // default reader, per the analyzer's own performance guidance (AV0015).
-    options.ApiVersionReader = new Asp.Versioning.UrlSegmentApiVersionReader();
-    // Every route must carry /v{n} explicitly - matches ADR-0012's
-    // rejection of an implicit-fallback version.
-    options.AssumeDefaultVersionWhenUnspecified = false;
-    options.ReportApiVersions = true;
-})
-    .AddMvc()
-    .AddApiExplorer(options =>
-    {
-        options.GroupNameFormat = "'v'VVV";
-        options.SubstituteApiVersionInUrl = true;
-    });
-
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(options =>
-{
-    options.SwaggerDoc("v1", new OpenApiInfo { Title = "Logs Ingestion API", Version = "v1" });
-});
+builder.Services.AddDzabaHomeSecurityApiVersioning(apiVersion);
+builder.Services.AddDzabaHomeSecuritySwaggerGen("Logs Ingestion API", apiVersion);
 
 // Device tokens have no OIDC discovery endpoint to validate against (unlike
 // the Keycloak-issued human tokens Org validates) - they're signed by a
@@ -69,17 +46,8 @@ builder.Services.AddDzabaHomeSecurityRabbitMqMessageBus(rabbitMqConnectionString
 
 builder.Services.AddTransient<IIngestLogsService, IngestLogsService>();
 
-builder.Services.AddOpenTelemetry()
-    .ConfigureResource(resource => resource.AddService(ServiceName))
-    .WithMetrics(metrics => metrics
-        .AddAspNetCoreInstrumentation()
-        .AddHttpClientInstrumentation()
-        .AddRuntimeInstrumentation()
-        .AddOtlpExporter(otlp => otlp.Endpoint = new Uri(builder.Configuration["OpenTelemetry:OtlpEndpoint"] ?? "http://localhost:4317")))
-    .WithTracing(tracing => tracing
-        .AddAspNetCoreInstrumentation()
-        .AddHttpClientInstrumentation()
-        .AddOtlpExporter(otlp => otlp.Endpoint = new Uri(builder.Configuration["OpenTelemetry:OtlpEndpoint"] ?? "http://localhost:4317")));
+builder.Services.AddDzabaHomeSecurityOpenTelemetry(ServiceName,
+    () => new Uri(builder.Configuration["OpenTelemetry:OtlpEndpoint"] ?? "http://localhost:4317"));
 
 var app = builder.Build();
 
@@ -100,23 +68,11 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
-// Liveness: process is up, no dependency checks. Readiness: every
-// registered check (RabbitMQ, registered by AddDzabaHomeSecurityRabbitMqMessageBus).
-// Both unauthenticated but only ever reachable from inside the cluster -
-// see docs/architecture/09-observability.md. No Postgres/Redis checks -
-// this service has neither dependency.
-app.MapHealthChecks("/health/live", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions { Predicate = _ => false });
-app.MapHealthChecks("/health/ready");
+// RabbitMQ's check is registered by AddDzabaHomeSecurityRabbitMqMessageBus
+// above - see MapDzabaHomeSecurityHealthChecks for the endpoint shape.
+app.MapDzabaHomeSecurityHealthChecks();
 
-// Gate by runtime environment/config, not Debug/Release build
-// configuration - a Release build is what actually deploys to Staging too,
-// and #if DEBUG would make Swagger unreachable there even when wanted.
-var swaggerEnabled = builder.Configuration.GetValue("Swagger:Enabled", app.Environment.IsDevelopment());
-if (swaggerEnabled)
-{
-    app.UseSwagger();
-    app.UseSwaggerUI(options => options.SwaggerEndpoint("/swagger/v1/swagger.json", "Logs Ingestion API v1"));
-}
+app.UseDzabaHomeSecuritySwaggerUI("Logs Ingestion API", apiVersion);
 
 app.Run();
 

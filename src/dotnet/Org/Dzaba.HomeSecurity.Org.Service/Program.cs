@@ -6,17 +6,15 @@ using Dzaba.HomeSecurity.Org.Service.Data;
 using Dzaba.HomeSecurity.Org.Service.Hal;
 using Dzaba.HomeSecurity.Org.Service.Services;
 using Dzaba.HomeSecurity.Org.Service.Tenancy;
+using Dzaba.HomeSecurity.WebApi;
 using Dzaba.Utils.AspNet;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.OpenApi;
-using OpenTelemetry.Metrics;
-using OpenTelemetry.Resources;
-using OpenTelemetry.Trace;
 using Serilog;
 using StackExchange.Redis;
 
 const string ServiceName = "Dzaba.HomeSecurity.Org.Service";
+var apiVersion = new Version(1, 0);
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,29 +23,8 @@ builder.Host.UseDzabaHomeSecuritySerilog(ServiceName);
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddControllers();
 
-builder.Services.AddApiVersioning(options =>
-{
-    options.DefaultApiVersion = new Asp.Versioning.ApiVersion(1, 0);
-    // URI path versioning per ADR-0012 - explicit rather than the reflection-based
-    // default reader, per the analyzer's own performance guidance (AV0015).
-    options.ApiVersionReader = new Asp.Versioning.UrlSegmentApiVersionReader();
-    // Every route must carry /v{n} explicitly - matches ADR-0012's
-    // rejection of an implicit-fallback version.
-    options.AssumeDefaultVersionWhenUnspecified = false;
-    options.ReportApiVersions = true;
-})
-    .AddMvc()
-    .AddApiExplorer(options =>
-    {
-        options.GroupNameFormat = "'v'VVV";
-        options.SubstituteApiVersionInUrl = true;
-    });
-
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(options =>
-{
-    options.SwaggerDoc("v1", new OpenApiInfo { Title = "Org API", Version = "v1" });
-});
+builder.Services.AddDzabaHomeSecurityApiVersioning(apiVersion);
+builder.Services.AddDzabaHomeSecuritySwaggerGen("Org API", apiVersion);
 
 builder.Services.AddJwtAuthentication(() => new JwtSettings
 {
@@ -63,7 +40,7 @@ foreach (var permissionKey in PermissionKeys.All)
 {
     authorizationBuilder.AddPolicy(permissionKey, policy => policy.Requirements.Add(new PermissionRequirement(permissionKey)));
 }
-builder.Services.AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
+builder.Services.AddTransient<IAuthorizationHandler, PermissionAuthorizationHandler>();
 
 // One scoped HttpRequestTenantContext instance behind both interfaces - the
 // write side (IMutableTenantContext) is used only by
@@ -82,7 +59,7 @@ builder.Services.AddScoped<IMutableTenantContext>(sp => sp.GetRequiredService<Ht
 // auto-detection throw. It also keeps the
 // Microsoft.EntityFrameworkCore.InMemory package out of this project
 // entirely - only the test project references it.
-builder.Services.AddSingleton<IDbServerProvider, NpgsqlDbServerProvider>();
+builder.Services.AddTransient<IDbServerProvider, NpgsqlDbServerProvider>();
 builder.Services.AddDzabaHomeSecurityDataServices(
     (sp, options, connectionString) => sp.GetRequiredService<IDbServerProvider>().Configure(options, connectionString),
     sp => sp.GetRequiredService<IConfiguration>().GetConnectionString("AppDatabase")
@@ -98,33 +75,38 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
 {
     var connectionString = sp.GetRequiredService<IConfiguration>().GetConnectionString("Redis")
         ?? throw new InvalidOperationException("Missing ConnectionStrings:Redis");
-    return ConnectionMultiplexer.Connect(connectionString);
+    var options = ConfigurationOptions.Parse(connectionString);
+    // Fail open on a Redis outage (see PermissionEvaluator's DB fallback):
+    // the default abortConnect=true would make Connect() throw synchronously
+    // for the first caller - and every caller after it, since a failed
+    // singleton factory isn't cached - until Redis is reachable again.
+    // AbortOnConnectFail=false returns a multiplexer immediately and retries
+    // in the background instead; still-disconnected calls surface as
+    // per-call RedisConnectionExceptions, which PermissionEvaluator catches.
+    options.AbortOnConnectFail = false;
+    return ConnectionMultiplexer.Connect(options);
 });
 builder.Services.Configure<PermissionCacheOptions>(builder.Configuration.GetSection(PermissionCacheOptions.SectionName));
 
-builder.Services.AddScoped<IPermissionEvaluator, PermissionEvaluator>();
-builder.Services.AddScoped<IOrganizationsService, OrganizationsService>();
-builder.Services.AddScoped<IMembershipsService, MembershipsService>();
-builder.Services.AddScoped<IRolesService, RolesService>();
-builder.Services.AddScoped<IUserRoleAssignmentsService, UserRoleAssignmentsService>();
-builder.Services.AddScoped<IPermissionCatalogService, PermissionCatalogService>();
-builder.Services.AddScoped<IOrgLinkFactory, OrgLinkFactory>();
+builder.Services.AddTransient<IPermissionEvaluator, PermissionEvaluator>();
+builder.Services.AddTransient<IOrganizationsService, OrganizationsService>();
+builder.Services.AddTransient<IMembershipsService, MembershipsService>();
+builder.Services.AddTransient<IRolesService, RolesService>();
+builder.Services.AddTransient<IUserRoleAssignmentsService, UserRoleAssignmentsService>();
+builder.Services.AddTransient<IPermissionCatalogService, PermissionCatalogService>();
+builder.Services.AddTransient<IOrgLinkFactory, OrgLinkFactory>();
 
 builder.Services.AddHealthChecks()
     .AddNpgSql(sp => sp.GetRequiredService<IConfiguration>().GetConnectionString("AppDatabase")!, name: "postgres")
-    .AddRedis(sp => sp.GetRequiredService<IConnectionMultiplexer>(), name: "redis");
+    // Tagged "degraded", not a hard readiness dependency - PermissionEvaluator
+    // fails open to Postgres when Redis is unreachable (docs/architecture/14:
+    // "a cache miss just costs one extra DB join... not data loss"), so a
+    // Redis outage shouldn't pull the whole pod out of rotation the way a
+    // genuinely broken Postgres connection should.
+    .AddRedis(sp => sp.GetRequiredService<IConnectionMultiplexer>(), name: "redis", tags: ["degraded"]);
 
-builder.Services.AddOpenTelemetry()
-    .ConfigureResource(resource => resource.AddService(ServiceName))
-    .WithMetrics(metrics => metrics
-        .AddAspNetCoreInstrumentation()
-        .AddHttpClientInstrumentation()
-        .AddRuntimeInstrumentation()
-        .AddOtlpExporter(otlp => otlp.Endpoint = new Uri(builder.Configuration["OpenTelemetry:OtlpEndpoint"] ?? "http://localhost:4317")))
-    .WithTracing(tracing => tracing
-        .AddAspNetCoreInstrumentation()
-        .AddHttpClientInstrumentation()
-        .AddOtlpExporter(otlp => otlp.Endpoint = new Uri(builder.Configuration["OpenTelemetry:OtlpEndpoint"] ?? "http://localhost:4317")));
+builder.Services.AddDzabaHomeSecurityOpenTelemetry(ServiceName,
+    () => new Uri(builder.Configuration["OpenTelemetry:OtlpEndpoint"] ?? "http://localhost:4317"));
 
 var app = builder.Build();
 
@@ -168,21 +150,11 @@ app.UseMiddleware<TenantResolutionMiddleware>();
 app.UseAuthorization();
 app.MapControllers();
 
-// Liveness: process is up, no dependency checks. Readiness: every
-// registered check (Postgres, Redis). Both unauthenticated but only ever
-// reachable from inside the cluster - see docs/architecture/09-observability.md.
-app.MapHealthChecks("/health/live", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions { Predicate = _ => false });
-app.MapHealthChecks("/health/ready");
+// Postgres and Redis checks are registered above via AddHealthChecks() -
+// see MapDzabaHomeSecurityHealthChecks for the endpoint shape.
+app.MapDzabaHomeSecurityHealthChecks();
 
-// Gate by runtime environment/config, not Debug/Release build
-// configuration - a Release build is what actually deploys to Staging too,
-// and #if DEBUG would make Swagger unreachable there even when wanted.
-var swaggerEnabled = builder.Configuration.GetValue("Swagger:Enabled", app.Environment.IsDevelopment());
-if (swaggerEnabled)
-{
-    app.UseSwagger();
-    app.UseSwaggerUI(options => options.SwaggerEndpoint("/swagger/v1/swagger.json", "Org API v1"));
-}
+app.UseDzabaHomeSecuritySwaggerUI("Org API", apiVersion);
 
 app.Run();
 

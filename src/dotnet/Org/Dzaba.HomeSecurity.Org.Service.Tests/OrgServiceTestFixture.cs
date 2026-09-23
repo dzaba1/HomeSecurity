@@ -8,6 +8,7 @@ using Dzaba.HomeSecurity.Domain;
 using Dzaba.HomeSecurity.Org.Service.Data;
 using Dzaba.TestUtils.Integration.AspNet;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -23,13 +24,17 @@ namespace Dzaba.HomeSecurity.Org.Service.Tests;
 /// provider by swapping IDbServerProvider (Org.Service's own DI seam - see
 /// its doc comment for why this exists instead of a second, competing
 /// AddDbContext(UseInMemoryDatabase(...)) call) with a fresh database name
-/// per test, and points Redis at the real docker-compose container -
-/// tenant/user ids are fresh GUIDs per test, so no explicit Redis
-/// isolation/flush is needed. JWT bearer options are overridden with a
-/// symmetric test key (ControllerTestFixture's own AddMockedJwtSettings
+/// per test, and swaps IConnectionMultiplexer for FakeRedis's in-memory
+/// double - no real Redis instance needed. JWT bearer options are overridden
+/// with a symmetric test key (ControllerTestFixture's own AddMockedJwtSettings
 /// helper assumes a DI-resolved JwtSettings, which Program.cs's
 /// AddJwtAuthentication(Func&lt;JwtSettings&gt;) doesn't use - PostConfigure is
-/// the mechanism that actually works against that wiring).
+/// the mechanism that actually works against that wiring). DataProtection
+/// uses an ephemeral (in-memory) key provider instead of the real host's
+/// default disk-backed one - every test otherwise reads/writes the same
+/// per-user key-ring file on disk, which is both needless I/O per test and,
+/// once tests run in parallel (see the assembly-level [Parallelizable]),
+/// a genuine race on that shared file.
 /// </summary>
 public abstract class OrgServiceTestFixture : ControllerTestFixture<Program>
 {
@@ -60,7 +65,9 @@ public abstract class OrgServiceTestFixture : ControllerTestFixture<Program>
         services.AddSingleton<IDbServerProvider, InMemoryDbServerProvider>();
 
         services.RemoveAll<IConnectionMultiplexer>();
-        services.AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect("localhost:6379"));
+        services.AddSingleton<IConnectionMultiplexer>(_ => FakeRedis.CreateConnectionMultiplexer());
+
+        services.AddDataProtection().UseEphemeralDataProtectionProvider();
 
         services.PostConfigure<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme, jwtOptions =>
         {
