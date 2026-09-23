@@ -2,7 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using Asp.Versioning;
 using Dzaba.AspNetUtils.ActionFilters;
-using Dzaba.HomeSecurity.Org.Service.Hal;
+using Dzaba.HomeSecurity.WebApi.Hal;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
@@ -21,7 +21,7 @@ namespace Dzaba.HomeSecurity.Org.Service.Controllers;
 [Route("api/v{version:apiVersion}")]
 public sealed class RootController : OrgControllerBase
 {
-    public RootController(IOrgLinkFactory links, IOptions<JsonOptions> jsonOptions)
+    public RootController(ILinkFactory links, IOptions<JsonOptions> jsonOptions)
         : base(links, jsonOptions)
     {
     }

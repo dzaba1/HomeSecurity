@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
-namespace Dzaba.HomeSecurity.Org.Service.Hal;
+namespace Dzaba.HomeSecurity.WebApi.Hal;
 
 /// <summary>
 /// Hand-rolled HAL <c>_links</c>/<c>_embedded</c> envelope - no well-adopted,
@@ -10,7 +10,7 @@ namespace Dzaba.HomeSecurity.Org.Service.Hal;
 /// HAL's shape is simple/stable enough that hand-rolling it is the right
 /// call rather than a shortcut. Uses only System.Text.Json - no new package.
 /// </summary>
-internal static class HalEnvelope
+public static class HalEnvelope
 {
     public static JsonObject Wrap<T>(T resource, IReadOnlyDictionary<string, HalLink> links, JsonSerializerOptions options)
     {

@@ -1,5 +1,5 @@
 using System.Text.Json;
-using Dzaba.HomeSecurity.Org.Service.Hal;
+using Dzaba.HomeSecurity.WebApi.Hal;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 
@@ -12,11 +12,11 @@ namespace Dzaba.HomeSecurity.Org.Service.Controllers;
 /// </summary>
 public abstract class OrgControllerBase : ControllerBase
 {
-    protected IOrgLinkFactory Links { get; }
+    protected ILinkFactory Links { get; }
 
     protected JsonSerializerOptions JsonOptions { get; }
 
-    protected OrgControllerBase(IOrgLinkFactory links, IOptions<JsonOptions> jsonOptions)
+    protected OrgControllerBase(ILinkFactory links, IOptions<JsonOptions> jsonOptions)
     {
         ArgumentNullException.ThrowIfNull(links);
         ArgumentNullException.ThrowIfNull(jsonOptions);

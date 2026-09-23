@@ -1,17 +1,15 @@
+using Dzaba.HomeSecurity.Authorization;
+using Dzaba.HomeSecurity.Caching.Redis;
 using Dzaba.HomeSecurity.Data;
 using Dzaba.HomeSecurity.Domain;
 using Dzaba.HomeSecurity.Observability;
-using Dzaba.HomeSecurity.Org.Service.Authorization;
 using Dzaba.HomeSecurity.Org.Service.Data;
-using Dzaba.HomeSecurity.Org.Service.Hal;
 using Dzaba.HomeSecurity.Org.Service.Services;
 using Dzaba.HomeSecurity.Org.Service.Tenancy;
 using Dzaba.HomeSecurity.WebApi;
 using Dzaba.Utils.AspNet;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
-using StackExchange.Redis;
 
 const string ServiceName = "Dzaba.HomeSecurity.Org.Service";
 var apiVersion = new Version(1, 0);
@@ -35,12 +33,11 @@ builder.Services.AddJwtAuthentication(() => new JwtSettings
     ValidateIssuer = true,
 });
 
-var authorizationBuilder = builder.Services.AddAuthorizationBuilder();
-foreach (var permissionKey in PermissionKeys.All)
-{
-    authorizationBuilder.AddPolicy(permissionKey, policy => policy.Requirements.Add(new PermissionRequirement(permissionKey)));
-}
-builder.Services.AddTransient<IAuthorizationHandler, PermissionAuthorizationHandler>();
+builder.Services.AddDzabaHomeSecurityPermissionAuthorization(builder.Configuration);
+// Org.Service owns Membership/UserRole/RolePermission directly, so it
+// loads access context from its own tables - see LocalDbPermissionSourceLoader's
+// doc comment for how a service that doesn't own this data would differ.
+builder.Services.AddTransient<IPermissionSourceLoader, LocalDbPermissionSourceLoader>();
 
 // One scoped HttpRequestTenantContext instance behind both interfaces - the
 // write side (IMutableTenantContext) is used only by
@@ -71,39 +68,25 @@ builder.Services.AddDzabaHomeSecurityDataServices(
 // repeated invocations within one request return the same instance.
 builder.Services.AddScoped<Func<AppDbContext>>(sp => sp.GetRequiredService<AppDbContext>);
 
-builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
-{
-    var connectionString = sp.GetRequiredService<IConfiguration>().GetConnectionString("Redis")
-        ?? throw new InvalidOperationException("Missing ConnectionStrings:Redis");
-    var options = ConfigurationOptions.Parse(connectionString);
-    // Fail open on a Redis outage (see PermissionEvaluator's DB fallback):
-    // the default abortConnect=true would make Connect() throw synchronously
-    // for the first caller - and every caller after it, since a failed
-    // singleton factory isn't cached - until Redis is reachable again.
-    // AbortOnConnectFail=false returns a multiplexer immediately and retries
-    // in the background instead; still-disconnected calls surface as
-    // per-call RedisConnectionExceptions, which PermissionEvaluator catches.
-    options.AbortOnConnectFail = false;
-    return ConnectionMultiplexer.Connect(options);
-});
-builder.Services.Configure<PermissionCacheOptions>(builder.Configuration.GetSection(PermissionCacheOptions.SectionName));
+// Fail open on a Redis outage (see PermissionEvaluator's source-loader
+// fallback): tagged "degraded", not a hard readiness dependency, since a
+// cache miss just costs one extra permission-source round-trip, not data
+// loss (docs/architecture/14) - a Redis outage shouldn't pull the whole
+// pod out of rotation the way a genuinely broken Postgres connection should.
+builder.Services.AddDzabaHomeSecurityRedisCache(
+    sp => sp.GetRequiredService<IConfiguration>().GetConnectionString("Redis")
+        ?? throw new InvalidOperationException("Missing ConnectionStrings:Redis"),
+    "degraded");
 
-builder.Services.AddTransient<IPermissionEvaluator, PermissionEvaluator>();
 builder.Services.AddTransient<IOrganizationsService, OrganizationsService>();
 builder.Services.AddTransient<IMembershipsService, MembershipsService>();
 builder.Services.AddTransient<IRolesService, RolesService>();
 builder.Services.AddTransient<IUserRoleAssignmentsService, UserRoleAssignmentsService>();
 builder.Services.AddTransient<IPermissionCatalogService, PermissionCatalogService>();
-builder.Services.AddTransient<IOrgLinkFactory, OrgLinkFactory>();
+builder.Services.AddDzabaHomeSecurityHal();
 
 builder.Services.AddHealthChecks()
-    .AddNpgSql(sp => sp.GetRequiredService<IConfiguration>().GetConnectionString("AppDatabase")!, name: "postgres")
-    // Tagged "degraded", not a hard readiness dependency - PermissionEvaluator
-    // fails open to Postgres when Redis is unreachable (docs/architecture/14:
-    // "a cache miss just costs one extra DB join... not data loss"), so a
-    // Redis outage shouldn't pull the whole pod out of rotation the way a
-    // genuinely broken Postgres connection should.
-    .AddRedis(sp => sp.GetRequiredService<IConnectionMultiplexer>(), name: "redis", tags: ["degraded"]);
+    .AddNpgSql(sp => sp.GetRequiredService<IConfiguration>().GetConnectionString("AppDatabase")!, name: "postgres");
 
 builder.Services.AddDzabaHomeSecurityOpenTelemetry(ServiceName,
     () => new Uri(builder.Configuration["OpenTelemetry:OtlpEndpoint"] ?? "http://localhost:4317"));

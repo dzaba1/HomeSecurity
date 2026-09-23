@@ -1,8 +1,8 @@
 using Asp.Versioning;
 using Dzaba.AspNetUtils.ActionFilters;
 using Dzaba.HomeSecurity.Org.Contracts;
-using Dzaba.HomeSecurity.Org.Service.Hal;
 using Dzaba.HomeSecurity.Org.Service.Services;
+using Dzaba.HomeSecurity.WebApi.Hal;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
@@ -19,7 +19,7 @@ public sealed class PermissionsController : OrgControllerBase
 {
     private readonly IPermissionCatalogService catalog;
 
-    public PermissionsController(IPermissionCatalogService catalog, IOrgLinkFactory links, IOptions<JsonOptions> jsonOptions)
+    public PermissionsController(IPermissionCatalogService catalog, ILinkFactory links, IOptions<JsonOptions> jsonOptions)
         : base(links, jsonOptions)
     {
         ArgumentNullException.ThrowIfNull(catalog);

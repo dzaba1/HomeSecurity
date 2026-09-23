@@ -2,9 +2,10 @@ using Asp.Versioning;
 using Dzaba.AspNetUtils;
 using Dzaba.AspNetUtils.ActionFilters;
 using Dzaba.HomeSecurity.Domain;
+using Dzaba.HomeSecurity.Authorization;
 using Dzaba.HomeSecurity.Org.Contracts;
-using Dzaba.HomeSecurity.Org.Service.Hal;
 using Dzaba.HomeSecurity.Org.Service.Services;
+using Dzaba.HomeSecurity.WebApi.Hal;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
@@ -28,7 +29,7 @@ public sealed class MembersController : OrgControllerBase
     private readonly IPermissionEvaluator permissionEvaluator;
 
     public MembersController(IMembershipsService memberships, IPermissionEvaluator permissionEvaluator,
-        IOrgLinkFactory links, IOptions<JsonOptions> jsonOptions)
+        ILinkFactory links, IOptions<JsonOptions> jsonOptions)
         : base(links, jsonOptions)
     {
         ArgumentNullException.ThrowIfNull(memberships);

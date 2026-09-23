@@ -16,6 +16,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Dzaba.HomeSecurity.Org.Contracts\Dzaba.HomeSecurity.Org.Contracts.csproj" />
+    <ProjectReference Include="..\..\Common\Dzaba.HomeSecurity.Authorization\Dzaba.HomeSecurity.Authorization.csproj" />
+    <ProjectReference Include="..\..\Common\Dzaba.HomeSecurity.Caching.Redis\Dzaba.HomeSecurity.Caching.Redis.csproj" />
     <ProjectReference Include="..\..\Common\Dzaba.HomeSecurity.Domain\Dzaba.HomeSecurity.Domain.csproj" />
     <ProjectReference Include="..\..\Data\Dzaba.HomeSecurity.Data\Dzaba.HomeSecurity.Data.csproj" />
     <ProjectReference Include="..\..\Common\Dzaba.HomeSecurity.Observability\Dzaba.HomeSecurity.Observability.csproj" />
@@ -24,7 +26,6 @@
 
   <ItemGroup>
     <PackageReference Include="AspNetCore.HealthChecks.NpgSql" />
-    <PackageReference Include="AspNetCore.HealthChecks.Redis" />
     <PackageReference Include="Dzaba.Utils.AspNet" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
@@ -33,7 +34,6 @@
     </PackageReference>
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
     <PackageReference Include="Serilog.AspNetCore" />
-    <PackageReference Include="StackExchange.Redis" />
     <PackageReference Include="Swashbuckle.AspNetCore" />
   </ItemGroup>
 

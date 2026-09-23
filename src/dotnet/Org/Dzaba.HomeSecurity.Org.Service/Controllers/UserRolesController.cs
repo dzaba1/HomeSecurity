@@ -2,8 +2,8 @@ using Asp.Versioning;
 using Dzaba.AspNetUtils.ActionFilters;
 using Dzaba.HomeSecurity.Domain;
 using Dzaba.HomeSecurity.Org.Contracts;
-using Dzaba.HomeSecurity.Org.Service.Hal;
 using Dzaba.HomeSecurity.Org.Service.Services;
+using Dzaba.HomeSecurity.WebApi.Hal;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
@@ -24,7 +24,7 @@ public sealed class UserRolesController : OrgControllerBase
 {
     private readonly IUserRoleAssignmentsService userRoles;
 
-    public UserRolesController(IUserRoleAssignmentsService userRoles, IOrgLinkFactory links, IOptions<JsonOptions> jsonOptions)
+    public UserRolesController(IUserRoleAssignmentsService userRoles, ILinkFactory links, IOptions<JsonOptions> jsonOptions)
         : base(links, jsonOptions)
     {
         ArgumentNullException.ThrowIfNull(userRoles);

@@ -1,12 +1,13 @@
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 
-namespace Dzaba.HomeSecurity.Org.Service.Hal;
+namespace Dzaba.HomeSecurity.WebApi.Hal;
 
-internal sealed class OrgLinkFactory : IOrgLinkFactory
+internal sealed class LinkFactory : ILinkFactory
 {
     private readonly LinkGenerator linkGenerator;
 
-    public OrgLinkFactory(LinkGenerator linkGenerator)
+    public LinkFactory(LinkGenerator linkGenerator)
     {
         ArgumentNullException.ThrowIfNull(linkGenerator);
 

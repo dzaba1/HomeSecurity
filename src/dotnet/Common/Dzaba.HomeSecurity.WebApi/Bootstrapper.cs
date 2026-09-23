@@ -1,3 +1,4 @@
+using Dzaba.HomeSecurity.WebApi.Hal;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Routing;
@@ -10,6 +11,19 @@ namespace Dzaba.HomeSecurity.WebApi;
 
 public static class Bootstrapper
 {
+    /// <summary>
+    /// Registers <see cref="ILinkFactory"/> for building HAL <c>_links</c>
+    /// hrefs via ASP.NET Core's own LinkGenerator - see Hal/HalEnvelope.cs.
+    /// </summary>
+    public static IServiceCollection AddDzabaHomeSecurityHal(this IServiceCollection services)
+    {
+        ArgumentNullException.ThrowIfNull(services);
+
+        services.AddTransient<ILinkFactory, LinkFactory>();
+
+        return services;
+    }
+
     /// <summary>
     /// URI path versioning shared by every service, per ADR-0012: explicit
     /// UrlSegmentApiVersionReader rather than the reflection-based default
