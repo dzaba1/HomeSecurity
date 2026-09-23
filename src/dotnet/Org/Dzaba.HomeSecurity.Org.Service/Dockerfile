@@ -25,6 +25,8 @@ COPY ["build/JsonSchema.targets", "build/"]
 
 COPY ["src/dotnet/Directory.Build.props", "src/dotnet/Directory.Packages.props", "src/dotnet/"]
 COPY ["src/dotnet/Common/Dzaba.HomeSecurity.Domain/Dzaba.HomeSecurity.Domain.csproj", "src/dotnet/Common/Dzaba.HomeSecurity.Domain/"]
+COPY ["src/dotnet/Common/Dzaba.HomeSecurity.Observability/Dzaba.HomeSecurity.Observability.csproj", "src/dotnet/Common/Dzaba.HomeSecurity.Observability/"]
+COPY ["src/dotnet/Common/Dzaba.HomeSecurity.WebApi/Dzaba.HomeSecurity.WebApi.csproj", "src/dotnet/Common/Dzaba.HomeSecurity.WebApi/"]
 COPY ["src/dotnet/Data/Dzaba.HomeSecurity.Data/Dzaba.HomeSecurity.Data.csproj", "src/dotnet/Data/Dzaba.HomeSecurity.Data/"]
 COPY ["src/dotnet/Org/Dzaba.HomeSecurity.Org.Contracts/Dzaba.HomeSecurity.Org.Contracts.csproj", "src/dotnet/Org/Dzaba.HomeSecurity.Org.Contracts/"]
 COPY ["src/dotnet/Org/Dzaba.HomeSecurity.Org.Service/Dzaba.HomeSecurity.Org.Service.csproj", "src/dotnet/Org/Dzaba.HomeSecurity.Org.Service/"]
