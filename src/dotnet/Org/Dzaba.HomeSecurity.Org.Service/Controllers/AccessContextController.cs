@@ -13,8 +13,9 @@ namespace Dzaba.HomeSecurity.Org.Service.Controllers;
 /// Devices.Service) resolves the token bearer's effective permissions
 /// here, by forwarding the same bearer token it was itself called with
 /// ("token relay") - no new service-account auth scheme needed.
-/// Deliberately outside the HAL/_links surface (ADR-0013's carve-out):
-/// this isn't a resource a browser client navigates to.
+/// Deliberately outside the HAL/_links surface (see ADR-0013 and its
+/// ADR-0017 extension): this isn't a resource a browser client navigates
+/// to.
 ///
 /// TenantResolutionMiddleware already 404s a non-member before this
 /// action ever runs, so a 200 response always means the caller is a

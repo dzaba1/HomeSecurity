@@ -7,7 +7,12 @@ ingestion → detection → push) works, not to be a full alerting system.
 
 ## Data model
 
-Two new tenant-scoped entities:
+Two new tenant-scoped entities. `Device` lives in **`Devices.Service`'s own
+database**, alongside `Router` — see
+[`15-router-credentials.md`](15-router-credentials.md#data-model) and
+[ADR-0016](../decisions/0016-devices-service-owns-its-own-database.md).
+`PushRegistration` belongs to whichever service ends up owning the
+Notification Service's data, not yet built:
 
 ```mermaid
 erDiagram
@@ -22,6 +27,7 @@ erDiagram
     string Status "Unknown | Known"
     datetime FirstSeenAt
     datetime LastSeenAt
+    guid LastSeenViaRouterId "nullable, non-identifying - traceability only"
   }
   PushRegistration {
     guid Id PK
@@ -33,13 +39,33 @@ erDiagram
 ```
 
 - **`Device`** — one row per MAC address ever seen on a tenant's network.
-  `MacAddress` is unique per tenant. `Status` starts at `Unknown` and moves to
-  `Known` once a user acknowledges it.
+  `MacAddress` is unique per tenant (`(TenantId, MacAddress)` is the
+  identity, not `LastSeenViaRouterId`). `Status` starts at `Unknown` and
+  moves to `Known` once a user acknowledges it. `LastSeenViaRouterId` is a
+  nullable FK to `Router` for traceability only, written by the ingestion
+  consumer described below (resolving the reporting agent's credential to
+  its bound router) — no admin-facing endpoint writes it, and its absence
+  doesn't mean anything about the device's own identity.
 - **`PushRegistration`** — one row per (user, tenant, installed mobile app).
   A user can belong to multiple tenants and get notifications for each
   independently.
 
+`Devices.Service`'s own admin API only ever lists/gets `Device` rows and
+`PATCH`es `Name`/`Status` (see [`15-router-credentials.md`](15-router-credentials.md)
+for the full endpoint table) — rows are created and `LastSeenAt`/
+`LastSeenViaRouterId` updated only by the ingestion consumer below, never
+by that API. Every `PATCH` also publishes a coarse `device.changed`
+notification event (`{tenantId, deviceId, macAddress, status, changedAt}`)
+— no consumer exists yet; see
+[`07-caching-and-idempotency.md`](07-caching-and-idempotency.md#3-coarse-something-changed-notification-events).
+
 ## Detection flow
+
+Not yet built — `Devices.Service`'s initial scope is the admin/agent CRUD
+API from [`15-router-credentials.md`](15-router-credentials.md), not this
+consumer (see [ADR-0016](../decisions/0016-devices-service-owns-its-own-database.md)'s
+"CRUD only for now" framing). Documented here as the target design the
+`Device` schema above is already shaped for.
 
 The agent already reports the router's currently-connected device list
 (MAC/IP/hostname) as part of its periodic log upload (see
@@ -75,16 +101,24 @@ FCM's own delivery guarantees are enough at this scale.
 
 ## End-to-end flow
 
+`W` below is a consumer that has to live inside `Devices.Service` itself
+once built, not a separate "Processing Workers" service reaching into
+`Devices.Service`'s own database from outside — same reasoning as
+[`01-overview.md`](01-overview.md#system-context)'s note on this. The
+mobile app's write also targets `Devices.Service`, not the Ingestion API —
+it never touches ingestion at all.
+
 ```mermaid
 sequenceDiagram
   participant A as Agent
   participant I as Ingestion API
   participant Q as RabbitMQ
-  participant W as Processing Worker
-  participant DB as Device table
+  participant W as Devices.Service consumer
+  participant DB as Devices DB
   participant N as Notification Service
   participant FCM as FCM
   participant M as Mobile App
+  participant DS as Devices.Service (admin API)
 
   A->>I: Upload log batch (includes connected-device list)
   I->>Q: Publish
@@ -96,7 +130,7 @@ sequenceDiagram
     N->>FCM: Send push to tenant's PushRegistrations
     FCM->>M: Push notification
     M->>M: User taps "This is mine"
-    M->>I: PATCH device.status = Known
+    M->>DS: PATCH device.status = Known
   else MAC already known
     W->>DB: Update LastSeenAt only
   end

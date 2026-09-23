@@ -11,7 +11,10 @@ earlier decisions before Redis itself was chosen as the tool:
 
 Two other candidate uses (rate limiting the ingestion endpoint, caching the
 known-MAC set per tenant) are documented at the bottom as designed-but-not-
-built-yet, to keep the first version focused.
+built-yet, to keep the first version focused. A third, RabbitMQ-based
+mechanism directly tied to (1) — coarse "something changed" notification
+events — is documented at the end too, since it only makes sense alongside
+the permission cache it's a hedge for.
 
 ## 1. Permission cache
 
@@ -23,16 +26,31 @@ Checking "does this user have permission X in this tenant" is a join across
 once, but every authenticated API call needs this answer, and re-joining on
 every request is wasted DB load for data that changes rarely.
 
+This cache started as an `Org.Service`-internal optimization, but it's now
+genuinely **cross-service shared infrastructure**: a service that doesn't
+own `UserRole`/`RolePermission` directly (see
+[ADR-0016](../decisions/0016-devices-service-owns-its-own-database.md))
+reads and populates the exact same Redis keys `Org.Service` does, rather
+than having its own separate cache.
+
 ### The approach
 
-Compute a user's **effective permission set for a tenant** once, cache it in
-Redis, and reuse it for the lifetime of that cache entry:
+Compute a user's **effective access for a tenant** once, cache it in Redis,
+and reuse it for the lifetime of that cache entry:
 
 - **Key**: `perms:{tenantId}:{userId}`
 - **Value**: the set of permission keys the user currently holds in that
-  tenant
-- **Populated**: on first check after cache miss (compute via the DB join,
-  write to Redis)
+  tenant, plus one reserved sentinel member meaning "not a member of this
+  tenant at all" — one cache entry answers both "is this user a member"
+  (tenant resolution) and "does this user have permission X"
+  (authorization) from the same round-trip.
+- **Populated**: on first check after cache miss, via
+  `IPermissionSourceLoader` (`Dzaba.HomeSecurity.Authorization`) — `Org.Service`
+  implements this by querying `UserRole`/`RolePermission` directly; any
+  other service implements it by calling `Org.Service`'s
+  `GET /api/v1/orgs/{orgId}/access-context` instead (forwarding its own
+  caller's bearer token — no new service-account auth scheme). See
+  [`04-roles-and-permissions.md`](04-roles-and-permissions.md#checking-a-permission-from-a-service-that-doesnt-own-this-data).
 - **Invalidated**: explicitly, whenever that user's role assignment changes
   in that tenant (role added/removed, or a role's permission set edited) —
   not relied upon to expire on its own, though a TTL (e.g. 15 minutes) is
@@ -40,19 +58,27 @@ Redis, and reuse it for the lifetime of that cache entry:
 
 ```mermaid
 sequenceDiagram
-  participant API as API request
+  participant API as API request (any service)
   participant R as Redis
-  participant DB as Postgres
+  participant Org as Org.Service
 
   API->>R: GET perms:{tenant}:{user}
   alt cache hit
-    R-->>API: permission set
-  else cache miss
-    API->>DB: Join UserRole/Role/RolePermission
-    DB-->>API: permission set
+    R-->>API: access context
+  else cache miss, Org.Service itself
+    API->>API: Join UserRole/Role/RolePermission directly
+    API->>R: SET perms:{tenant}:{user} (with TTL)
+  else cache miss, any other service
+    API->>Org: GET /orgs/{orgId}/access-context (bearer token relay)
+    Org-->>API: { permissionKeys }
     API->>R: SET perms:{tenant}:{user} (with TTL)
   end
 ```
+
+A cache miss reached by a service other than `Org.Service` is a genuine
+runtime dependency on `Org.Service`'s availability — accepted explicitly in
+[ADR-0016](../decisions/0016-devices-service-owns-its-own-database.md),
+not hidden.
 
 ## 2. Idempotent event processing
 
@@ -102,6 +128,29 @@ sequenceDiagram
   end
 ```
 
+## 3. Coarse "something changed" notification events
+
+Separate from both uses above: `Org.Service` publishes `access.changed`
+(`{tenantId, userId, changedAt}`) to RabbitMQ whenever a user's membership
+or role assignment changes, and `Devices.Service` will publish
+`router.changed`/`device.changed` the same way for its own data. **No
+consumer exists for any of these yet** — they're published as a low-cost
+hedge for future integrations (a cache warmer, an audit-log service,
+another product), following the same "publish now, consume later"
+precedent `LogsIngestion.Service` already set with `logs.ingested` (see
+[ADR-0007](../decisions/0007-rabbitmq-as-message-bus.md)).
+
+These are deliberately **notification events, not event-carried state
+transfer**: the payload says "something about this changed, go re-check,"
+never "here is the new state." A future consumer still calls the owning
+service's API (or reads the shared permission cache) for current data —
+this keeps the owning service the single source of truth and avoids ever
+having two divergent copies of "what this user can do" or "what this
+router's config is." See
+[ADR-0016](../decisions/0016-devices-service-owns-its-own-database.md) for
+why this exists alongside, not instead of, the permission cache's
+call-through mechanism above.
+
 ## Designed but not built for v1
 
 Kept here so the reasoning isn't lost, not because they're needed yet:
@@ -119,5 +168,5 @@ Kept here so the reasoning isn't lost, not because they're needed yet:
 
 ## Related documents
 
-- Why a single Redis instance is enough for both uses today, and what
-  Redis Cluster would be for: [`14-scalability.md`](14-scalability.md#the-real-bottleneck-stateful-dependencies-not-the-stateless-pods)
+- Why a single Redis instance is enough for all of these uses today, and
+  what Redis Cluster would be for: [`14-scalability.md`](14-scalability.md#the-real-bottleneck-stateful-dependencies-not-the-stateless-pods)

@@ -62,10 +62,22 @@ trade-off this accepts.
 
 ## Data model
 
+`Router` lives in **`Devices.Service`'s own database** — not the shared
+`Data` project `Org.Service` and `LogsIngestion.Service` use for the
+agent-auth `DeviceCredential` entity — see
+[ADR-0016](../decisions/0016-devices-service-owns-its-own-database.md).
+This also resolves a naming collision the model had implicitly carried:
+"Device" here always meant the network device a router reports seeing
+(the entity in [`06-notifications.md`](06-notifications.md)), never the
+agent's own auth credential — but the two lived in different services'
+data even before either was renamed to make that explicit
+(`DeviceCredential` in `Org.Service`'s database).
+
 ```mermaid
 erDiagram
   Tenant ||--o{ Router : owns
-  Router ||--o{ Device : "polled by"
+  Router ||--o{ AgentRouterBinding : "polled via"
+  Router ||--o{ Device : "last reported seen via (optional)"
 
   Router {
     guid Id PK
@@ -78,19 +90,49 @@ erDiagram
     bytes EncryptedSecret "ciphertext only"
     datetime UpdatedAt
   }
+  AgentRouterBinding {
+    guid Id PK
+    guid TenantId FK
+    guid DeviceCredentialId "opaque reference to Org.Service's DeviceCredential - no DB-level FK, cross-database"
+    guid RouterId FK
+    datetime CreatedAt
+  }
 ```
 
-One `Router` can be polled by more than one `Device`/agent (e.g. a laptop and
-a phone both checking the same home router, for redundancy) — that's the
+`AgentRouterBinding` is the pairing link: "this agent credential polls this
+router." It's deliberately not a column on `DeviceCredential` itself -
+`DeviceCredential` lives in a different service's database, and a
+cross-database foreign key isn't possible, so the link lives on the
+`Devices.Service` side instead and references the credential only by its
+opaque id (the JWT's `device_id` claim). One `Router` can be polled by more
+than one agent credential via `AgentRouterBinding` (e.g. a laptop and a
+phone both checking the same home router, for redundancy) — that's the
 common case this model is built for. The reverse (one agent polling several
-routers) isn't a goal for MVP, matching the "agent and router are on the same
-home network" assumption already in
+routers) isn't a goal for MVP, matching the "agent and router are on the
+same home network" assumption already in
 [`05-agents-and-ingestion.md`](05-agents-and-ingestion.md).
 
-`Router` is tenant-owned data like everything else in
-[`02-multi-tenancy.md`](02-multi-tenancy.md): it carries `TenantId` and is
-covered by the same EF Core global query filter and tenant-leak tests as
-`Device`.
+There is currently no admin-facing or agent-facing endpoint that *creates*
+an `AgentRouterBinding` row — pairing an agent to a router is a known,
+deliberate gap (rows are seeded directly in tests), not an oversight; it's
+tracked as follow-up work once the rest of `Devices.Service`'s CRUD surface
+exists.
+
+The `Router ||--o{ Device : "last reported seen via"` relationship is a
+separate, much weaker link: `Device.LastSeenViaRouterId` is a nullable,
+non-identifying column for traceability only, not part of `Device`'s
+identity (`(TenantId, MacAddress)`, per
+[`06-notifications.md`](06-notifications.md)). No endpoint in
+`Devices.Service`'s own admin API writes it — only a future ingestion
+consumer (see that document's detection flow) would.
+
+`Router` and `Device` are tenant-owned data like everything else in
+[`02-multi-tenancy.md`](02-multi-tenancy.md): both carry `TenantId` and are
+covered by an EF Core global query filter and tenant-leak tests, same as
+every other tenant-owned entity — but *within* `Devices.Service`'s own
+database, with no database-level foreign key to `Organization` (see
+ADR-0016 again: tenant validity is enforced at the API edge, not a shared
+FK).
 
 ## Encryption at rest
 
@@ -128,7 +170,7 @@ Two entries join the catalog in
   delete routers.
 
 Only `router.manage` can write a router's credential, same granularity as
-`device.delete` etc.
+`device_credential.delete` etc.
 
 ## How the agent gets the credential
 
@@ -142,8 +184,8 @@ exchanges it for a short-lived JWT. That JWT's scope grows by one claim:
 sequenceDiagram
   participant Admin as Org admin (browser)
   participant UI as Admin UI / BFF
-  participant BE as Backend (Router API)
-  participant DB as Postgres
+  participant BE as Devices.Service
+  participant DB as Devices DB
   participant A as Agent
   participant T as Device Token Endpoint
   participant R as Router
@@ -156,11 +198,17 @@ sequenceDiagram
   A->>T: Authenticate with device secret
   T-->>A: Short-lived JWT (tenant_id, device_id, scope=logs:write router:read)
   A->>BE: GET /devices/{deviceId}/router-config (JWT)
-  BE->>DB: Resolve device -> router (tenant-scoped)
+  BE->>DB: Resolve device -> router via AgentRouterBinding (tenant-scoped)
   BE->>BE: Decrypt secret
   BE-->>A: host, protocol, authMode, username, password (HTTPS response body)
   A->>R: Authenticate per authMode (Basic/Digest header or form login), poll for connected devices
 ```
+
+Every create/update/delete of a `Router` also publishes a coarse
+`router.changed` notification event (`{tenantId, routerId, action,
+changedAt}`) — no consumer exists yet; see
+[`07-caching-and-idempotency.md`](07-caching-and-idempotency.md#3-coarse-something-changed-notification-events)
+for why this is published anyway.
 
 Notes on this flow:
 
@@ -184,10 +232,11 @@ Notes on this flow:
 
 - Changing the password in the Admin UI takes effect the next time an agent
   fetches router config — no agent-side re-pairing needed.
-- Deleting a `Router`, or unlinking a `Device` from it, immediately removes
-  the backend's ability to serve that credential to that device — the same
-  immediate-effect revocation model as the device secret in ADR-0004,
-  because there's no cached copy of the plaintext anywhere to also clean up.
+- Deleting a `Router`, or removing its `AgentRouterBinding` to a given
+  agent credential, immediately removes the backend's ability to serve
+  that credential to that agent — the same immediate-effect revocation
+  model as the device secret in ADR-0004, because there's no cached copy
+  of the plaintext anywhere to also clean up.
 
 ## Alternatives considered
 
