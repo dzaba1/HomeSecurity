@@ -49,6 +49,22 @@ evaluated.
    everything may still exist for local IDE use, but pipelines target each
    service's own solution, never the repo-root one.
 
+## Verification
+
+- **Run independent verification steps in parallel, purely for speed.** When
+  several checks don't depend on each other's output (e.g. `dotnet test` and
+  `docker build` for the same service), start them concurrently instead of
+  one after another: issue them as background Bash commands in the same turn
+  (or as parallel subagents in one message, if the output is noisy enough to
+  be worth isolating), then wait for all of them before reporting.
+- Example: to verify a service, run `dotnet test` on its own `.slnx` and
+  `docker build` for its Dockerfile at the same time, not sequentially.
+  Report success only once both have passed; on failure, report the failing
+  test names or the tail of the build output.
+- Don't parallelize steps that depend on each other (e.g. a build that
+  produces artifacts another step consumes) or that would contend for the same
+  files or ports.
+
 ## C# guidance
 
 - **Central Package Management with transient pinning**: manage NuGet package
