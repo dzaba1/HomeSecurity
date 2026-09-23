@@ -14,36 +14,38 @@
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.12" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.12" />
     <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
-
     <!-- Multi-tenancy: tenant resolution + EF global query filter wiring (Apache-2.0) -->
     <PackageVersion Include="Finbuckle.MultiTenant.AspNetCore" Version="10.1.4" />
     <PackageVersion Include="Finbuckle.MultiTenant.EntityFrameworkCore" Version="10.1.4" />
-
     <!-- Auth / JWT (MIT) -->
     <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.12" />
     <PackageVersion Include="Microsoft.IdentityModel.Tokens" Version="8.23.0" />
     <PackageVersion Include="System.IdentityModel.Tokens.Jwt" Version="8.23.0" />
     <PackageVersion Include="Keycloak.Net.Core" Version="1.0.41" />
-
     <!-- Caching (MIT) -->
     <PackageVersion Include="StackExchange.Redis" Version="3.3.0" />
-
+    <!-- Messaging: RabbitMQ client, ADR-0007 (MIT) -->
+    <PackageVersion Include="EasyNetQ" Version="8.1.7" />
+    <!-- Health check abstractions/registration (IHealthCheck, AddHealthChecks)
+         for non-Web SDK class libraries - Org.Service gets these for free
+         from the Microsoft.NET.Sdk.Web shared framework, but
+         Dzaba.HomeSecurity.MessageBroker.RabbitMQ is a plain class library. -->
+    <PackageVersion Include="Microsoft.Extensions.Diagnostics.HealthChecks.Abstractions" Version="10.0.12" />
+    <PackageVersion Include="Microsoft.Extensions.Diagnostics.HealthChecks" Version="10.0.12" />
     <!-- Logging (Serilog, per CLAUDE.md) (Apache-2.0) -->
+    <PackageVersion Include="Serilog" Version="4.4.0" />
     <PackageVersion Include="Serilog.AspNetCore" Version="10.0.0" />
     <PackageVersion Include="Serilog.Sinks.Console" Version="6.1.1" />
     <PackageVersion Include="Serilog.Enrichers.Thread" Version="4.0.0" />
-
     <!-- Observability: OpenTelemetry, ADR-0009 (Apache-2.0) -->
     <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.19.1" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.19.0" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.19.0" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.19.0" />
     <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.19.1" />
-
     <!-- Observability: health checks, ADR-0009 (Apache-2.0) -->
     <PackageVersion Include="AspNetCore.HealthChecks.NpgSql" Version="9.0.0" />
     <PackageVersion Include="AspNetCore.HealthChecks.Redis" Version="9.0.0" />
-
     <!-- API versioning, ADR-0012 (Apache-2.0) -->
     <!-- Asp.Versioning.Http is newer than Asp.Versioning.Mvc's own release train
          (10.2.3 vs 10.2.1) - the packages aren't released in lockstep, and
@@ -53,13 +55,10 @@
     <PackageVersion Include="Asp.Versioning.Mvc" Version="10.2.1" />
     <PackageVersion Include="Asp.Versioning.Mvc.ApiExplorer" Version="10.2.1" />
     <PackageVersion Include="Asp.Versioning.Abstractions" Version="10.2.1" />
-
     <!-- Contract codegen (MIT) -->
     <PackageVersion Include="NSwag.MSBuild" Version="14.7.1" />
-
     <!-- Ready-made utilities (CLAUDE.md: prefer Dzaba.Utils over hand-rolled equivalents) (MIT) -->
     <PackageVersion Include="Dzaba.Utils.AspNet" Version="1.1.0" />
-
     <!--
       Testing.
       FluentAssertions is deliberately pinned at 7.2.2, the last version
@@ -78,7 +77,6 @@
     <PackageVersion Include="Dzaba.TestUtils" Version="2.0.1" />
     <PackageVersion Include="Dzaba.TestUtils.Integration.AspNet" Version="1.1.0" />
     <PackageVersion Include="coverlet.collector" Version="10.0.1" />
-
     <!-- API docs (MIT) -->
     <PackageVersion Include="Swashbuckle.AspNetCore" Version="10.2.3" />
   </ItemGroup>

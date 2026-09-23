@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "LogEntry",
+  "type": "object",
+  "required": ["eventId", "level", "message", "timestamp"],
+  "properties": {
+    "eventId": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Unique event identifier, used downstream as an idempotency key."
+    },
+    "level": {
+      "type": "string",
+      "enum": ["debug", "info", "warning", "error", "critical"]
+    },
+    "message": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4096
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the router reported this log line, as recorded by the agent."
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,0 +1,38 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- network_device.json/log_entry.json/device_logs.json are "library"
+         schemas: shared between the HTTP contract (log_event.json) and the
+         message-bus contract (log_batch_message.json) via $ref, so each is
+         generated exactly once here and the other two exclude it (see
+         build/JsonSchema.targets' ExcludedTypeNames note) rather than each
+         regenerating their own copy, which would collide as duplicate
+         types in this shared namespace. Class names carry the filename's
+         snake_case through (Network_device, not NetworkDevice) because
+         that's what a $ref'd (non-root) schema is named by this toolchain
+         regardless of its own "title" - a deliberate tradeoff for keeping
+         every schema file in this directory under one naming convention,
+         not a naming bug. -->
+    <JsonSchema Include="..\..\..\contracts\json\network_device.json" Link="network_device.json" OutputFile="Network_device.cs" ClassName="Network_device" />
+    <JsonSchema Include="..\..\..\contracts\json\log_entry.json" Link="log_entry.json" OutputFile="Log_entry.cs" ClassName="Log_entry" />
+    <JsonSchema Include="..\..\..\contracts\json\device_logs.json" Link="device_logs.json" OutputFile="Device_logs.cs" ClassName="Device_logs" ExcludedTypeNames="Network_device,Log_entry,Log_entryLevel" />
+    <JsonSchema Include="..\..\..\contracts\json\log_event.json" Link="log_event.json" OutputFile="IngestLogsRequest.cs" ClassName="IngestLogsRequest" ExcludedTypeNames="Network_device,Log_entry,Log_entryLevel,Device_logs" />
+    <JsonSchema Include="..\..\..\contracts\json\log_batch_message.json" Link="log_batch_message.json" OutputFile="LogBatchMessage.cs" ClassName="LogBatchMessage" ExcludedTypeNames="Network_device,Log_entry,Log_entryLevel,Device_logs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NSwag.MSBuild">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <Import Project="..\..\..\..\build\JsonSchema.targets" />
+
+</Project>

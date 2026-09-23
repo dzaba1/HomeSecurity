@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "NetworkDevice",
+  "description": "A device observed on the tenant's LAN - distinct from the agent credential ('Device' in the Data project) that authenticates the upload itself.",
+  "type": "object",
+  "required": ["macAddress"],
+  "properties": {
+    "macAddress": {
+      "type": "string",
+      "pattern": "^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$"
+    },
+    "ipAddress": {
+      "type": "string",
+      "maxLength": 45
+    },
+    "hostname": {
+      "type": "string",
+      "maxLength": 255
+    }
+  },
+  "additionalProperties": false
+}

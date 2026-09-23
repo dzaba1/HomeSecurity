@@ -32,11 +32,14 @@ Reasons over Kafka, for this project specifically:
 - Its consumer/ack/dead-letter-queue model maps directly onto "process this
   message once, retry on failure, park it if it keeps failing" — exactly
   what's needed here, without needing log-replay semantics.
-- Already has a dedicated project in the codebase
-  (`Dzaba.HomeSecurity.MessageBroker.RabbitMQ`) behind an `IEventPublisher`
-  abstraction, so the domain/application layers never reference RabbitMQ
-  directly — swapping brokers later, if ever needed, would only touch that
-  one project.
+- Has a dedicated, broker-agnostic `IMessageBus` abstraction
+  (`Dzaba.HomeSecurity.MessageBroker.Contracts`) with the EasyNetQ-backed
+  implementation in its own separate project
+  (`Dzaba.HomeSecurity.MessageBroker.RabbitMQ`), so no service's
+  application/controller code — or even its `PackageReference` list — ever
+  touches RabbitMQ/EasyNetQ directly; swapping brokers later would only
+  touch that one implementation project, and both projects are reusable
+  as-is by future ingestion services.
 
 ## Consequences
 
@@ -51,3 +54,11 @@ Reasons over Kafka, for this project specifically:
 - One broker for the whole system keeps operational surface small — no
   second message-bus technology to run, monitor, or explain in the
   portfolio unless it's actually earning its place.
+- Message payloads (e.g. `LogBatchMessage`) are JSON-Schema-first, same as
+  HTTP contracts — see
+  [`08-api-contracts-and-codegen.md`](../architecture/08-api-contracts-and-codegen.md).
+  A producer and its consumer(s) each generate their own binding from the
+  same schema file rather than sharing a compiled package, which keeps a
+  future non-.NET consumer (e.g. a Go Processing Worker) free to generate
+  its own client from that same schema without needing anything from this
+  codebase's C# projects.

@@ -165,6 +165,32 @@ services:
     networks:
       - backend
 
+  logs-ingestion-service:
+    build:
+      context: ..
+      dockerfile: src/dotnet/LogsIngestion/Dzaba.HomeSecurity.LogsIngestion.Service/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_HTTP_PORTS: "8080"
+      # No TLS termination in front of this service in the local stack -
+      # see the comment on Security:UseHttpsRedirection in Program.cs.
+      Security__UseHttpsRedirection: "false"
+      ConnectionStrings__RabbitMQ: host=rabbitmq;username=${RABBITMQ_DEFAULT_USER};password=${RABBITMQ_DEFAULT_PASS}
+      Authentication__DeviceTokens__SigningKey: ${LOGS_DEVICE_TOKENS_SIGNING_KEY}
+    ports:
+      - "8083:8080"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - backend
+
   adminer:
     image: adminer:6.0.1
     ports:

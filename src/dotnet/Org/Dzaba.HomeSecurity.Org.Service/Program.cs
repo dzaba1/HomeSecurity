@@ -1,9 +1,9 @@
 using Dzaba.HomeSecurity.Data;
 using Dzaba.HomeSecurity.Domain;
+using Dzaba.HomeSecurity.Observability;
 using Dzaba.HomeSecurity.Org.Service.Authorization;
 using Dzaba.HomeSecurity.Org.Service.Data;
 using Dzaba.HomeSecurity.Org.Service.Hal;
-using Dzaba.HomeSecurity.Org.Service.Logging;
 using Dzaba.HomeSecurity.Org.Service.Services;
 using Dzaba.HomeSecurity.Org.Service.Tenancy;
 using Dzaba.Utils.AspNet;
@@ -14,25 +14,13 @@ using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Serilog;
-using Serilog.Formatting.Json;
 using StackExchange.Redis;
 
 const string ServiceName = "Dzaba.HomeSecurity.Org.Service";
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Host.UseSerilog((context, services, configuration) => configuration
-    .Enrich.FromLogContext()
-    .Enrich.WithThreadId()
-    .Enrich.With<ActivityEnricher>()
-    .Enrich.WithProperty("service_name", ServiceName)
-    .Enrich.WithProperty("environment", context.HostingEnvironment.EnvironmentName)
-    // Console only, structured JSON - shipping (e.g. to Loki) is a
-    // cluster-infra concern, not something this service configures for
-    // itself. Never destructure request/command objects here - device
-    // secrets/JWTs/Keycloak credentials must never be logged, per
-    // docs/architecture/09-observability.md.
-    .WriteTo.Console(new JsonFormatter()));
+builder.Host.UseDzabaHomeSecuritySerilog(ServiceName);
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddControllers();

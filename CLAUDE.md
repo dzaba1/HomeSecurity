@@ -34,6 +34,14 @@ and client codegen. `docs/decisions/` holds one ADR per file, numbered in
 decision order — check here before revisiting a choice that's already been
 evaluated.
 
+## General coding principles
+
+- **Register DI services as transient by default**, regardless of language/DI
+  container. Reach for a scoped or singleton lifetime only when a service
+  actually holds state that must be shared across resolutions within a
+  scope/across the app (e.g. a connection multiplexer, a per-request tenant
+  context) — not as a default choice.
+
 ## Architecture principles that apply to new code
 
 1. **Prefer a ready-made container/library over custom code**, especially for

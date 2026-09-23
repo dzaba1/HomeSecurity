@@ -18,6 +18,7 @@
     <ProjectReference Include="..\Dzaba.HomeSecurity.Org.Contracts\Dzaba.HomeSecurity.Org.Contracts.csproj" />
     <ProjectReference Include="..\..\Common\Dzaba.HomeSecurity.Domain\Dzaba.HomeSecurity.Domain.csproj" />
     <ProjectReference Include="..\..\Data\Dzaba.HomeSecurity.Data\Dzaba.HomeSecurity.Data.csproj" />
+    <ProjectReference Include="..\..\Common\Dzaba.HomeSecurity.Observability\Dzaba.HomeSecurity.Observability.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -38,8 +39,6 @@
     <PackageReference Include="OpenTelemetry.Instrumentation.Http" />
     <PackageReference Include="OpenTelemetry.Instrumentation.Runtime" />
     <PackageReference Include="Serilog.AspNetCore" />
-    <PackageReference Include="Serilog.Enrichers.Thread" />
-    <PackageReference Include="Serilog.Sinks.Console" />
     <PackageReference Include="StackExchange.Redis" />
     <PackageReference Include="Swashbuckle.AspNetCore" />
   </ItemGroup>

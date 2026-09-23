@@ -1,0 +1,8 @@
+<Solution>
+  <Project Path="../Common/Dzaba.HomeSecurity.MessageBroker.Contracts/Dzaba.HomeSecurity.MessageBroker.Contracts.csproj" />
+  <Project Path="../Common/Dzaba.HomeSecurity.MessageBroker.RabbitMQ/Dzaba.HomeSecurity.MessageBroker.RabbitMQ.csproj" />
+  <Project Path="Dzaba.HomeSecurity.LogsIngestion.Contracts.Tests/Dzaba.HomeSecurity.LogsIngestion.Contracts.Tests.csproj" />
+  <Project Path="Dzaba.HomeSecurity.LogsIngestion.Contracts/Dzaba.HomeSecurity.LogsIngestion.Contracts.csproj" />
+  <Project Path="Dzaba.HomeSecurity.LogsIngestion.Service.Tests/Dzaba.HomeSecurity.LogsIngestion.Service.Tests.csproj" />
+  <Project Path="Dzaba.HomeSecurity.LogsIngestion.Service/Dzaba.HomeSecurity.LogsIngestion.Service.csproj" />
+</Solution>
