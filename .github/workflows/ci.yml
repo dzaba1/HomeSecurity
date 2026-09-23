@@ -1,0 +1,23 @@
+name: CI
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  org-service:
+    name: Org service
+    uses: ./.github/workflows/dotnet-service-ci.yml
+    with:
+      service-name: org-service
+      solution-path: src/dotnet/Org/Dzaba.HomeSecurity.Org.slnx
+      dockerfile-path: src/dotnet/Org/Dzaba.HomeSecurity.Org.Service/Dockerfile
+
+  logs-ingestion-service:
+    name: Logs Ingestion service
+    uses: ./.github/workflows/dotnet-service-ci.yml
+    with:
+      service-name: logs-ingestion-service
+      solution-path: src/dotnet/LogsIngestion/Dzaba.HomeSecurity.LogsIngestion.slnx
+      dockerfile-path: src/dotnet/LogsIngestion/Dzaba.HomeSecurity.LogsIngestion.Service/Dockerfile
