@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AccessChangedMessage",
+  "description": "Notification only, not event-carried state transfer: something about this (tenant, user) pair's access changed, a consumer should re-check via the access-context endpoint or the shared permission cache - never reconstruct state from this event alone. No consumer exists yet - published as a low-cost hedge for future integrations.",
+  "type": "object",
+  "required": ["tenantId", "userId", "changedAt"],
+  "properties": {
+    "tenantId": { "type": "string", "format": "uuid" },
+    "userId": { "type": "string", "minLength": 1, "description": "Keycloak subject (sub claim) whose access changed" },
+    "changedAt": { "type": "string", "format": "date-time" }
+  },
+  "additionalProperties": false
+}

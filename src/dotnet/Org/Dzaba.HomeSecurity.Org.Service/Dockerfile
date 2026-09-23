@@ -30,6 +30,8 @@ COPY ["src/dotnet/Common/Dzaba.HomeSecurity.WebApi/Dzaba.HomeSecurity.WebApi.csp
 COPY ["src/dotnet/Common/Dzaba.HomeSecurity.Authorization/Dzaba.HomeSecurity.Authorization.csproj", "src/dotnet/Common/Dzaba.HomeSecurity.Authorization/"]
 COPY ["src/dotnet/Common/Dzaba.HomeSecurity.Caching.Contracts/Dzaba.HomeSecurity.Caching.Contracts.csproj", "src/dotnet/Common/Dzaba.HomeSecurity.Caching.Contracts/"]
 COPY ["src/dotnet/Common/Dzaba.HomeSecurity.Caching.Redis/Dzaba.HomeSecurity.Caching.Redis.csproj", "src/dotnet/Common/Dzaba.HomeSecurity.Caching.Redis/"]
+COPY ["src/dotnet/Common/Dzaba.HomeSecurity.MessageBroker.Contracts/Dzaba.HomeSecurity.MessageBroker.Contracts.csproj", "src/dotnet/Common/Dzaba.HomeSecurity.MessageBroker.Contracts/"]
+COPY ["src/dotnet/Common/Dzaba.HomeSecurity.MessageBroker.RabbitMQ/Dzaba.HomeSecurity.MessageBroker.RabbitMQ.csproj", "src/dotnet/Common/Dzaba.HomeSecurity.MessageBroker.RabbitMQ/"]
 COPY ["src/dotnet/Data/Dzaba.HomeSecurity.Data/Dzaba.HomeSecurity.Data.csproj", "src/dotnet/Data/Dzaba.HomeSecurity.Data/"]
 COPY ["src/dotnet/Org/Dzaba.HomeSecurity.Org.Contracts/Dzaba.HomeSecurity.Org.Contracts.csproj", "src/dotnet/Org/Dzaba.HomeSecurity.Org.Contracts/"]
 COPY ["src/dotnet/Org/Dzaba.HomeSecurity.Org.Service/Dzaba.HomeSecurity.Org.Service.csproj", "src/dotnet/Org/Dzaba.HomeSecurity.Org.Service/"]

@@ -45,6 +45,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Dzaba.HomeSecurity.Org.Service\Dzaba.HomeSecurity.Org.Service.csproj" />
     <ProjectReference Include="..\Dzaba.HomeSecurity.Org.Contracts\Dzaba.HomeSecurity.Org.Contracts.csproj" />
+    <ProjectReference Include="..\..\Common\Dzaba.HomeSecurity.TestUtils\Dzaba.HomeSecurity.TestUtils.csproj" />
   </ItemGroup>
 
 </Project>

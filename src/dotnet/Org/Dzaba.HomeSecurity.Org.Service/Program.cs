@@ -2,6 +2,7 @@ using Dzaba.HomeSecurity.Authorization;
 using Dzaba.HomeSecurity.Caching.Redis;
 using Dzaba.HomeSecurity.Data;
 using Dzaba.HomeSecurity.Domain;
+using Dzaba.HomeSecurity.MessageBroker.RabbitMQ;
 using Dzaba.HomeSecurity.Observability;
 using Dzaba.HomeSecurity.Org.Service.Data;
 using Dzaba.HomeSecurity.Org.Service.Services;
@@ -77,6 +78,13 @@ builder.Services.AddDzabaHomeSecurityRedisCache(
     sp => sp.GetRequiredService<IConfiguration>().GetConnectionString("Redis")
         ?? throw new InvalidOperationException("Missing ConnectionStrings:Redis"),
     "degraded");
+
+// Publishes access.changed (MembershipsService/UserRoleAssignmentsService) -
+// a notification-only event with no consumer yet, published as a low-cost
+// hedge for future integrations. See access_changed_message.json.
+var rabbitMqConnectionString = builder.Configuration.GetConnectionString("RabbitMQ")
+    ?? throw new InvalidOperationException("Missing ConnectionStrings:RabbitMQ");
+builder.Services.AddDzabaHomeSecurityRabbitMqMessageBus(rabbitMqConnectionString);
 
 builder.Services.AddTransient<IOrganizationsService, OrganizationsService>();
 builder.Services.AddTransient<IMembershipsService, MembershipsService>();

@@ -3,7 +3,10 @@
   <Project Path="../Common/Dzaba.HomeSecurity.Caching.Contracts/Dzaba.HomeSecurity.Caching.Contracts.csproj" />
   <Project Path="../Common/Dzaba.HomeSecurity.Caching.Redis/Dzaba.HomeSecurity.Caching.Redis.csproj" />
   <Project Path="../Common/Dzaba.HomeSecurity.Domain/Dzaba.HomeSecurity.Domain.csproj" />
+  <Project Path="../Common/Dzaba.HomeSecurity.MessageBroker.Contracts/Dzaba.HomeSecurity.MessageBroker.Contracts.csproj" />
+  <Project Path="../Common/Dzaba.HomeSecurity.MessageBroker.RabbitMQ/Dzaba.HomeSecurity.MessageBroker.RabbitMQ.csproj" />
   <Project Path="../Common/Dzaba.HomeSecurity.Observability/Dzaba.HomeSecurity.Observability.csproj" />
+  <Project Path="../Common/Dzaba.HomeSecurity.TestUtils/Dzaba.HomeSecurity.TestUtils.csproj" />
   <Project Path="../Common/Dzaba.HomeSecurity.WebApi/Dzaba.HomeSecurity.WebApi.csproj" />
   <Project Path="../Data/Dzaba.HomeSecurity.Data/Dzaba.HomeSecurity.Data.csproj" />
   <Project Path="Dzaba.HomeSecurity.Org.Contracts.Tests/Dzaba.HomeSecurity.Org.Contracts.Tests.csproj" />

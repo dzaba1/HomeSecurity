@@ -28,6 +28,7 @@
     <ProjectReference Include="..\Dzaba.HomeSecurity.LogsIngestion.Service\Dzaba.HomeSecurity.LogsIngestion.Service.csproj" />
     <ProjectReference Include="..\Dzaba.HomeSecurity.LogsIngestion.Contracts\Dzaba.HomeSecurity.LogsIngestion.Contracts.csproj" />
     <ProjectReference Include="..\..\Common\Dzaba.HomeSecurity.MessageBroker.Contracts\Dzaba.HomeSecurity.MessageBroker.Contracts.csproj" />
+    <ProjectReference Include="..\..\Common\Dzaba.HomeSecurity.TestUtils\Dzaba.HomeSecurity.TestUtils.csproj" />
   </ItemGroup>
 
 </Project>

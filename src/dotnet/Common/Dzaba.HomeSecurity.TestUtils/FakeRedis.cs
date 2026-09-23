@@ -2,18 +2,18 @@ using System.Collections.Concurrent;
 using Moq;
 using StackExchange.Redis;
 
-namespace Dzaba.HomeSecurity.Org.Service.Tests;
+namespace Dzaba.HomeSecurity.TestUtils;
 
 /// <summary>
 /// In-memory Moq-backed fake for the handful of IDatabase members
-/// PermissionEvaluator (set add/contains, key exists/expire/delete) and its
-/// tests (key TTL) call - keeps controller tests isolated from a real Redis
-/// instance. Expiry is recorded but never counted down: tests use a fresh
-/// tenant/user GUID per run, so staleness can't happen within a single test,
-/// and KeyTimeToLiveAsync just echoes back whatever KeyExpireAsync was last
+/// RedisCacheClient (and its callers' tests, e.g. key TTL) call - keeps
+/// controller tests isolated from a real Redis instance. Expiry is
+/// recorded but never counted down: tests use a fresh tenant/user GUID per
+/// run, so staleness can't happen within a single test, and
+/// KeyTimeToLiveAsync just echoes back whatever KeyExpireAsync was last
 /// given for that key.
 /// </summary>
-internal static class FakeRedis
+public static class FakeRedis
 {
     public static IConnectionMultiplexer CreateConnectionMultiplexer()
     {
@@ -47,9 +47,9 @@ internal static class FakeRedis
             .ReturnsAsync((RedisKey key, RedisValue value, CommandFlags flags) =>
                 sets.TryGetValue(key, out var set) && set.Contains(value));
 
-        // PermissionEvaluator's 2-arg call site (key, expiry) resolves to
-        // this 4-param overload - TimeSpan/ExpireWhen/CommandFlags all fill
-        // in via their default values - not the (key, expiry, flags) one.
+        // 2-arg call sites (key, expiry) resolve to this 4-param overload -
+        // TimeSpan/ExpireWhen/CommandFlags all fill in via their default
+        // values - not the (key, expiry, flags) one.
         db.Setup(d => d.KeyExpireAsync(It.IsAny<RedisKey>(), It.IsAny<TimeSpan?>(), It.IsAny<ExpireWhen>(), It.IsAny<CommandFlags>()))
             .ReturnsAsync((RedisKey key, TimeSpan? expiry, ExpireWhen when, CommandFlags flags) =>
             {
@@ -78,10 +78,10 @@ internal static class FakeRedis
 
     /// <summary>
     /// Simulates a fully unreachable Redis: every IDatabase member
-    /// PermissionEvaluator calls throws the same RedisConnectionException a
+    /// RedisCacheClient calls throws the same RedisConnectionException a
     /// real disconnected multiplexer would raise per-call once
     /// AbortOnConnectFail=false lets Connect() itself succeed - see
-    /// PermissionEvaluator's fail-open catch blocks.
+    /// RedisCacheClient's translation into CacheUnavailableException.
     /// </summary>
     public static IConnectionMultiplexer CreateUnavailableConnectionMultiplexer()
     {

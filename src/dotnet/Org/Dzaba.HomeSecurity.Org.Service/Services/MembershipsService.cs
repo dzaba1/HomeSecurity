@@ -4,7 +4,10 @@ using Dzaba.AspNetUtils;
 using Dzaba.HomeSecurity.Authorization;
 using Dzaba.HomeSecurity.Data;
 using Dzaba.HomeSecurity.Domain;
+using Dzaba.HomeSecurity.MessageBroker.Contracts;
+using Dzaba.HomeSecurity.Org.Contracts;
 using Dzaba.HomeSecurity.Org.Service.Mapping;
+using Dzaba.HomeSecurity.Org.Service.Messages;
 using Microsoft.EntityFrameworkCore;
 using MembershipEntity = Dzaba.HomeSecurity.Data.Entities.Membership;
 using Membership = Dzaba.HomeSecurity.Org.Contracts.Membership;
@@ -17,19 +20,22 @@ internal sealed class MembershipsService : IMembershipsService
     private readonly Func<AppDbContext> dbFactory;
     private readonly ITenantContext tenantContext;
     private readonly IPermissionEvaluator permissionEvaluator;
+    private readonly IMessageBus messageBus;
     private readonly ILogger<MembershipsService> logger;
 
     public MembershipsService(Func<AppDbContext> dbFactory, ITenantContext tenantContext,
-        IPermissionEvaluator permissionEvaluator, ILogger<MembershipsService> logger)
+        IPermissionEvaluator permissionEvaluator, IMessageBus messageBus, ILogger<MembershipsService> logger)
     {
         ArgumentNullException.ThrowIfNull(dbFactory);
         ArgumentNullException.ThrowIfNull(tenantContext);
         ArgumentNullException.ThrowIfNull(permissionEvaluator);
+        ArgumentNullException.ThrowIfNull(messageBus);
         ArgumentNullException.ThrowIfNull(logger);
 
         this.dbFactory = dbFactory;
         this.tenantContext = tenantContext;
         this.permissionEvaluator = permissionEvaluator;
+        this.messageBus = messageBus;
         this.logger = logger;
     }
 
@@ -72,6 +78,8 @@ internal sealed class MembershipsService : IMembershipsService
 
         logger.LogInformation("User {UserId} added to organization {OrganizationId}", request.UserId, tenantContext.TenantId);
 
+        await PublishAccessChangedAsync(tenantContext.TenantId, request.UserId, cancellationToken).ConfigureAwait(false);
+
         return entity.ToContract();
     }
 
@@ -104,6 +112,16 @@ internal sealed class MembershipsService : IMembershipsService
 
         logger.LogInformation("User {UserId} removed from organization {OrganizationId}", userId, tenantId);
 
+        await PublishAccessChangedAsync(tenantId, userId, cancellationToken).ConfigureAwait(false);
+
         return true;
     }
+
+    // Notification only, not event-carried state transfer - see
+    // access_changed_message.json's own description. No consumer exists
+    // yet; published as a low-cost hedge for future integrations.
+    private Task PublishAccessChangedAsync(Guid tenantId, string userId, CancellationToken cancellationToken) =>
+        messageBus.PublishAsync(RoutingKeys.AccessChanged,
+            new AccessChangedMessage { TenantId = tenantId, UserId = userId, ChangedAt = DateTimeOffset.UtcNow },
+            cancellationToken);
 }

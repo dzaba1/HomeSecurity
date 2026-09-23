@@ -3,6 +3,7 @@ using System.Text;
 using Dzaba.AspNetUtils;
 using Dzaba.HomeSecurity.LogsIngestion.Service.Authorization;
 using Dzaba.HomeSecurity.MessageBroker.Contracts;
+using Dzaba.HomeSecurity.TestUtils;
 using Dzaba.TestUtils.Integration.AspNet;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.DependencyInjection;

@@ -5,7 +5,9 @@ using System.Text.Json;
 using Dzaba.AspNetUtils;
 using Dzaba.HomeSecurity.Data;
 using Dzaba.HomeSecurity.Domain;
+using Dzaba.HomeSecurity.MessageBroker.Contracts;
 using Dzaba.HomeSecurity.Org.Service.Data;
+using Dzaba.HomeSecurity.TestUtils;
 using Dzaba.TestUtils.Integration.AspNet;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.DataProtection;
@@ -34,7 +36,10 @@ namespace Dzaba.HomeSecurity.Org.Service.Tests;
 /// default disk-backed one - every test otherwise reads/writes the same
 /// per-user key-ring file on disk, which is both needless I/O per test and,
 /// once tests run in parallel (see the assembly-level [Parallelizable]),
-/// a genuine race on that shared file.
+/// a genuine race on that shared file. Also swaps the real RabbitMQ-backed
+/// IMessageBus for FakeMessageBus - MembershipsService/UserRoleAssignmentsService
+/// publish access.changed on every mutation now, so every such test would
+/// otherwise need a real broker.
 /// </summary>
 public abstract class OrgServiceTestFixture : ControllerTestFixture<Program>
 {
@@ -45,6 +50,8 @@ public abstract class OrgServiceTestFixture : ControllerTestFixture<Program>
     // of DI - see BuildDbContextOptions) share the same InMemory store,
     // which EF Core's InMemory provider keys purely by this name.
     private string databaseName = null!;
+
+    protected FakeMessageBus MessageBus { get; private set; } = null!;
 
     protected override void OnConfigureConfiguration(IConfigurationBuilder builder)
     {
@@ -66,6 +73,10 @@ public abstract class OrgServiceTestFixture : ControllerTestFixture<Program>
 
         services.RemoveAll<IConnectionMultiplexer>();
         services.AddSingleton<IConnectionMultiplexer>(_ => FakeRedis.CreateConnectionMultiplexer());
+
+        MessageBus = new FakeMessageBus();
+        services.RemoveAll<IMessageBus>();
+        services.AddSingleton<IMessageBus>(MessageBus);
 
         services.AddDataProtection().UseEphemeralDataProtectionProvider();
 
