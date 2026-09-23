@@ -60,6 +60,12 @@
     <PackageVersion Include="NSwag.MSBuild" Version="14.7.1" />
     <!-- Ready-made utilities (CLAUDE.md: prefer Dzaba.Utils over hand-rolled equivalents) (MIT) -->
     <PackageVersion Include="Dzaba.Utils.AspNet" Version="1.1.0" />
+    <!-- Transitive-only: Dzaba.Utils.AspNet floors on Newtonsoft.Json 9.0.1,
+         which NuGet's audit flags as a known high-severity vulnerability
+         (GHSA-5crp-9r3c-p9vr). Other services only pass because something
+         else in their graph (e.g. EF Core Design's build host) incidentally
+         resolves it higher; pin explicitly rather than rely on that. -->
+    <PackageVersion Include="Newtonsoft.Json" Version="13.0.4" />
     <!--
       Testing.
       FluentAssertions is deliberately pinned at 7.2.2, the last version
