@@ -2,7 +2,7 @@ using Dzaba.HomeSecurity.Domain;
 
 namespace Dzaba.HomeSecurity.Data.Entities;
 
-public enum DeviceStatus
+public enum DeviceCredentialStatus
 {
     Active,
     Revoked
@@ -11,11 +11,10 @@ public enum DeviceStatus
 /// <summary>
 /// An agent-app credential (device identity), owned by DeviceAuth. Not to be
 /// confused with a network device/MAC address seen in router logs, which is
-/// a separate, future Ingestion-domain concept - see the naming note in
-/// docs/decisions/0006-defer-auth-platform-extraction.md's implementation
-/// plan.
+/// Devices.Service's own Device entity, in its own database - see
+/// docs/decisions/0016-devices-service-owns-its-own-database.md.
 /// </summary>
-public sealed class Device : ITenantOwned
+public sealed class DeviceCredential : ITenantOwned
 {
     public Guid Id { get; set; }
 
@@ -27,7 +26,7 @@ public sealed class Device : ITenantOwned
 
     public DateTimeOffset SecretCreatedAt { get; set; }
 
-    public DeviceStatus Status { get; set; }
+    public DeviceCredentialStatus Status { get; set; }
 
     public DateTimeOffset? RevokedAt { get; set; }
 

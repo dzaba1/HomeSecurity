@@ -27,11 +27,11 @@ public class AppDbContextTests : DataTestFixture
         created.Should().BeFalse();
         (await context.Organizations.ToListAsync()).Should().BeEmpty();
         (await context.Memberships.ToListAsync()).Should().BeEmpty();
-        (await context.Permissions.ToListAsync()).Should().HaveCount(4);
+        (await context.Permissions.ToListAsync()).Should().HaveCount(8);
         (await context.Roles.ToListAsync()).Should().HaveCount(4);
-        (await context.RolePermissions.ToListAsync()).Should().HaveCount(12);
+        (await context.RolePermissions.ToListAsync()).Should().HaveCount(22);
         (await context.UserRoles.ToListAsync()).Should().BeEmpty();
-        (await context.Devices.ToListAsync()).Should().BeEmpty();
+        (await context.DeviceCredentials.ToListAsync()).Should().BeEmpty();
     }
 
     [Test]
@@ -45,17 +45,17 @@ public class AppDbContextTests : DataTestFixture
 
             var role = new Role { Id = Guid.NewGuid(), TenantId = tenantId, Name = "Custom" };
             context.Roles.Add(role);
-            context.RolePermissions.Add(new RolePermission { RoleId = role.Id, PermissionKey = PermissionKeys.DeviceView });
+            context.RolePermissions.Add(new RolePermission { RoleId = role.Id, PermissionKey = PermissionKeys.DeviceCredentialView });
             context.UserRoles.Add(new UserRole { UserId = "user-1", TenantId = tenantId, RoleId = role.Id });
             context.Memberships.Add(new Membership { OrganizationId = tenantId, UserId = "user-1" });
-            context.Devices.Add(new Device
+            context.DeviceCredentials.Add(new DeviceCredential
             {
                 Id = Guid.NewGuid(),
                 TenantId = tenantId,
                 Name = "Laptop",
                 SecretHash = "hash",
                 SecretCreatedAt = DateTimeOffset.UtcNow,
-                Status = DeviceStatus.Active
+                Status = DeviceCredentialStatus.Active
             });
 
             await context.SaveChangesAsync();
@@ -64,12 +64,12 @@ public class AppDbContextTests : DataTestFixture
         using (var context = CreateContext(tenantId))
         {
             (await context.Organizations.FindAsync(tenantId)).Should().NotBeNull();
-            (await context.Permissions.FindAsync("device.view")).Should().NotBeNull();
+            (await context.Permissions.FindAsync("device_credential.view")).Should().NotBeNull();
             (await context.Roles.CountAsync()).Should().Be(5); // 4 system + 1 custom
-            (await context.RolePermissions.CountAsync()).Should().Be(13); // 12 system + 1 custom
+            (await context.RolePermissions.CountAsync()).Should().Be(23); // 22 system + 1 custom
             (await context.UserRoles.CountAsync()).Should().Be(1);
             (await context.Memberships.CountAsync()).Should().Be(1);
-            (await context.Devices.CountAsync()).Should().Be(1);
+            (await context.DeviceCredentials.CountAsync()).Should().Be(1);
         }
     }
 
@@ -108,18 +108,18 @@ public class AppDbContextTests : DataTestFixture
         using (var context = CreateContext(tenantA))
         {
             context.Roles.Add(new Role { Id = roleId, TenantId = tenantA, Name = "Custom-A" });
-            context.RolePermissions.Add(new RolePermission { RoleId = roleId, PermissionKey = PermissionKeys.DeviceDelete });
+            context.RolePermissions.Add(new RolePermission { RoleId = roleId, PermissionKey = PermissionKeys.DeviceCredentialDelete });
             await context.SaveChangesAsync();
         }
 
         using (var context = CreateContext(tenantA))
         {
-            (await context.RolePermissions.CountAsync()).Should().Be(13); // 12 system + 1 custom
+            (await context.RolePermissions.CountAsync()).Should().Be(23); // 22 system + 1 custom
         }
 
         using (var context = CreateContext(tenantB))
         {
-            (await context.RolePermissions.CountAsync()).Should().Be(12); // system only
+            (await context.RolePermissions.CountAsync()).Should().Be(22); // system only
         }
     }
 
@@ -166,33 +166,33 @@ public class AppDbContextTests : DataTestFixture
     }
 
     [Test]
-    public async Task Devices_WhenQueriedFromAnotherTenant_ThenTheyAreHidden()
+    public async Task DeviceCredentials_WhenQueriedFromAnotherTenant_ThenTheyAreHidden()
     {
         var tenantA = Guid.NewGuid();
         var tenantB = Guid.NewGuid();
 
         using (var context = CreateContext(tenantA))
         {
-            context.Devices.Add(new Device
+            context.DeviceCredentials.Add(new DeviceCredential
             {
                 Id = Guid.NewGuid(),
                 TenantId = tenantA,
                 Name = "Phone",
                 SecretHash = "hash",
                 SecretCreatedAt = DateTimeOffset.UtcNow,
-                Status = DeviceStatus.Active
+                Status = DeviceCredentialStatus.Active
             });
             await context.SaveChangesAsync();
         }
 
         using (var context = CreateContext(tenantA))
         {
-            (await context.Devices.CountAsync()).Should().Be(1);
+            (await context.DeviceCredentials.CountAsync()).Should().Be(1);
         }
 
         using (var context = CreateContext(tenantB))
         {
-            (await context.Devices.CountAsync()).Should().Be(0);
+            (await context.DeviceCredentials.CountAsync()).Should().Be(0);
         }
     }
 
@@ -227,10 +227,14 @@ public class AppDbContextTests : DataTestFixture
         var keys = await context.Permissions.Select(p => p.Key).ToListAsync();
 
         keys.Should().BeEquivalentTo(
-            PermissionKeys.DeviceView,
-            PermissionKeys.DeviceDelete,
+            PermissionKeys.DeviceCredentialView,
+            PermissionKeys.DeviceCredentialDelete,
             PermissionKeys.LogsView,
-            PermissionKeys.OrgManageMembers);
+            PermissionKeys.OrgManageMembers,
+            PermissionKeys.RouterView,
+            PermissionKeys.RouterManage,
+            PermissionKeys.DeviceView,
+            PermissionKeys.DeviceManage);
     }
 
     [Test]
@@ -248,7 +252,7 @@ public class AppDbContextTests : DataTestFixture
     }
 
     [Test]
-    public async Task RolePermissions_WhenQueried_ThenOwnerGrantsAllFourPermissions()
+    public async Task RolePermissions_WhenQueried_ThenOwnerGrantsAllEightPermissions()
     {
         using var context = CreateContext(Guid.NewGuid());
 
@@ -258,14 +262,18 @@ public class AppDbContextTests : DataTestFixture
             .ToListAsync();
 
         keys.Should().BeEquivalentTo(
-            PermissionKeys.DeviceView,
-            PermissionKeys.DeviceDelete,
+            PermissionKeys.DeviceCredentialView,
+            PermissionKeys.DeviceCredentialDelete,
             PermissionKeys.LogsView,
-            PermissionKeys.OrgManageMembers);
+            PermissionKeys.OrgManageMembers,
+            PermissionKeys.RouterView,
+            PermissionKeys.RouterManage,
+            PermissionKeys.DeviceView,
+            PermissionKeys.DeviceManage);
     }
 
     [Test]
-    public async Task RolePermissions_WhenQueried_ThenAdminGrantsAllFourPermissions()
+    public async Task RolePermissions_WhenQueried_ThenAdminGrantsAllEightPermissions()
     {
         using var context = CreateContext(Guid.NewGuid());
 
@@ -275,14 +283,18 @@ public class AppDbContextTests : DataTestFixture
             .ToListAsync();
 
         keys.Should().BeEquivalentTo(
-            PermissionKeys.DeviceView,
-            PermissionKeys.DeviceDelete,
+            PermissionKeys.DeviceCredentialView,
+            PermissionKeys.DeviceCredentialDelete,
             PermissionKeys.LogsView,
-            PermissionKeys.OrgManageMembers);
+            PermissionKeys.OrgManageMembers,
+            PermissionKeys.RouterView,
+            PermissionKeys.RouterManage,
+            PermissionKeys.DeviceView,
+            PermissionKeys.DeviceManage);
     }
 
     [Test]
-    public async Task RolePermissions_WhenQueried_ThenMemberGrantsDeviceViewAndLogsViewOnly()
+    public async Task RolePermissions_WhenQueried_ThenMemberGrantsDeviceCredentialViewLogsViewAndDeviceViewOnly()
     {
         using var context = CreateContext(Guid.NewGuid());
 
@@ -291,11 +303,14 @@ public class AppDbContextTests : DataTestFixture
             .Select(rp => rp.PermissionKey)
             .ToListAsync();
 
-        keys.Should().BeEquivalentTo(PermissionKeys.DeviceView, PermissionKeys.LogsView);
+        keys.Should().BeEquivalentTo(
+            PermissionKeys.DeviceCredentialView,
+            PermissionKeys.LogsView,
+            PermissionKeys.DeviceView);
     }
 
     [Test]
-    public async Task RolePermissions_WhenQueried_ThenViewerGrantsDeviceViewAndLogsViewOnly()
+    public async Task RolePermissions_WhenQueried_ThenViewerGrantsDeviceCredentialViewLogsViewAndDeviceViewOnly()
     {
         using var context = CreateContext(Guid.NewGuid());
 
@@ -304,6 +319,9 @@ public class AppDbContextTests : DataTestFixture
             .Select(rp => rp.PermissionKey)
             .ToListAsync();
 
-        keys.Should().BeEquivalentTo(PermissionKeys.DeviceView, PermissionKeys.LogsView);
+        keys.Should().BeEquivalentTo(
+            PermissionKeys.DeviceCredentialView,
+            PermissionKeys.LogsView,
+            PermissionKeys.DeviceView);
     }
 }

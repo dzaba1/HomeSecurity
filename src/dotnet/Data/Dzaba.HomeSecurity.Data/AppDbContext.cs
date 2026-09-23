@@ -34,7 +34,7 @@ public sealed class AppDbContext : DbContext
 
     public DbSet<UserRole> UserRoles => Set<UserRole>();
 
-    public DbSet<Device> Devices => Set<Device>();
+    public DbSet<DeviceCredential> DeviceCredentials => Set<DeviceCredential>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -56,10 +56,14 @@ public sealed class AppDbContext : DbContext
             e.HasKey(p => p.Key);
 
             e.HasData(
-                new Permission { Key = PermissionKeys.DeviceView, Description = "View devices" },
-                new Permission { Key = PermissionKeys.DeviceDelete, Description = "Delete devices" },
+                new Permission { Key = PermissionKeys.DeviceCredentialView, Description = "View agent device credentials" },
+                new Permission { Key = PermissionKeys.DeviceCredentialDelete, Description = "Delete agent device credentials" },
                 new Permission { Key = PermissionKeys.LogsView, Description = "View logs" },
-                new Permission { Key = PermissionKeys.OrgManageMembers, Description = "Manage organization members" });
+                new Permission { Key = PermissionKeys.OrgManageMembers, Description = "Manage organization members" },
+                new Permission { Key = PermissionKeys.RouterView, Description = "View router metadata (never the secret)" },
+                new Permission { Key = PermissionKeys.RouterManage, Description = "Create, update, and delete routers" },
+                new Permission { Key = PermissionKeys.DeviceView, Description = "View network devices" },
+                new Permission { Key = PermissionKeys.DeviceManage, Description = "Rename/acknowledge network devices" });
         });
 
         modelBuilder.Entity<Role>(e =>
@@ -88,18 +92,28 @@ public sealed class AppDbContext : DbContext
             // non-null navigations, and HasData seed instances must not
             // carry navigation state.
             e.HasData(
-                new { RoleId = SystemRoles.OwnerId, PermissionKey = PermissionKeys.DeviceView },
-                new { RoleId = SystemRoles.OwnerId, PermissionKey = PermissionKeys.DeviceDelete },
+                new { RoleId = SystemRoles.OwnerId, PermissionKey = PermissionKeys.DeviceCredentialView },
+                new { RoleId = SystemRoles.OwnerId, PermissionKey = PermissionKeys.DeviceCredentialDelete },
                 new { RoleId = SystemRoles.OwnerId, PermissionKey = PermissionKeys.LogsView },
                 new { RoleId = SystemRoles.OwnerId, PermissionKey = PermissionKeys.OrgManageMembers },
-                new { RoleId = SystemRoles.AdminId, PermissionKey = PermissionKeys.DeviceView },
-                new { RoleId = SystemRoles.AdminId, PermissionKey = PermissionKeys.DeviceDelete },
+                new { RoleId = SystemRoles.OwnerId, PermissionKey = PermissionKeys.RouterView },
+                new { RoleId = SystemRoles.OwnerId, PermissionKey = PermissionKeys.RouterManage },
+                new { RoleId = SystemRoles.OwnerId, PermissionKey = PermissionKeys.DeviceView },
+                new { RoleId = SystemRoles.OwnerId, PermissionKey = PermissionKeys.DeviceManage },
+                new { RoleId = SystemRoles.AdminId, PermissionKey = PermissionKeys.DeviceCredentialView },
+                new { RoleId = SystemRoles.AdminId, PermissionKey = PermissionKeys.DeviceCredentialDelete },
                 new { RoleId = SystemRoles.AdminId, PermissionKey = PermissionKeys.LogsView },
                 new { RoleId = SystemRoles.AdminId, PermissionKey = PermissionKeys.OrgManageMembers },
-                new { RoleId = SystemRoles.MemberId, PermissionKey = PermissionKeys.DeviceView },
+                new { RoleId = SystemRoles.AdminId, PermissionKey = PermissionKeys.RouterView },
+                new { RoleId = SystemRoles.AdminId, PermissionKey = PermissionKeys.RouterManage },
+                new { RoleId = SystemRoles.AdminId, PermissionKey = PermissionKeys.DeviceView },
+                new { RoleId = SystemRoles.AdminId, PermissionKey = PermissionKeys.DeviceManage },
+                new { RoleId = SystemRoles.MemberId, PermissionKey = PermissionKeys.DeviceCredentialView },
                 new { RoleId = SystemRoles.MemberId, PermissionKey = PermissionKeys.LogsView },
-                new { RoleId = SystemRoles.ViewerId, PermissionKey = PermissionKeys.DeviceView },
-                new { RoleId = SystemRoles.ViewerId, PermissionKey = PermissionKeys.LogsView });
+                new { RoleId = SystemRoles.MemberId, PermissionKey = PermissionKeys.DeviceView },
+                new { RoleId = SystemRoles.ViewerId, PermissionKey = PermissionKeys.DeviceCredentialView },
+                new { RoleId = SystemRoles.ViewerId, PermissionKey = PermissionKeys.LogsView },
+                new { RoleId = SystemRoles.ViewerId, PermissionKey = PermissionKeys.DeviceView });
         });
 
         modelBuilder.Entity<UserRole>(e =>
@@ -110,7 +124,7 @@ public sealed class AppDbContext : DbContext
             e.HasQueryFilter(ur => ur.TenantId == _tenantId);
         });
 
-        modelBuilder.Entity<Device>(e =>
+        modelBuilder.Entity<DeviceCredential>(e =>
         {
             e.HasKey(d => d.Id);
             e.HasOne<Organization>().WithMany().HasForeignKey(d => d.TenantId);

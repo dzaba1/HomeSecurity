@@ -22,7 +22,7 @@ namespace Dzaba.HomeSecurity.Org.Service.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("Dzaba.HomeSecurity.Data.Entities.Device", b =>
+            modelBuilder.Entity("Dzaba.HomeSecurity.Data.Entities.DeviceCredential", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -52,7 +52,7 @@ namespace Dzaba.HomeSecurity.Org.Service.Migrations
 
                     b.HasIndex("TenantId");
 
-                    b.ToTable("Devices");
+                    b.ToTable("DeviceCredentials");
                 });
 
             modelBuilder.Entity("Dzaba.HomeSecurity.Data.Entities.Membership", b =>
@@ -106,13 +106,13 @@ namespace Dzaba.HomeSecurity.Org.Service.Migrations
                     b.HasData(
                         new
                         {
-                            Key = "device.view",
-                            Description = "View devices"
+                            Key = "device_credential.view",
+                            Description = "View agent device credentials"
                         },
                         new
                         {
-                            Key = "device.delete",
-                            Description = "Delete devices"
+                            Key = "device_credential.delete",
+                            Description = "Delete agent device credentials"
                         },
                         new
                         {
@@ -123,6 +123,26 @@ namespace Dzaba.HomeSecurity.Org.Service.Migrations
                         {
                             Key = "org.manage_members",
                             Description = "Manage organization members"
+                        },
+                        new
+                        {
+                            Key = "router.view",
+                            Description = "View router metadata (never the secret)"
+                        },
+                        new
+                        {
+                            Key = "router.manage",
+                            Description = "Create, update, and delete routers"
+                        },
+                        new
+                        {
+                            Key = "device.view",
+                            Description = "View network devices"
+                        },
+                        new
+                        {
+                            Key = "device.manage",
+                            Description = "Rename/acknowledge network devices"
                         });
                 });
 
@@ -186,12 +206,12 @@ namespace Dzaba.HomeSecurity.Org.Service.Migrations
                         new
                         {
                             RoleId = new Guid("00000000-0000-0000-0000-000000000001"),
-                            PermissionKey = "device.view"
+                            PermissionKey = "device_credential.view"
                         },
                         new
                         {
                             RoleId = new Guid("00000000-0000-0000-0000-000000000001"),
-                            PermissionKey = "device.delete"
+                            PermissionKey = "device_credential.delete"
                         },
                         new
                         {
@@ -205,13 +225,33 @@ namespace Dzaba.HomeSecurity.Org.Service.Migrations
                         },
                         new
                         {
-                            RoleId = new Guid("00000000-0000-0000-0000-000000000002"),
+                            RoleId = new Guid("00000000-0000-0000-0000-000000000001"),
+                            PermissionKey = "router.view"
+                        },
+                        new
+                        {
+                            RoleId = new Guid("00000000-0000-0000-0000-000000000001"),
+                            PermissionKey = "router.manage"
+                        },
+                        new
+                        {
+                            RoleId = new Guid("00000000-0000-0000-0000-000000000001"),
                             PermissionKey = "device.view"
                         },
                         new
                         {
+                            RoleId = new Guid("00000000-0000-0000-0000-000000000001"),
+                            PermissionKey = "device.manage"
+                        },
+                        new
+                        {
                             RoleId = new Guid("00000000-0000-0000-0000-000000000002"),
-                            PermissionKey = "device.delete"
+                            PermissionKey = "device_credential.view"
+                        },
+                        new
+                        {
+                            RoleId = new Guid("00000000-0000-0000-0000-000000000002"),
+                            PermissionKey = "device_credential.delete"
                         },
                         new
                         {
@@ -225,8 +265,28 @@ namespace Dzaba.HomeSecurity.Org.Service.Migrations
                         },
                         new
                         {
-                            RoleId = new Guid("00000000-0000-0000-0000-000000000003"),
+                            RoleId = new Guid("00000000-0000-0000-0000-000000000002"),
+                            PermissionKey = "router.view"
+                        },
+                        new
+                        {
+                            RoleId = new Guid("00000000-0000-0000-0000-000000000002"),
+                            PermissionKey = "router.manage"
+                        },
+                        new
+                        {
+                            RoleId = new Guid("00000000-0000-0000-0000-000000000002"),
                             PermissionKey = "device.view"
+                        },
+                        new
+                        {
+                            RoleId = new Guid("00000000-0000-0000-0000-000000000002"),
+                            PermissionKey = "device.manage"
+                        },
+                        new
+                        {
+                            RoleId = new Guid("00000000-0000-0000-0000-000000000003"),
+                            PermissionKey = "device_credential.view"
                         },
                         new
                         {
@@ -235,13 +295,23 @@ namespace Dzaba.HomeSecurity.Org.Service.Migrations
                         },
                         new
                         {
-                            RoleId = new Guid("00000000-0000-0000-0000-000000000004"),
+                            RoleId = new Guid("00000000-0000-0000-0000-000000000003"),
                             PermissionKey = "device.view"
                         },
                         new
                         {
                             RoleId = new Guid("00000000-0000-0000-0000-000000000004"),
+                            PermissionKey = "device_credential.view"
+                        },
+                        new
+                        {
+                            RoleId = new Guid("00000000-0000-0000-0000-000000000004"),
                             PermissionKey = "logs.view"
+                        },
+                        new
+                        {
+                            RoleId = new Guid("00000000-0000-0000-0000-000000000004"),
+                            PermissionKey = "device.view"
                         });
                 });
 
@@ -265,7 +335,7 @@ namespace Dzaba.HomeSecurity.Org.Service.Migrations
                     b.ToTable("UserRoles");
                 });
 
-            modelBuilder.Entity("Dzaba.HomeSecurity.Data.Entities.Device", b =>
+            modelBuilder.Entity("Dzaba.HomeSecurity.Data.Entities.DeviceCredential", b =>
                 {
                     b.HasOne("Dzaba.HomeSecurity.Data.Entities.Organization", null)
                         .WithMany()

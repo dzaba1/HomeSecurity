@@ -39,7 +39,7 @@ namespace Dzaba.HomeSecurity.Org.Service.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Devices",
+                name: "DeviceCredentials",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -52,9 +52,9 @@ namespace Dzaba.HomeSecurity.Org.Service.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Devices", x => x.Id);
+                    table.PrimaryKey("PK_DeviceCredentials", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Devices_Organizations_TenantId",
+                        name: "FK_DeviceCredentials_Organizations_TenantId",
                         column: x => x.TenantId,
                         principalTable: "Organizations",
                         principalColumn: "Id",
@@ -151,10 +151,14 @@ namespace Dzaba.HomeSecurity.Org.Service.Migrations
                 columns: new[] { "Key", "Description" },
                 values: new object[,]
                 {
-                    { "device.delete", "Delete devices" },
-                    { "device.view", "View devices" },
+                    { "device_credential.delete", "Delete agent device credentials" },
+                    { "device_credential.view", "View agent device credentials" },
+                    { "device.manage", "Rename/acknowledge network devices" },
+                    { "device.view", "View network devices" },
                     { "logs.view", "View logs" },
-                    { "org.manage_members", "Manage organization members" }
+                    { "org.manage_members", "Manage organization members" },
+                    { "router.manage", "Create, update, and delete routers" },
+                    { "router.view", "View router metadata (never the secret)" }
                 });
 
             migrationBuilder.InsertData(
@@ -173,23 +177,33 @@ namespace Dzaba.HomeSecurity.Org.Service.Migrations
                 columns: new[] { "PermissionKey", "RoleId" },
                 values: new object[,]
                 {
-                    { "device.delete", new Guid("00000000-0000-0000-0000-000000000001") },
+                    { "device_credential.delete", new Guid("00000000-0000-0000-0000-000000000001") },
+                    { "device_credential.view", new Guid("00000000-0000-0000-0000-000000000001") },
+                    { "device.manage", new Guid("00000000-0000-0000-0000-000000000001") },
                     { "device.view", new Guid("00000000-0000-0000-0000-000000000001") },
                     { "logs.view", new Guid("00000000-0000-0000-0000-000000000001") },
                     { "org.manage_members", new Guid("00000000-0000-0000-0000-000000000001") },
-                    { "device.delete", new Guid("00000000-0000-0000-0000-000000000002") },
+                    { "router.manage", new Guid("00000000-0000-0000-0000-000000000001") },
+                    { "router.view", new Guid("00000000-0000-0000-0000-000000000001") },
+                    { "device_credential.delete", new Guid("00000000-0000-0000-0000-000000000002") },
+                    { "device_credential.view", new Guid("00000000-0000-0000-0000-000000000002") },
+                    { "device.manage", new Guid("00000000-0000-0000-0000-000000000002") },
                     { "device.view", new Guid("00000000-0000-0000-0000-000000000002") },
                     { "logs.view", new Guid("00000000-0000-0000-0000-000000000002") },
                     { "org.manage_members", new Guid("00000000-0000-0000-0000-000000000002") },
+                    { "router.manage", new Guid("00000000-0000-0000-0000-000000000002") },
+                    { "router.view", new Guid("00000000-0000-0000-0000-000000000002") },
+                    { "device_credential.view", new Guid("00000000-0000-0000-0000-000000000003") },
                     { "device.view", new Guid("00000000-0000-0000-0000-000000000003") },
                     { "logs.view", new Guid("00000000-0000-0000-0000-000000000003") },
+                    { "device_credential.view", new Guid("00000000-0000-0000-0000-000000000004") },
                     { "device.view", new Guid("00000000-0000-0000-0000-000000000004") },
                     { "logs.view", new Guid("00000000-0000-0000-0000-000000000004") }
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_Devices_TenantId",
-                table: "Devices",
+                name: "IX_DeviceCredentials_TenantId",
+                table: "DeviceCredentials",
                 column: "TenantId");
 
             migrationBuilder.CreateIndex(
@@ -223,7 +237,7 @@ namespace Dzaba.HomeSecurity.Org.Service.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "Devices");
+                name: "DeviceCredentials");
 
             migrationBuilder.DropTable(
                 name: "Memberships");
