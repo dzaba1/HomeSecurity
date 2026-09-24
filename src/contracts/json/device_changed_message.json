@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "DeviceChangedMessage",
+  "description": "Notification only, not event-carried state transfer: a device was renamed or acknowledged - a consumer should call Devices.Service's API for current data, never reconstruct state from this event alone. No consumer exists yet - published as a low-cost hedge for future integrations.",
+  "type": "object",
+  "required": ["tenantId", "deviceId", "macAddress", "status", "changedAt"],
+  "properties": {
+    "tenantId": { "type": "string", "format": "uuid" },
+    "deviceId": { "type": "string", "format": "uuid" },
+    "macAddress": { "type": "string" },
+    "status": { "$ref": "device_status.json" },
+    "changedAt": { "type": "string", "format": "date-time" }
+  },
+  "additionalProperties": false
+}

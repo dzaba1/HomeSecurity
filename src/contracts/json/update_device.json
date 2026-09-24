@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "UpdateDevice",
+  "description": "A partial update: only the fields present are applied, and at least one must be. An empty name clears it.",
+  "type": "object",
+  "properties": {
+    "name": { "type": "string", "maxLength": 200 },
+    "status": { "oneOf": [{ "$ref": "device_status.json" }, { "type": "null" }] }
+  },
+  "additionalProperties": false
+}

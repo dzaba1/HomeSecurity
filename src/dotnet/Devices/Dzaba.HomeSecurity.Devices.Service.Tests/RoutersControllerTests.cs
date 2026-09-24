@@ -9,6 +9,7 @@ using Dzaba.HomeSecurity.Domain;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using DeviceEntity = Dzaba.HomeSecurity.Devices.Service.Data.Entities.Device;
 
 namespace Dzaba.HomeSecurity.Devices.Service.Tests;
 
@@ -287,7 +288,7 @@ public sealed class RoutersControllerTests : DevicesServiceTestFixture
             {
                 Id = Guid.NewGuid(), TenantId = orgId, DeviceCredentialId = Guid.NewGuid(), RouterId = routerId, CreatedAt = DateTimeOffset.UtcNow,
             });
-            db.Devices.Add(new Device
+            db.Devices.Add(new DeviceEntity
             {
                 Id = deviceId, TenantId = orgId, MacAddress = "AA:BB:CC:DD:EE:FF", Status = DeviceStatus.Unknown,
                 FirstSeenAt = DateTimeOffset.UtcNow, LastSeenAt = DateTimeOffset.UtcNow, LastSeenViaRouterId = routerId,

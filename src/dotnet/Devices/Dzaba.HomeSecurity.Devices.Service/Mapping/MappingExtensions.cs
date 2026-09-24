@@ -1,7 +1,10 @@
 using Dzaba.HomeSecurity.Devices.Contracts;
+using DeviceEntity = Dzaba.HomeSecurity.Devices.Service.Data.Entities.Device;
+using DeviceStatusEntity = Dzaba.HomeSecurity.Devices.Service.Data.Entities.DeviceStatus;
 using RouterEntity = Dzaba.HomeSecurity.Devices.Service.Data.Entities.Router;
 using RouterProtocolEntity = Dzaba.HomeSecurity.Devices.Service.Data.Entities.RouterProtocol;
 using RouterAuthModeEntity = Dzaba.HomeSecurity.Devices.Service.Data.Entities.RouterAuthMode;
+using Device = Dzaba.HomeSecurity.Devices.Contracts.Device;
 using Router = Dzaba.HomeSecurity.Devices.Contracts.Router;
 
 namespace Dzaba.HomeSecurity.Devices.Service.Mapping;
@@ -26,16 +29,39 @@ internal static class MappingExtensions
         };
     }
 
+    public static Device ToContract(this DeviceEntity entity)
+    {
+        ArgumentNullException.ThrowIfNull(entity);
+
+        return new Device
+        {
+            Id = entity.Id,
+            MacAddress = entity.MacAddress,
+            Name = entity.Name,
+            Status = entity.Status.ToContract(),
+            FirstSeenAt = entity.FirstSeenAt,
+            LastSeenAt = entity.LastSeenAt,
+            LastSeenViaRouterId = entity.LastSeenViaRouterId,
+        };
+    }
+
     public static RouterProtocolEntity ToEntity(this Router_protocol protocol) =>
         ConvertByName<RouterProtocolEntity>(protocol);
 
     public static RouterAuthModeEntity ToEntity(this Router_auth_mode authMode) =>
         ConvertByName<RouterAuthModeEntity>(authMode);
 
+    public static DeviceStatusEntity ToEntity(this Device_status status) =>
+        ConvertByName<DeviceStatusEntity>(status);
+
+    public static Device_status ToContract(this DeviceStatusEntity status) =>
+        ConvertByName<Device_status>(status);
+
     // The generated contract enums and the entity enums share value names
-    // (WebScrape, SNMP, HttpBasic, ...) but are separate types; converting by
-    // name rather than by underlying number means a renamed or reordered
-    // member fails loudly here instead of silently mapping to the wrong one.
+    // (WebScrape, SNMP, HttpBasic, Unknown, ...) but are separate types;
+    // converting by name rather than by underlying number means a renamed or
+    // reordered member fails loudly here instead of silently mapping to the
+    // wrong one.
     private static TTo ConvertByName<TTo>(Enum value)
         where TTo : struct, Enum =>
         Enum.Parse<TTo>(value.ToString());

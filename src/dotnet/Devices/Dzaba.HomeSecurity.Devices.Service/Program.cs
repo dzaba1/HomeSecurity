@@ -84,6 +84,7 @@ builder.Services.AddDzabaHomeSecurityRabbitMqMessageBus(
 
 builder.Services.AddDzabaHomeSecurityHal();
 builder.Services.AddTransient<IRoutersService, RoutersService>();
+builder.Services.AddTransient<IDevicesService, DevicesService>();
 
 builder.Services.AddHealthChecks()
     .AddNpgSql(sp => sp.GetRequiredService<IConfiguration>().GetConnectionString("DevicesDatabase")!, name: "postgres");

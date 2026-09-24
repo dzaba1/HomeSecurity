@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Device",
+  "description": "A network device (MAC address) seen on a tenant's home network. Identity is (tenant, macAddress). Distinct from the agent's own auth credential, which lives in Org.Service.",
+  "type": "object",
+  "required": ["id", "macAddress", "name", "status", "firstSeenAt", "lastSeenAt", "lastSeenViaRouterId"],
+  "properties": {
+    "id": { "type": "string", "format": "uuid" },
+    "macAddress": { "type": "string", "pattern": "^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$" },
+    "name": { "type": ["string", "null"], "maxLength": 200, "description": "Optional, user-assigned" },
+    "status": { "$ref": "device_status.json" },
+    "firstSeenAt": { "type": "string", "format": "date-time" },
+    "lastSeenAt": { "type": "string", "format": "date-time" },
+    "lastSeenViaRouterId": { "type": ["string", "null"], "format": "uuid", "description": "The router whose agent last reported this device; traceability only, not part of its identity" }
+  },
+  "additionalProperties": false
+}

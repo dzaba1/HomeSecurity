@@ -1,0 +1,7 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "DeviceStatus",
+  "description": "Unknown until a user acknowledges the device ('this is mine'), then Known. See docs/architecture/06-notifications.md.",
+  "type": "string",
+  "enum": ["Unknown", "Known"]
+}
