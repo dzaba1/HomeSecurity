@@ -18,6 +18,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+      # First-boot initdb (and crash recovery on a leftover volume) can be slow.
+      start_period: 120s
     networks:
       - backend
 
@@ -36,6 +38,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+      # Crash recovery on a leftover volume can take a minute or more.
+      start_period: 120s
     networks:
       - backend
 
@@ -50,7 +54,12 @@ services:
       KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN}
       KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
       KC_HEALTH_ENABLED: "true"
-      KC_HOSTNAME_STRICT: "false"
+      # The issuer in every token is this public, browser-reachable URL,
+      # whichever host the request came in on. Back-channel endpoints
+      # (token, jwks) still follow the request host, so containers can keep
+      # calling keycloak:8080 directly.
+      KC_HOSTNAME: http://localhost:8080
+      KC_HOSTNAME_BACKCHANNEL_DYNAMIC: "true"
     ports:
       - "8080:8080"
     volumes:
@@ -65,7 +74,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 15
-      start_period: 30s
+      # start-dev's first boot spends minutes on Quarkus augmentation.
+      start_period: 240s
     networks:
       - backend
 
@@ -73,12 +83,25 @@ services:
     image: quay.io/oauth2-proxy/oauth2-proxy:v7.15.4-alpine
     command:
       - --provider=keycloak-oidc
-      - --oidc-issuer-url=http://keycloak:8080/realms/home-security
+      # Keycloak's issuer is its public URL (KC_HOSTNAME), which isn't
+      # reachable from inside this container, so discovery is skipped: the
+      # issuer is still verified strictly, but the browser-facing login URL
+      # points at localhost and the server-to-server ones at keycloak.
+      - --oidc-issuer-url=http://localhost:8080/realms/home-security
+      - --skip-oidc-discovery=true
+      - --login-url=http://localhost:8080/realms/home-security/protocol/openid-connect/auth
+      - --redeem-url=http://keycloak:8080/realms/home-security/protocol/openid-connect/token
+      - --oidc-jwks-url=http://keycloak:8080/realms/home-security/protocol/openid-connect/certs
       - --client-id=oauth2-proxy
       - --client-secret=${OAUTH2_PROXY_CLIENT_SECRET}
       - --cookie-secret=${OAUTH2_PROXY_COOKIE_SECRET}
       - --redirect-url=http://localhost:4180/oauth2/callback
       - --email-domain=*
+      # Local stack only: self-registered users have emailVerified=false and
+      # there is no SMTP server here for Keycloak's verification email. A real
+      # deployment must enable "verifyEmail" in the realm (with SMTP) and drop
+      # this flag.
+      - --insecure-oidc-allow-unverified-email=true
       - --http-address=0.0.0.0:4180
       # Stands in for the Admin UI, which doesn't exist yet: returns a
       # bare 200 once the OIDC login succeeds. Swap this for the real

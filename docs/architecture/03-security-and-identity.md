@@ -52,6 +52,28 @@ the redirect from completing the login themselves. We don't implement this —
 `oauth2-proxy` (and every standard OIDC client) does it automatically once
 enabled.
 
+### Where Keycloak sits on the network
+
+Keycloak is **not** fully internal, and it isn't fully public either — it has
+two faces:
+
+- **Public (browser-reachable):** the hosted login/registration/account pages
+  and the OIDC front-channel, i.e. `/realms/*` and `/resources/*`. A user's
+  browser is redirected here by `oauth2-proxy`, so it must be reachable from
+  the Internet (behind the TLS-terminating reverse proxy). There are no custom
+  register/login endpoints in our APIs on purpose: users type their password
+  only into Keycloak's own page, never into our code.
+- **Internal only:** the admin console and Admin API (`/admin/*`, the
+  `master` realm), `/metrics`, `/health`, and the management port. The reverse
+  proxy must not route these. Server-to-server calls (`oauth2-proxy` and the
+  APIs fetching the token endpoint / JWKS) use the internal network address.
+
+Because the `iss` claim in every token has to be one stable string, Keycloak is
+configured with a fixed public hostname (`KC_HOSTNAME`) rather than deriving it
+from the request. Back-channel endpoints (`KC_HOSTNAME_BACKCHANNEL_DYNAMIC`)
+still resolve to whichever address the caller used, so services keep talking to
+Keycloak over the internal network while validating the public issuer.
+
 ## 2. Agent/device authentication: short-lived device tokens
 
 Agents are not people and there could eventually be a large number of them

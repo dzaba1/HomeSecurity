@@ -92,7 +92,7 @@ if ($DevTestUser) {
         publicClient              = $true
         standardFlowEnabled       = $false
         directAccessGrantsEnabled = $true
-        defaultClientScopes       = @('home-security-api-audience')
+        defaultClientScopes       = @('email', 'profile', 'home-security-api-audience')
     }
 
     $realm | Add-Member -NotePropertyName 'users' -NotePropertyValue @(
