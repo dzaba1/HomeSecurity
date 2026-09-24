@@ -64,7 +64,7 @@ sequenceDiagram
   participant R as Router
   participant A as Agent (PC/laptop/phone)
   participant T as Device Token Endpoint
-  participant C as Router Config Endpoint
+  participant C as Router Config Endpoint (Devices.Service)
   participant I as Logs Ingestion API
   participant Q as RabbitMQ
   participant W as Processing Worker

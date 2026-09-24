@@ -82,8 +82,21 @@ These apply to every decision recorded here:
 
 ## Current status
 
-The system is in active design/prototyping. The `Dzaba.HomeSecurity.Auth` and
-`Dzaba.Org` projects in `src/dotnet` are experimental scaffolding from earlier
-iterations and are expected to be reshaped or replaced as the decisions in this
-folder are implemented — see [ADR-0006](decisions/0006-defer-auth-platform-extraction.md)
-for the current stance on splitting auth out of this repo entirely.
+The system is in active development. Three services exist in `src/dotnet`, each
+independently buildable with its own solution file: `Org` (organizations,
+memberships, roles/permissions), `LogsIngestion` (the agents' log intake) and
+`Devices` (routers with encrypted credentials, network devices, and the
+agent's router-config fetch — with its own database, per
+[ADR-0016](decisions/0016-devices-service-owns-its-own-database.md)). What they
+have in common lives in `src/dotnet/Common` as small shared libraries rather
+than copies: domain types and permission keys, permission/tenant authorization
+(with a cache and an Org-API-backed permission source), device-token
+authorization, Redis cache and Data Protection wiring, the RabbitMQ message
+bus, the per-service database provider, HAL and other web-API plumbing,
+observability, and test utilities.
+
+Not built yet: the Admin UI, the device-token endpoint, agent pairing (the
+`AgentRouterBinding` rows are only created directly in tests), the ingestion
+consumer that detects unknown devices, and push notification delivery. See
+[ADR-0006](decisions/0006-defer-auth-platform-extraction.md) for the current
+stance on splitting auth out of this repo entirely.

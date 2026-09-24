@@ -227,6 +227,33 @@ Notes on this flow:
   — never the credential value itself, matching the existing "what never
   gets logged" rule for device secrets and JWTs.
 
+### The endpoint as built
+
+`GET /api/v1/devices/{deviceId}/router-config` in `Devices.Service`:
+
+- **Authentication**: a device token under the named `DeviceToken` scheme
+  (its own audience and signing key, alongside the default Keycloak scheme
+  the admin API uses — see
+  [ADR-0018](../decisions/0018-per-service-device-token-audience-and-key.md)),
+  and the `router:read` scope. A human's Keycloak token can't call it.
+- **Tenant and device come from the token only.** The `{deviceId}` in the
+  route is a cross-check, not an input: if it isn't the `device_id` in the
+  caller's own token the answer is `403`. There is no `{orgId}` segment, so
+  the tenant-resolution middleware doesn't apply; the lookup instead runs
+  in a `DevicesDbContext` bound to the token's `tenant_id`, so both the
+  binding and router queries stay inside that tenant's query filter.
+- **Responses**: `200` with the `RouterConfig` contract
+  (`router_config.json`: router id, host, protocol, auth mode, username,
+  plaintext secret, `updatedAt`), plain JSON with no HAL
+  ([ADR-0017](../decisions/0017-hateoas-extends-to-devices-service.md));
+  `404` when the credential has no router paired (including when the same
+  credential id is paired in *another* tenant); `401` without a valid
+  token; `403` for a missing scope or another device's id.
+- **`Cache-Control: no-store`** on the response, since the body carries a
+  plaintext secret.
+- **Audit**: each hand-out logs the router, device and tenant ids at
+  `Information`; the secret is never logged.
+
 ## Rotation & revocation
 
 - Changing the password in the Admin UI takes effect the next time an agent

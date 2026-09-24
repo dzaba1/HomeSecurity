@@ -72,9 +72,16 @@ Flow:
 2. The agent authenticates to a small token endpoint with that secret and
    receives a short-lived JWT (5–15 minutes) carrying `tenant_id`, `device_id`,
    and a narrow scope like `logs:write`.
-3. The Logs Ingestion API validates that JWT with the same off-the-shelf
+3. Any API that agents call (the Logs Ingestion API, and `Devices.Service`'s
+   router-config endpoint) validates that JWT with the same off-the-shelf
    `JwtBearer` middleware used for human tokens — just a different
-   issuer/audience. No bespoke validation code.
+   audience and a symmetric signing key instead of Keycloak's discovery
+   document. No bespoke validation code. Each service has **its own
+   audience and key**, and a service that also serves humans registers
+   device tokens as a second, named authentication scheme; the claim names,
+   scope policy and handler are shared code
+   (`Common/Dzaba.HomeSecurity.DeviceAuth`). See
+   [ADR-0018](../decisions/0018-per-service-device-token-audience-and-key.md).
 4. **Revocation** is just deleting/rotating the device's secret in our own
    DB — since tokens are short-lived, a revoked device is locked out within
    minutes without needing a token-blocklist.

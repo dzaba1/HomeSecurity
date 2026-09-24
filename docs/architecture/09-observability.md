@@ -74,6 +74,12 @@ hand-written probes:
   - Admin UI/BFF: the Ingestion/Tenant API, Redis, and Keycloak's discovery
     endpoint.
 
+  The RabbitMQ check does not just read connection state: EasyNetQ opens
+  its producer connection lazily, on the first publish, so a service that
+  only publishes on demand would otherwise report "not initialised" forever
+  and never become ready. The shared check asks for the connection itself,
+  bounded by a 5-second timeout, and logs why it failed when it does.
+
   Kubernetes stops routing traffic to a pod that fails readiness, without
   restarting it — the standard distinction, and the reason liveness and
   readiness are always two separate endpoints rather than one `/health`.

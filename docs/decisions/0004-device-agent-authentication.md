@@ -43,4 +43,8 @@ Build a small, purpose-specific device-token endpoint, owned by this product:
 - We explicitly accept not using Keycloak for this piece, in exchange for
   operational simplicity at scale.
 
+Since this was written, more than one service validates these tokens - see
+[ADR-0018](0018-per-service-device-token-audience-and-key.md) for which audience
+and key each uses.
+
 See [`03-security-and-identity.md`](../architecture/03-security-and-identity.md).
