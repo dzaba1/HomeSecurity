@@ -1,8 +1,8 @@
 using System.Security.Claims;
 
-namespace Dzaba.HomeSecurity.LogsIngestion.Service.Authorization;
+namespace Dzaba.HomeSecurity.DeviceAuth;
 
-internal static class ClaimsPrincipalExtensions
+public static class DeviceClaimsPrincipalExtensions
 {
     /// <summary>
     /// The tenant this device belongs to, trusted directly from the

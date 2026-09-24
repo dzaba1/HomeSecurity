@@ -29,6 +29,24 @@ internal static class MappingExtensions
         };
     }
 
+    /// <summary>Carries the decrypted secret - only for the agent-facing router-config endpoint.</summary>
+    public static RouterConfig ToRouterConfig(this RouterEntity entity, string secret)
+    {
+        ArgumentNullException.ThrowIfNull(entity);
+        ArgumentNullException.ThrowIfNull(secret);
+
+        return new RouterConfig
+        {
+            RouterId = entity.Id,
+            Host = entity.Host,
+            Protocol = ConvertByName<Router_protocol>(entity.Protocol),
+            AuthMode = entity.AuthMode is { } authMode ? ConvertByName<Router_auth_mode>(authMode) : null,
+            Username = entity.Username,
+            Secret = secret,
+            UpdatedAt = entity.UpdatedAt,
+        };
+    }
+
     public static Device ToContract(this DeviceEntity entity)
     {
         ArgumentNullException.ThrowIfNull(entity);

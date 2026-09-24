@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 
-namespace Dzaba.HomeSecurity.LogsIngestion.Service.Authorization;
+namespace Dzaba.HomeSecurity.DeviceAuth;
 
 internal sealed class ScopeAuthorizationHandler : AuthorizationHandler<ScopeRequirement>
 {

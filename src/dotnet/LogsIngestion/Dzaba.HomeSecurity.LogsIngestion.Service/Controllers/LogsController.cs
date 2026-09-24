@@ -1,6 +1,7 @@
 using Asp.Versioning;
 using Dzaba.AspNetUtils.ActionFilters;
 using Dzaba.HomeSecurity.LogsIngestion.Contracts;
+using Dzaba.HomeSecurity.DeviceAuth;
 using Dzaba.HomeSecurity.LogsIngestion.Service.Authorization;
 using Dzaba.HomeSecurity.LogsIngestion.Service.Services;
 using Microsoft.AspNetCore.Authorization;

@@ -9,6 +9,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Dzaba.HomeSecurity.MessageBroker.Contracts\Dzaba.HomeSecurity.MessageBroker.Contracts.csproj" />
     <ProjectReference Include="..\Dzaba.HomeSecurity.DbServer\Dzaba.HomeSecurity.DbServer.csproj" />
+    <ProjectReference Include="..\Dzaba.HomeSecurity.DeviceAuth\Dzaba.HomeSecurity.DeviceAuth.csproj" />
     <ProjectReference Include="..\Dzaba.HomeSecurity.Authorization\Dzaba.HomeSecurity.Authorization.csproj" />
   </ItemGroup>
 

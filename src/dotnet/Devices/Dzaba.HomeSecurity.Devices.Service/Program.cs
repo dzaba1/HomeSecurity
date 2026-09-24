@@ -1,7 +1,10 @@
+using System.Text;
 using Dzaba.HomeSecurity.Authorization;
 using Dzaba.HomeSecurity.Authorization.OrgApi;
 using Dzaba.HomeSecurity.Caching.Redis;
 using Dzaba.HomeSecurity.DbServer;
+using Dzaba.HomeSecurity.DeviceAuth;
+using Dzaba.HomeSecurity.Devices.Service.Authorization;
 using Dzaba.HomeSecurity.Devices.Service.Data;
 using Dzaba.HomeSecurity.Devices.Service.Security;
 using Dzaba.HomeSecurity.Devices.Service.Services;
@@ -10,7 +13,9 @@ using Dzaba.HomeSecurity.MessageBroker.RabbitMQ;
 using Dzaba.HomeSecurity.Observability;
 using Dzaba.HomeSecurity.WebApi;
 using Dzaba.Utils.AspNet;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using Serilog;
 
 const string ServiceName = "Dzaba.HomeSecurity.Devices.Service";
@@ -34,6 +39,30 @@ builder.Services.AddJwtAuthentication(() => new JwtSettings
     ValidateAudience = true,
     ValidateIssuer = true,
 });
+
+// The agent app's router-config endpoint is authenticated with a device
+// token, not a Keycloak one, so it needs its own named scheme next to the
+// default one above (AddJwtAuthentication can only be called once). Device
+// tokens have no OIDC discovery endpoint - they are signed by a purpose-built
+// token endpoint with a symmetric key this service shares with it - so, as in
+// LogsIngestion.Service, issuer validation is explicitly off.
+builder.Services.AddAuthentication()
+    .AddJwtBearer(AgentAuth.DeviceTokenScheme, options =>
+    {
+        options.RequireHttpsMetadata = builder.Environment.IsProduction();
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidAudience = builder.Configuration["Authentication:DeviceTokens:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(
+                builder.Configuration["Authentication:DeviceTokens:SigningKey"]
+                    ?? throw new InvalidOperationException("Missing Authentication:DeviceTokens:SigningKey"))),
+            ValidateAudience = true,
+            ValidateIssuer = false,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+        };
+    });
+builder.Services.AddDzabaHomeSecurityDeviceScopePolicy(AgentAuth.RouterReadScope);
 
 // One scoped MutableTenantContext behind both ITenantContext (what
 // DevicesDbContext sees) and IMutableTenantContext (only the
@@ -85,6 +114,7 @@ builder.Services.AddDzabaHomeSecurityRabbitMqMessageBus(
 builder.Services.AddDzabaHomeSecurityHal();
 builder.Services.AddTransient<IRoutersService, RoutersService>();
 builder.Services.AddTransient<IDevicesService, DevicesService>();
+builder.Services.AddTransient<IAgentRouterConfigService, AgentRouterConfigService>();
 
 builder.Services.AddHealthChecks()
     .AddNpgSql(sp => sp.GetRequiredService<IConfiguration>().GetConnectionString("DevicesDatabase")!, name: "postgres");

@@ -1,4 +1,5 @@
 <Solution>
+  <Project Path="../Common/Dzaba.HomeSecurity.DeviceAuth/Dzaba.HomeSecurity.DeviceAuth.csproj" />
   <Project Path="../Common/Dzaba.HomeSecurity.MessageBroker.Contracts/Dzaba.HomeSecurity.MessageBroker.Contracts.csproj" />
   <Project Path="../Common/Dzaba.HomeSecurity.MessageBroker.RabbitMQ/Dzaba.HomeSecurity.MessageBroker.RabbitMQ.csproj" />
   <Project Path="../Common/Dzaba.HomeSecurity.TestUtils/Dzaba.HomeSecurity.TestUtils.csproj" />

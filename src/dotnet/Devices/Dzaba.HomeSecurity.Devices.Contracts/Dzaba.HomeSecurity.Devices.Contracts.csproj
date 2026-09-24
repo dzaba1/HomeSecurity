@@ -21,6 +21,7 @@
     <JsonSchema Include="..\..\..\contracts\json\create_router.json" Link="create_router.json" OutputFile="CreateRouter.cs" ClassName="CreateRouter" ExcludedTypeNames="Router_protocol,Router_auth_mode" />
     <JsonSchema Include="..\..\..\contracts\json\update_router.json" Link="update_router.json" OutputFile="UpdateRouter.cs" ClassName="UpdateRouter" ExcludedTypeNames="Router_protocol,Router_auth_mode" />
     <JsonSchema Include="..\..\..\contracts\json\router_changed_message.json" Link="router_changed_message.json" OutputFile="RouterChangedMessage.cs" ClassName="RouterChangedMessage" />
+    <JsonSchema Include="..\..\..\contracts\json\router_config.json" Link="router_config.json" OutputFile="RouterConfig.cs" ClassName="RouterConfig" ExcludedTypeNames="Router_protocol,Router_auth_mode" />
 
     <!-- Same "library schema" treatment for device_status.json. -->
     <JsonSchema Include="..\..\..\contracts\json\device_status.json" Link="device_status.json" OutputFile="Device_status.cs" ClassName="Device_status" />

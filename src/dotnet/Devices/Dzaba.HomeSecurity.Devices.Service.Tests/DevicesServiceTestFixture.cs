@@ -2,6 +2,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using Dzaba.HomeSecurity.Authorization;
 using Dzaba.HomeSecurity.DbServer;
+using Dzaba.HomeSecurity.Devices.Service.Authorization;
 using Dzaba.HomeSecurity.Devices.Service.Data;
 using Dzaba.HomeSecurity.Domain;
 using Dzaba.HomeSecurity.MessageBroker.Contracts;
@@ -35,6 +36,10 @@ public abstract class DevicesServiceTestFixture : AuthenticatedControllerTestFix
     // InMemory store (which EF Core's InMemory provider keys purely by name)
     // and the same fakes.
     private string databaseName = null!;
+
+    // Device tokens are validated under their own scheme here, next to the
+    // default Keycloak one, so both get the test signing key.
+    protected override string? DeviceTokenScheme => AgentAuth.DeviceTokenScheme;
 
     protected FakeMessageBus MessageBus { get; private set; } = null!;
 

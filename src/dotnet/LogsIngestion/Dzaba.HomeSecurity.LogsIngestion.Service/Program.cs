@@ -1,10 +1,10 @@
+using Dzaba.HomeSecurity.DeviceAuth;
 using Dzaba.HomeSecurity.LogsIngestion.Service.Authorization;
 using Dzaba.HomeSecurity.LogsIngestion.Service.Services;
 using Dzaba.HomeSecurity.MessageBroker.RabbitMQ;
 using Dzaba.HomeSecurity.Observability;
 using Dzaba.HomeSecurity.WebApi;
 using Dzaba.Utils.AspNet;
-using Microsoft.AspNetCore.Authorization;
 using Serilog;
 
 const string ServiceName = "Dzaba.HomeSecurity.LogsIngestion.Service";
@@ -36,9 +36,7 @@ builder.Services.AddJwtAuthentication(() => new JwtSettings
     ValidateIssuer = false,
 });
 
-builder.Services.AddAuthorizationBuilder()
-    .AddPolicy(LogsPolicies.LogsWrite, policy => policy.Requirements.Add(new ScopeRequirement(LogsPolicies.LogsWrite)));
-builder.Services.AddTransient<IAuthorizationHandler, ScopeAuthorizationHandler>();
+builder.Services.AddDzabaHomeSecurityDeviceScopePolicy(LogsPolicies.LogsWrite);
 
 var rabbitMqConnectionString = builder.Configuration.GetConnectionString("RabbitMQ")
     ?? throw new InvalidOperationException("Missing ConnectionStrings:RabbitMQ");

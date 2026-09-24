@@ -23,6 +23,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Dzaba.HomeSecurity.LogsIngestion.Contracts\Dzaba.HomeSecurity.LogsIngestion.Contracts.csproj" />
+    <ProjectReference Include="..\..\Common\Dzaba.HomeSecurity.DeviceAuth\Dzaba.HomeSecurity.DeviceAuth.csproj" />
     <ProjectReference Include="..\..\Common\Dzaba.HomeSecurity.MessageBroker.Contracts\Dzaba.HomeSecurity.MessageBroker.Contracts.csproj" />
     <ProjectReference Include="..\..\Common\Dzaba.HomeSecurity.MessageBroker.RabbitMQ\Dzaba.HomeSecurity.MessageBroker.RabbitMQ.csproj" />
     <ProjectReference Include="..\..\Common\Dzaba.HomeSecurity.Observability\Dzaba.HomeSecurity.Observability.csproj" />

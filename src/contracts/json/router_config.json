@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "RouterConfig",
+  "description": "How an agent reaches the router it is paired with, including the decrypted secret. Only ever returned to that agent, over HTTPS, to the device-token-authenticated router-config endpoint; never logged.",
+  "type": "object",
+  "required": ["routerId", "host", "protocol", "username", "secret", "updatedAt"],
+  "properties": {
+    "routerId": { "type": "string", "format": "uuid" },
+    "host": { "type": "string", "minLength": 1, "maxLength": 255, "description": "Host name or IP address on the home network" },
+    "protocol": { "$ref": "router_protocol.json" },
+    "authMode": { "oneOf": [{ "$ref": "router_auth_mode.json" }, { "type": "null" }] },
+    "username": { "type": "string", "maxLength": 200 },
+    "secret": { "type": "string", "description": "The router password or SNMP community string, in plaintext" },
+    "updatedAt": { "type": "string", "format": "date-time", "description": "When the router's settings last changed, so the agent knows when to refresh" }
+  },
+  "additionalProperties": false
+}
