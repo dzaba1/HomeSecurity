@@ -1,0 +1,44 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Lets Authorization.OrgApi.Tests unit-test the internal loader and its
+         generated response binding directly. -->
+    <InternalsVisibleTo Include="Dzaba.HomeSecurity.Authorization.OrgApi.Tests" />
+    <!-- Lets Moq/Castle auto-mock ILogger<OrgApiPermissionSourceLoader>, whose
+         generic argument is internal - same reason as Authorization.csproj. -->
+    <InternalsVisibleTo Include="DynamicProxyGenAssembly2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- This library is the consumer of Org.Service's access-context
+         endpoint for every service that needs it, so it owns the one
+         consumer-side binding: each side generates its own class from the
+         same schema file rather than sharing a compiled package (ADR-0007). -->
+    <JsonSchema Include="..\..\..\contracts\json\access_context_response.json" Link="access_context_response.json" OutputFile="AccessContextResponse.cs" ClassName="AccessContextResponse" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Dzaba.HomeSecurity.Authorization\Dzaba.HomeSecurity.Authorization.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Http.Resilience" />
+    <PackageReference Include="NSwag.MSBuild">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <Import Project="..\..\..\..\build\JsonSchema.targets" />
+
+</Project>

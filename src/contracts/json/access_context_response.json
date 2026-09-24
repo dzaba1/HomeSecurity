@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AccessContextResponse",
+  "description": "The calling user's effective permissions in one organization. Membership is implied by the response itself: a non-member never gets a body, the tenant-resolution middleware answers 404 first, so 200 always means 'member'. Consumed by services that don't own Membership/UserRole/RolePermission directly (see docs/decisions/0016-devices-service-owns-its-own-database.md).",
+  "type": "object",
+  "required": ["permissionKeys"],
+  "properties": {
+    "permissionKeys": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    }
+  },
+  "additionalProperties": false
+}

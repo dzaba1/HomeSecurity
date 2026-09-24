@@ -18,6 +18,8 @@ public class ContractRoundTripTests
     [TestCase(typeof(CreateMembership), """{"userId":"user-1"}""")]
     [TestCase(typeof(UserRoleAssignment), """{"userId":"user-1","tenantId":"11111111-1111-1111-1111-111111111111","roleId":"22222222-2222-2222-2222-222222222222"}""")]
     [TestCase(typeof(AssignUserRole), """{"userId":"user-1","roleId":"22222222-2222-2222-2222-222222222222"}""")]
+    [TestCase(typeof(AccessContextResponse), """{"permissionKeys":["router.view","router.manage"]}""")]
+    [TestCase(typeof(AccessContextResponse), """{"permissionKeys":[]}""")]
     public void Deserialize_WhenGivenSchemaShapedJson_ThenRoundTripsWithoutLoss(Type contractType, string json)
     {
         var value = JsonSerializer.Deserialize(json, contractType);

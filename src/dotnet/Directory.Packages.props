@@ -27,6 +27,10 @@
     <PackageVersion Include="StackExchange.Redis" Version="3.3.0" />
     <!-- Messaging: RabbitMQ client, ADR-0007 (MIT) -->
     <PackageVersion Include="EasyNetQ" Version="8.1.7" />
+    <!-- Service-to-service HttpClient resilience: retry/circuit breaker via the
+         standard resilience handler (built on Polly) rather than hand-rolled
+         retry logic (MIT) -->
+    <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="10.10.0" />
     <!-- Health check abstractions/registration (IHealthCheck, AddHealthChecks)
          for non-Web SDK class libraries - Org.Service gets these for free
          from the Microsoft.NET.Sdk.Web shared framework, but

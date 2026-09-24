@@ -20,6 +20,8 @@
     <ProjectReference Include="..\..\Common\Dzaba.HomeSecurity.WebApi\Dzaba.HomeSecurity.WebApi.csproj" />
     <ProjectReference Include="..\..\Common\Dzaba.HomeSecurity.Authorization\Dzaba.HomeSecurity.Authorization.csproj" />
     <ProjectReference Include="..\..\Common\Dzaba.HomeSecurity.DbServer\Dzaba.HomeSecurity.DbServer.csproj" />
+    <ProjectReference Include="..\..\Common\Dzaba.HomeSecurity.Caching.Redis\Dzaba.HomeSecurity.Caching.Redis.csproj" />
+    <ProjectReference Include="..\..\Common\Dzaba.HomeSecurity.Authorization.OrgApi\Dzaba.HomeSecurity.Authorization.OrgApi.csproj" />
   </ItemGroup>
 
   <ItemGroup>

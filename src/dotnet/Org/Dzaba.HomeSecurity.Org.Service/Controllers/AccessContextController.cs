@@ -2,6 +2,7 @@ using Asp.Versioning;
 using Dzaba.AspNetUtils;
 using Dzaba.AspNetUtils.ActionFilters;
 using Dzaba.HomeSecurity.Authorization;
+using Dzaba.HomeSecurity.Org.Contracts;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -43,6 +44,6 @@ public sealed class AccessContextController : ControllerBase
         var userId = User.GetUserSubOrNameIdentifier();
         var accessContext = await sourceLoader.LoadAsync(orgId, userId, cancellationToken).ConfigureAwait(false);
 
-        return Ok(new { permissionKeys = accessContext.PermissionKeys });
+        return Ok(new AccessContextResponse { PermissionKeys = [.. accessContext.PermissionKeys] });
     }
 }

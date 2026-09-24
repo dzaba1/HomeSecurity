@@ -17,6 +17,7 @@
     <JsonSchema Include="..\..\..\contracts\json\user_role_assignment.json" Link="user_role_assignment.json" OutputFile="UserRoleAssignment.cs" ClassName="UserRoleAssignment" />
     <JsonSchema Include="..\..\..\contracts\json\assign_user_role.json" Link="assign_user_role.json" OutputFile="AssignUserRole.cs" ClassName="AssignUserRole" />
     <JsonSchema Include="..\..\..\contracts\json\access_changed_message.json" Link="access_changed_message.json" OutputFile="AccessChangedMessage.cs" ClassName="AccessChangedMessage" />
+    <JsonSchema Include="..\..\..\contracts\json\access_context_response.json" Link="access_context_response.json" OutputFile="AccessContextResponse.cs" ClassName="AccessContextResponse" />
   </ItemGroup>
 
   <ItemGroup>

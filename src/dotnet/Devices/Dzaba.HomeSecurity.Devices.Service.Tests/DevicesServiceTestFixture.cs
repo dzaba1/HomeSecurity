@@ -4,6 +4,7 @@ using Dzaba.TestUtils.Integration.AspNet;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using StackExchange.Redis;
 
 namespace Dzaba.HomeSecurity.Devices.Service.Tests;
 
@@ -11,7 +12,9 @@ namespace Dzaba.HomeSecurity.Devices.Service.Tests;
 /// Base fixture for every controller test: selects the InMemory EF Core
 /// provider by swapping the shared DbServer library's IDbServerProvider seam
 /// (see its doc comment for why that exists instead of a second, competing
-/// AddDbContext(UseInMemoryDatabase(...)) call).
+/// AddDbContext(UseInMemoryDatabase(...)) call), and swaps
+/// IConnectionMultiplexer for FakeRedis's in-memory double - no real Redis
+/// instance needed.
 /// </summary>
 public abstract class DevicesServiceTestFixture : ControllerTestFixture<Program>
 {
@@ -30,5 +33,8 @@ public abstract class DevicesServiceTestFixture : ControllerTestFixture<Program>
     {
         services.RemoveAll<IDbServerProvider>();
         services.AddSingleton<IDbServerProvider, InMemoryDbServerProvider>();
+
+        services.RemoveAll<IConnectionMultiplexer>();
+        services.AddSingleton<IConnectionMultiplexer>(_ => FakeRedis.CreateConnectionMultiplexer());
     }
 }

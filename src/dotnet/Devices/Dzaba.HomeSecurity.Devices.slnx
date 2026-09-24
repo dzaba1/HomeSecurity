@@ -1,6 +1,8 @@
 <Solution>
+  <Project Path="../Common/Dzaba.HomeSecurity.Authorization.OrgApi/Dzaba.HomeSecurity.Authorization.OrgApi.csproj" />
   <Project Path="../Common/Dzaba.HomeSecurity.Authorization/Dzaba.HomeSecurity.Authorization.csproj" />
   <Project Path="../Common/Dzaba.HomeSecurity.Caching.Contracts/Dzaba.HomeSecurity.Caching.Contracts.csproj" />
+  <Project Path="../Common/Dzaba.HomeSecurity.Caching.Redis/Dzaba.HomeSecurity.Caching.Redis.csproj" />
   <Project Path="../Common/Dzaba.HomeSecurity.DbServer/Dzaba.HomeSecurity.DbServer.csproj" />
   <Project Path="../Common/Dzaba.HomeSecurity.Domain/Dzaba.HomeSecurity.Domain.csproj" />
   <Project Path="../Common/Dzaba.HomeSecurity.MessageBroker.Contracts/Dzaba.HomeSecurity.MessageBroker.Contracts.csproj" />

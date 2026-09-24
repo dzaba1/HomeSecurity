@@ -1,4 +1,6 @@
 using Dzaba.HomeSecurity.Authorization;
+using Dzaba.HomeSecurity.Authorization.OrgApi;
+using Dzaba.HomeSecurity.Caching.Redis;
 using Dzaba.HomeSecurity.DbServer;
 using Dzaba.HomeSecurity.Devices.Service.Data;
 using Dzaba.HomeSecurity.Domain;
@@ -34,6 +36,21 @@ builder.Services.AddJwtAuthentication(() => new JwtSettings
 // DevicesDbContext sees) and IMutableTenantContext (only the
 // tenant-resolution middleware writes it).
 builder.Services.AddDzabaHomeSecurityTenancy();
+
+// Permission policies, and tenant membership, are answered from the shared
+// access-context cache; on a miss they reach Org.Service (which owns
+// Membership/UserRole/RolePermission) by relaying the caller's own bearer
+// token - see docs/decisions/0016-devices-service-owns-its-own-database.md.
+// Redis is a hard readiness dependency here (no "degraded" tag) - it will
+// also hold the Data Protection key ring for router secrets.
+builder.Services.AddDzabaHomeSecurityPermissionAuthorization(builder.Configuration);
+builder.Services.AddDzabaHomeSecurityCachedTenantMembership();
+builder.Services.AddDzabaHomeSecurityOrgApiPermissionSource(sp =>
+    new Uri(sp.GetRequiredService<IConfiguration>()["Services:Org:BaseUrl"]
+        ?? throw new InvalidOperationException("Missing Services:Org:BaseUrl")));
+builder.Services.AddDzabaHomeSecurityRedisCache(sp =>
+    sp.GetRequiredService<IConfiguration>().GetConnectionString("Redis")
+        ?? throw new InvalidOperationException("Missing ConnectionStrings:Redis"));
 
 // Devices.Service owns its own database, separate from Org.Service's -
 // see docs/decisions/0016-devices-service-owns-its-own-database.md.
@@ -88,10 +105,11 @@ if (builder.Configuration.GetValue("Security:UseHttpsRedirection", true))
 
 app.UseRouting();
 app.UseAuthentication();
+app.UseMiddleware<TenantResolutionMiddleware>();
 app.UseAuthorization();
 app.MapControllers();
 
-// The Postgres check is registered above via AddHealthChecks() - see
+// The Postgres and Redis checks are registered above - see
 // MapDzabaHomeSecurityHealthChecks for the endpoint shape.
 app.MapDzabaHomeSecurityHealthChecks();
 
