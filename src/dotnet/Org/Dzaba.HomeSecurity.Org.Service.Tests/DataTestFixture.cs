@@ -1,10 +1,11 @@
+using Dzaba.HomeSecurity.Org.Service.Data;
 using Dzaba.HomeSecurity.Domain;
 using Dzaba.TestUtils.Integration;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-namespace Dzaba.HomeSecurity.Data.Tests;
+namespace Dzaba.HomeSecurity.Org.Service.Tests;
 
 /// <summary>
 /// Registers AppDbContext against the EF Core InMemory provider, with a

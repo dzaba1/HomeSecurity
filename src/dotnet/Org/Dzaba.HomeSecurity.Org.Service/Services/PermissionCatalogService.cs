@@ -1,5 +1,5 @@
 using System.Runtime.CompilerServices;
-using Dzaba.HomeSecurity.Data;
+using Dzaba.HomeSecurity.Org.Service.Data;
 using Dzaba.HomeSecurity.Org.Service.Mapping;
 using Microsoft.EntityFrameworkCore;
 using Permission = Dzaba.HomeSecurity.Org.Contracts.Permission;

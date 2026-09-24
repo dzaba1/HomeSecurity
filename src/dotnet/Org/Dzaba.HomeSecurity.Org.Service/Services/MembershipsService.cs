@@ -2,14 +2,14 @@ using System.Net;
 using System.Runtime.CompilerServices;
 using Dzaba.AspNetUtils;
 using Dzaba.HomeSecurity.Authorization;
-using Dzaba.HomeSecurity.Data;
+using Dzaba.HomeSecurity.Org.Service.Data;
 using Dzaba.HomeSecurity.Domain;
 using Dzaba.HomeSecurity.MessageBroker.Contracts;
 using Dzaba.HomeSecurity.Org.Contracts;
 using Dzaba.HomeSecurity.Org.Service.Mapping;
 using Dzaba.HomeSecurity.Org.Service.Messages;
 using Microsoft.EntityFrameworkCore;
-using MembershipEntity = Dzaba.HomeSecurity.Data.Entities.Membership;
+using MembershipEntity = Dzaba.HomeSecurity.Org.Service.Data.Entities.Membership;
 using Membership = Dzaba.HomeSecurity.Org.Contracts.Membership;
 using CreateMembership = Dzaba.HomeSecurity.Org.Contracts.CreateMembership;
 

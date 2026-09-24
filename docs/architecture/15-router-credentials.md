@@ -62,9 +62,8 @@ trade-off this accepts.
 
 ## Data model
 
-`Router` lives in **`Devices.Service`'s own database** — not the shared
-`Data` project `Org.Service` and `LogsIngestion.Service` use for the
-agent-auth `DeviceCredential` entity — see
+`Router` lives in **`Devices.Service`'s own database** — not `Org.Service`'s
+database, which holds the agent-auth `DeviceCredential` entity — see
 [ADR-0016](../decisions/0016-devices-service-owns-its-own-database.md).
 This also resolves a naming collision the model had implicitly carried:
 "Device" here always meant the network device a router reports seeing

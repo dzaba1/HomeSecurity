@@ -1,4 +1,4 @@
-namespace Dzaba.HomeSecurity.Data.Entities;
+namespace Dzaba.HomeSecurity.Org.Service.Data.Entities;
 
 /// <summary>
 /// The tenant root. Not itself tenant-owned/query-filtered - see

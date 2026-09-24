@@ -98,6 +98,8 @@ open without further changes to `Org.Service` if it's ever taken.
   `DeviceCredential`'s existing shared-`Data`-project arrangement — that
   stays as documented. This ADR only sets the default for `Devices.Service`
   and any service added after it.
+  (Since then, the shared `Data` project has been folded into `Org.Service`,
+  its only user, so `DeviceCredential` now lives in Org.Service's own project.)
 - The permission catalog itself (the `Permission`/`RolePermission` seed
   data) stays centrally owned and seeded by `Org.Service` even for
   permission keys that gate `Devices.Service`'s own endpoints

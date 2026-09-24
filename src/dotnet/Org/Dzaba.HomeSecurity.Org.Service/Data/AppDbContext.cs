@@ -1,13 +1,11 @@
-using Dzaba.HomeSecurity.Data.Entities;
+using Dzaba.HomeSecurity.Org.Service.Data.Entities;
 using Dzaba.HomeSecurity.Domain;
 using Microsoft.EntityFrameworkCore;
 
-namespace Dzaba.HomeSecurity.Data;
+namespace Dzaba.HomeSecurity.Org.Service.Data;
 
 /// <summary>
-/// Shared across the Org and DeviceAuth services - both write to the same
-/// physical Postgres database, so one migration history avoids two services
-/// racing on schema changes. Every tenant-owned entity's global query
+/// Org.Service's own database. Every tenant-owned entity's global query
 /// filter is bound to the tenant resolved by <see cref="ITenantContext"/> at
 /// construction time - never a client-supplied value, per
 /// docs/architecture/02-multi-tenancy.md.

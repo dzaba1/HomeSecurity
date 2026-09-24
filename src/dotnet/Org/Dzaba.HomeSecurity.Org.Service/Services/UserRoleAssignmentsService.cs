@@ -2,14 +2,14 @@ using System.Net;
 using System.Runtime.CompilerServices;
 using Dzaba.AspNetUtils;
 using Dzaba.HomeSecurity.Authorization;
-using Dzaba.HomeSecurity.Data;
+using Dzaba.HomeSecurity.Org.Service.Data;
 using Dzaba.HomeSecurity.Domain;
 using Dzaba.HomeSecurity.MessageBroker.Contracts;
 using Dzaba.HomeSecurity.Org.Contracts;
 using Dzaba.HomeSecurity.Org.Service.Mapping;
 using Dzaba.HomeSecurity.Org.Service.Messages;
 using Microsoft.EntityFrameworkCore;
-using UserRoleEntity = Dzaba.HomeSecurity.Data.Entities.UserRole;
+using UserRoleEntity = Dzaba.HomeSecurity.Org.Service.Data.Entities.UserRole;
 using UserRoleAssignment = Dzaba.HomeSecurity.Org.Contracts.UserRoleAssignment;
 using AssignUserRole = Dzaba.HomeSecurity.Org.Contracts.AssignUserRole;
 

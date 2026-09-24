@@ -53,18 +53,17 @@ system's own data) — see [`04-roles-and-permissions.md`](04-roles-and-permissi
 "Shared database" above is entirely about the tenant-isolation strategy
 *within* one service's own database — it says nothing about whether two
 different microservices share a physical database with each other.
-`Org.Service` currently owns its tables (including the device-auth
-`DeviceCredential` entity) through a `Data` project documented as "shared
-across the Org and DeviceAuth services" — a real, separate axis of
-coupling worth naming even though only one service actually uses it today:
-two services sharing a migration history can't deploy schema changes
-independently.
+`Org.Service` owns its tables (including the device-auth `DeviceCredential`
+entity) inside its own project. It used to keep them in a separate `Data`
+project documented as "shared across the Org and DeviceAuth services", but
+only `Org.Service` ever used it, so it was folded back in. The coupling
+that project anticipated — two services sharing a migration history can't
+deploy schema changes independently — is the thing to avoid.
 
-Going forward, the default for a *new* service is the opposite: its own
-database, no cross-service database-level foreign keys, tenant validity
-enforced at the API edge rather than a shared FK to `Organization`. The
+The default for any *other* service is therefore its own database, no
+cross-service database-level foreign keys, tenant validity enforced at the
+API edge rather than a shared FK to `Organization`. The
 first example is `Devices.Service` (`Router`/`Device` management) — see
 [ADR-0016](../decisions/0016-devices-service-owns-its-own-database.md) for
 the decision and the cross-service tenant/permission-check mechanism this
-requires. This ADR doesn't retroactively change `Org.Service`'s existing
-arrangement, only the policy for services added after it.
+requires. ADR-0016 sets this policy for services added after `Org.Service`.

@@ -1,6 +1,6 @@
 using Dzaba.HomeSecurity.Domain;
 
-namespace Dzaba.HomeSecurity.Data.Entities;
+namespace Dzaba.HomeSecurity.Org.Service.Data.Entities;
 
 /// <summary>
 /// A named, tenant-owned bundle of permissions. A null <see cref="TenantId"/>

@@ -1,6 +1,6 @@
 using Dzaba.HomeSecurity.Authorization;
 using Dzaba.HomeSecurity.Caching.Redis;
-using Dzaba.HomeSecurity.Data;
+using Dzaba.HomeSecurity.Org.Service.Data;
 using Dzaba.HomeSecurity.DbServer;
 using Dzaba.HomeSecurity.Domain;
 using Dzaba.HomeSecurity.MessageBroker.RabbitMQ;
@@ -55,9 +55,7 @@ builder.Services.AddTransient<ITenantMembershipChecker, DbTenantMembershipChecke
 // registered in the same container and make EF Core's provider
 // auto-detection throw. It also keeps the
 // Microsoft.EntityFrameworkCore.InMemory package out of this project
-// entirely - only the test project references it. Migrations live in this
-// assembly, not in Dzaba.HomeSecurity.Data (where AppDbContext itself is
-// defined), which keeps that shared project provider-agnostic.
+// entirely - only the test project references it.
 builder.Services.AddDzabaHomeSecurityNpgsqlDbServer(typeof(Program).Assembly);
 builder.Services.AddDzabaHomeSecurityDataServices(
     (sp, options, connectionString) => sp.GetRequiredService<IDbServerProvider>().Configure(options, connectionString),

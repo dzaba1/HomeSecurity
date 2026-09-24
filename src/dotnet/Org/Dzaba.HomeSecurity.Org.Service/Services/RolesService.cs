@@ -2,12 +2,12 @@ using System.Net;
 using System.Runtime.CompilerServices;
 using Dzaba.AspNetUtils;
 using Dzaba.HomeSecurity.Authorization;
-using Dzaba.HomeSecurity.Data;
+using Dzaba.HomeSecurity.Org.Service.Data;
 using Dzaba.HomeSecurity.Domain;
 using Dzaba.HomeSecurity.Org.Service.Mapping;
 using Microsoft.EntityFrameworkCore;
-using RoleEntity = Dzaba.HomeSecurity.Data.Entities.Role;
-using RolePermissionEntity = Dzaba.HomeSecurity.Data.Entities.RolePermission;
+using RoleEntity = Dzaba.HomeSecurity.Org.Service.Data.Entities.Role;
+using RolePermissionEntity = Dzaba.HomeSecurity.Org.Service.Data.Entities.RolePermission;
 using Role = Dzaba.HomeSecurity.Org.Contracts.Role;
 using CreateRole = Dzaba.HomeSecurity.Org.Contracts.CreateRole;
 

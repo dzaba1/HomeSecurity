@@ -3,7 +3,7 @@ using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using Dzaba.AspNetUtils;
-using Dzaba.HomeSecurity.Data;
+using Dzaba.HomeSecurity.Org.Service.Data;
 using Dzaba.HomeSecurity.DbServer;
 using Dzaba.HomeSecurity.Domain;
 using Dzaba.HomeSecurity.MessageBroker.Contracts;
@@ -107,7 +107,7 @@ public abstract class OrgServiceTestFixture : ControllerTestFixture<Program>
         using var db = CreateDbContext(Guid.Empty);
         // InMemory only materializes HasData seed rows (the permission
         // catalog/system roles) once EnsureCreated runs - same reasoning as
-        // Data.Tests' DataTestFixture.
+        // DataTestFixture.
         await db.Database.EnsureCreatedAsync();
     }
 
@@ -118,7 +118,7 @@ public abstract class OrgServiceTestFixture : ControllerTestFixture<Program>
     /// DbContextOptions&lt;AppDbContext&gt; captures a reference back to its
     /// originating scope for some internal services (e.g. logging), which
     /// breaks once that scope is disposed - building the options standalone
-    /// avoids that entirely, same as Data.Tests' DataTestFixture and
+    /// avoids that entirely, same as DataTestFixture and
     /// AppDbContextFactory already do.
     /// </summary>
     protected AppDbContext CreateDbContext(Guid tenantId)

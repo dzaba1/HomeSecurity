@@ -1,10 +1,11 @@
-using Dzaba.HomeSecurity.Data.Entities;
+using Dzaba.HomeSecurity.Org.Service.Data;
+using Dzaba.HomeSecurity.Org.Service.Data.Entities;
 using Dzaba.HomeSecurity.Domain;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using NUnit.Framework;
 
-namespace Dzaba.HomeSecurity.Data.Tests;
+namespace Dzaba.HomeSecurity.Org.Service.Tests;
 
 [TestFixture]
 public class AppDbContextTests : DataTestFixture

@@ -33,7 +33,6 @@ COPY ["src/dotnet/Common/Dzaba.HomeSecurity.Caching.Redis/Dzaba.HomeSecurity.Cac
 COPY ["src/dotnet/Common/Dzaba.HomeSecurity.DbServer/Dzaba.HomeSecurity.DbServer.csproj", "src/dotnet/Common/Dzaba.HomeSecurity.DbServer/"]
 COPY ["src/dotnet/Common/Dzaba.HomeSecurity.MessageBroker.Contracts/Dzaba.HomeSecurity.MessageBroker.Contracts.csproj", "src/dotnet/Common/Dzaba.HomeSecurity.MessageBroker.Contracts/"]
 COPY ["src/dotnet/Common/Dzaba.HomeSecurity.MessageBroker.RabbitMQ/Dzaba.HomeSecurity.MessageBroker.RabbitMQ.csproj", "src/dotnet/Common/Dzaba.HomeSecurity.MessageBroker.RabbitMQ/"]
-COPY ["src/dotnet/Data/Dzaba.HomeSecurity.Data/Dzaba.HomeSecurity.Data.csproj", "src/dotnet/Data/Dzaba.HomeSecurity.Data/"]
 COPY ["src/dotnet/Org/Dzaba.HomeSecurity.Org.Contracts/Dzaba.HomeSecurity.Org.Contracts.csproj", "src/dotnet/Org/Dzaba.HomeSecurity.Org.Contracts/"]
 COPY ["src/dotnet/Org/Dzaba.HomeSecurity.Org.Service/Dzaba.HomeSecurity.Org.Service.csproj", "src/dotnet/Org/Dzaba.HomeSecurity.Org.Service/"]
 RUN dotnet restore "src/dotnet/Org/Dzaba.HomeSecurity.Org.Service/Dzaba.HomeSecurity.Org.Service.csproj"

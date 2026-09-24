@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Dzaba.HomeSecurity.Data;
+namespace Dzaba.HomeSecurity.Org.Service.Data;
 
 public static class Bootstrapper
 {

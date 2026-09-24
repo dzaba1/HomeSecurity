@@ -1,6 +1,6 @@
 using Dzaba.HomeSecurity.Domain;
 
-namespace Dzaba.HomeSecurity.Data.Entities;
+namespace Dzaba.HomeSecurity.Org.Service.Data.Entities;
 
 /// <summary>
 /// Which organizations a Keycloak-authenticated user belongs to. Distinct

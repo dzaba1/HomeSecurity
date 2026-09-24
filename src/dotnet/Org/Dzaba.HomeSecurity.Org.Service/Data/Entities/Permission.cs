@@ -1,4 +1,4 @@
-namespace Dzaba.HomeSecurity.Data.Entities;
+namespace Dzaba.HomeSecurity.Org.Service.Data.Entities;
 
 /// <summary>
 /// One atomic, opaque permission key from the fixed catalog. Seeded at

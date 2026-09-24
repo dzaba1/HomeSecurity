@@ -1,4 +1,4 @@
-namespace Dzaba.HomeSecurity.Data.Entities;
+namespace Dzaba.HomeSecurity.Org.Service.Data.Entities;
 
 /// <summary>
 /// Join table: which permission keys a role grants. Tenant isolation flows

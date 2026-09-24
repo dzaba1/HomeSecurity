@@ -1,6 +1,6 @@
 using Dzaba.HomeSecurity.Domain;
 
-namespace Dzaba.HomeSecurity.Data.Entities;
+namespace Dzaba.HomeSecurity.Org.Service.Data.Entities;
 
 /// <summary>
 /// Assigns a role to a user, scoped to a tenant - the join the effective

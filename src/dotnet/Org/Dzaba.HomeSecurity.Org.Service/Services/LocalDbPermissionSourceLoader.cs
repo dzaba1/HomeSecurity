@@ -1,5 +1,5 @@
 using Dzaba.HomeSecurity.Authorization;
-using Dzaba.HomeSecurity.Data;
+using Dzaba.HomeSecurity.Org.Service.Data;
 using Dzaba.HomeSecurity.Domain;
 using Microsoft.EntityFrameworkCore;
 
