@@ -3,7 +3,10 @@ using Dzaba.HomeSecurity.Authorization.OrgApi;
 using Dzaba.HomeSecurity.Caching.Redis;
 using Dzaba.HomeSecurity.DbServer;
 using Dzaba.HomeSecurity.Devices.Service.Data;
+using Dzaba.HomeSecurity.Devices.Service.Security;
+using Dzaba.HomeSecurity.Devices.Service.Services;
 using Dzaba.HomeSecurity.Domain;
+using Dzaba.HomeSecurity.MessageBroker.RabbitMQ;
 using Dzaba.HomeSecurity.Observability;
 using Dzaba.HomeSecurity.WebApi;
 using Dzaba.Utils.AspNet;
@@ -63,6 +66,24 @@ builder.Services.AddDbContext<DevicesDbContext>((sp, options) =>
         ?? throw new InvalidOperationException("Missing ConnectionStrings:DevicesDatabase");
     sp.GetRequiredService<IDbServerProvider>().Configure(options, connectionString);
 });
+
+// Router secrets are encrypted at rest with ASP.NET Core Data Protection
+// (docs/architecture/15-router-credentials.md). The key ring lives in the
+// same Redis (reusing the connection AddDzabaHomeSecurityRedisCache
+// registered), so every replica behind a rolling deployment can decrypt what
+// another replica encrypted, without a separate secrets store for v1.
+builder.Services.AddDzabaHomeSecurityRedisDataProtection(ServiceName, "DataProtection-Keys:Devices");
+builder.Services.AddTransient<IRouterSecretProtector, RouterSecretProtector>();
+
+// Publishes router.changed (RoutersService) - a notification-only event with
+// no consumer yet, published as a low-cost hedge for future integrations.
+// See router_changed_message.json.
+builder.Services.AddDzabaHomeSecurityRabbitMqMessageBus(
+    builder.Configuration.GetConnectionString("RabbitMQ")
+        ?? throw new InvalidOperationException("Missing ConnectionStrings:RabbitMQ"));
+
+builder.Services.AddDzabaHomeSecurityHal();
+builder.Services.AddTransient<IRoutersService, RoutersService>();
 
 builder.Services.AddHealthChecks()
     .AddNpgSql(sp => sp.GetRequiredService<IConfiguration>().GetConnectionString("DevicesDatabase")!, name: "postgres");

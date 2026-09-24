@@ -23,7 +23,7 @@ namespace Dzaba.HomeSecurity.Org.Service.Controllers;
 [ValidateModel]
 [HandleErrors]
 [Route("api/v{version:apiVersion}/orgs/{orgId:guid}/roles")]
-public sealed class RolesController : OrgControllerBase
+public sealed class RolesController : HalControllerBase
 {
     private readonly IRolesService roles;
     private readonly IPermissionEvaluator permissionEvaluator;

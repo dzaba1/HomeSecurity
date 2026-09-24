@@ -15,7 +15,7 @@ namespace Dzaba.HomeSecurity.Org.Service.Controllers;
 [Authorize]
 [HandleErrors]
 [Route("api/v{version:apiVersion}/permissions")]
-public sealed class PermissionsController : OrgControllerBase
+public sealed class PermissionsController : HalControllerBase
 {
     private readonly IPermissionCatalogService catalog;
 

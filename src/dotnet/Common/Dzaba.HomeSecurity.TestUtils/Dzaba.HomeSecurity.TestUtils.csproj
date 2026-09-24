@@ -9,9 +9,12 @@
   <ItemGroup>
     <ProjectReference Include="..\Dzaba.HomeSecurity.MessageBroker.Contracts\Dzaba.HomeSecurity.MessageBroker.Contracts.csproj" />
     <ProjectReference Include="..\Dzaba.HomeSecurity.DbServer\Dzaba.HomeSecurity.DbServer.csproj" />
+    <ProjectReference Include="..\Dzaba.HomeSecurity.Authorization\Dzaba.HomeSecurity.Authorization.csproj" />
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Dzaba.TestUtils.Integration.AspNet" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" />
     <PackageReference Include="Moq" />
     <PackageReference Include="StackExchange.Redis" />

@@ -19,7 +19,7 @@ namespace Dzaba.HomeSecurity.Org.Service.Controllers;
 [Authorize]
 [HandleErrors]
 [Route("api/v{version:apiVersion}")]
-public sealed class RootController : OrgControllerBase
+public sealed class RootController : HalControllerBase
 {
     public RootController(ILinkFactory links, IOptions<JsonOptions> jsonOptions)
         : base(links, jsonOptions)

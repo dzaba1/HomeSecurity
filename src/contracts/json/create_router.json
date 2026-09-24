@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "CreateRouter",
+  "description": "authMode is required for WebScrape and must be omitted for SNMP; for SNMP the secret is the community string.",
+  "type": "object",
+  "required": ["name", "host", "protocol", "username", "secret"],
+  "properties": {
+    "name": { "type": "string", "minLength": 1, "maxLength": 200 },
+    "host": { "type": "string", "minLength": 1, "maxLength": 255, "description": "Host name or IP address on the home network" },
+    "protocol": { "$ref": "router_protocol.json" },
+    "authMode": { "oneOf": [{ "$ref": "router_auth_mode.json" }, { "type": "null" }] },
+    "username": { "type": "string", "maxLength": 200 },
+    "secret": { "type": "string", "minLength": 1, "maxLength": 1024, "description": "The router password / SNMP community string. Write-only: never returned by any endpoint." }
+  },
+  "additionalProperties": false
+}

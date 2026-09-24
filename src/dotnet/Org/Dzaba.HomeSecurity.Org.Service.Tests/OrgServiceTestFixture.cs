@@ -1,21 +1,15 @@
-using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using System.Text;
 using System.Text.Json;
-using Dzaba.AspNetUtils;
 using Dzaba.HomeSecurity.Org.Service.Data;
 using Dzaba.HomeSecurity.DbServer;
 using Dzaba.HomeSecurity.Domain;
 using Dzaba.HomeSecurity.MessageBroker.Contracts;
 using Dzaba.HomeSecurity.TestUtils;
-using Dzaba.TestUtils.Integration.AspNet;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Microsoft.IdentityModel.Tokens;
 using NUnit.Framework;
 using StackExchange.Redis;
 
@@ -27,11 +21,8 @@ namespace Dzaba.HomeSecurity.Org.Service.Tests;
 /// seam - see its doc comment for why this exists instead of a second,
 /// competing AddDbContext(UseInMemoryDatabase(...)) call) with a fresh database name
 /// per test, and swaps IConnectionMultiplexer for FakeRedis's in-memory
-/// double - no real Redis instance needed. JWT bearer options are overridden
-/// with a symmetric test key (ControllerTestFixture's own AddMockedJwtSettings
-/// helper assumes a DI-resolved JwtSettings, which Program.cs's
-/// AddJwtAuthentication(Func&lt;JwtSettings&gt;) doesn't use - PostConfigure is
-/// the mechanism that actually works against that wiring). DataProtection
+/// double - no real Redis instance needed. JWT authentication comes from the
+/// shared AuthenticatedControllerTestFixture. DataProtection
 /// uses an ephemeral (in-memory) key provider instead of the real host's
 /// default disk-backed one - every test otherwise reads/writes the same
 /// per-user key-ring file on disk, which is both needless I/O per test and,
@@ -41,7 +32,7 @@ namespace Dzaba.HomeSecurity.Org.Service.Tests;
 /// publish access.changed on every mutation now, so every such test would
 /// otherwise need a real broker.
 /// </summary>
-public abstract class OrgServiceTestFixture : ControllerTestFixture<Program>
+public abstract class OrgServiceTestFixture : AuthenticatedControllerTestFixture<Program>
 {
     // Set by EnsureDatabaseCreatedAsync (a [SetUp], so it always runs before
     // OnConfigureConfiguration's lazy first firing - see that method's own
@@ -68,6 +59,8 @@ public abstract class OrgServiceTestFixture : ControllerTestFixture<Program>
 
     protected override void OnConfigureServices(IServiceCollection services)
     {
+        base.OnConfigureServices(services);
+
         services.RemoveAll<IDbServerProvider>();
         services.AddSingleton<IDbServerProvider, InMemoryDbServerProvider>();
 
@@ -79,20 +72,6 @@ public abstract class OrgServiceTestFixture : ControllerTestFixture<Program>
         services.AddSingleton<IMessageBus>(MessageBus);
 
         services.AddDataProtection().UseEphemeralDataProtectionProvider();
-
-        services.PostConfigure<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme, jwtOptions =>
-        {
-            jwtOptions.Authority = null;
-            jwtOptions.RequireHttpsMetadata = false;
-            jwtOptions.TokenValidationParameters = new TokenValidationParameters
-            {
-                ValidateIssuer = false,
-                ValidateAudience = false,
-                ValidateLifetime = true,
-                ValidateIssuerSigningKey = true,
-                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(JwtSettings.Settings.IssuerSigningKey)),
-            };
-        });
     }
 
     [SetUp]
@@ -125,16 +104,6 @@ public abstract class OrgServiceTestFixture : ControllerTestFixture<Program>
     {
         var options = new DbContextOptionsBuilder<AppDbContext>().UseInMemoryDatabase(databaseName).Options;
         return new AppDbContext(options, new StaticTenantContext(tenantId));
-    }
-
-    protected string CreateToken(string userId) =>
-        JwtSettings.GetTokenBuilder().WithSubject(userId).Build().EncodeToString();
-
-    protected HttpClient CreateAuthenticatedClient(string userId)
-    {
-        var client = CreateClient();
-        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", CreateToken(userId));
-        return client;
     }
 
     protected static async Task<Guid> ExtractIdAsync(HttpResponseMessage response)

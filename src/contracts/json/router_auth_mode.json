@@ -1,0 +1,7 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "RouterAuthMode",
+  "description": "How the agent presents a WebScrape router's credentials - only meaningful for the WebScrape protocol. See docs/architecture/15-router-credentials.md.",
+  "type": "string",
+  "enum": ["HttpBasic", "HttpDigest", "FormLogin"]
+}

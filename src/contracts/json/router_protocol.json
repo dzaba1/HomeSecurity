@@ -1,0 +1,7 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "RouterProtocol",
+  "description": "How the agent reads a router's connected-device list. See docs/architecture/15-router-credentials.md.",
+  "type": "string",
+  "enum": ["WebScrape", "SNMP"]
+}

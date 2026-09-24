@@ -23,7 +23,7 @@ namespace Dzaba.HomeSecurity.Org.Service.Controllers;
 [ValidateModel]
 [HandleErrors]
 [Route("api/v{version:apiVersion}/orgs/{orgId:guid}/members")]
-public sealed class MembersController : OrgControllerBase
+public sealed class MembersController : HalControllerBase
 {
     private readonly IMembershipsService memberships;
     private readonly IPermissionEvaluator permissionEvaluator;

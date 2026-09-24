@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Router",
+  "description": "A home router's metadata. Never carries the secret, encrypted or not: it is write-only.",
+  "type": "object",
+  "required": ["id", "name", "host", "protocol", "username", "updatedAt"],
+  "properties": {
+    "id": { "type": "string", "format": "uuid" },
+    "name": { "type": "string", "minLength": 1, "maxLength": 200 },
+    "host": { "type": "string", "minLength": 1, "maxLength": 255, "description": "Host name or IP address on the home network" },
+    "protocol": { "$ref": "router_protocol.json" },
+    "authMode": { "oneOf": [{ "$ref": "router_auth_mode.json" }, { "type": "null" }] },
+    "username": { "type": "string", "maxLength": 200 },
+    "updatedAt": { "type": "string", "format": "date-time" }
+  },
+  "additionalProperties": false
+}

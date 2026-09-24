@@ -25,6 +25,10 @@
     <PackageVersion Include="Keycloak.Net.Core" Version="1.0.41" />
     <!-- Caching (MIT) -->
     <PackageVersion Include="StackExchange.Redis" Version="3.3.0" />
+    <!-- ASP.NET Core Data Protection's Redis-backed key ring, for encrypting
+         router secrets at rest so every replica can decrypt what another
+         encrypted - docs/architecture/15-router-credentials.md (MIT) -->
+    <PackageVersion Include="Microsoft.AspNetCore.DataProtection.StackExchangeRedis" Version="10.0.12" />
     <!-- Messaging: RabbitMQ client, ADR-0007 (MIT) -->
     <PackageVersion Include="EasyNetQ" Version="8.1.7" />
     <!-- Service-to-service HttpClient resilience: retry/circuit breaker via the

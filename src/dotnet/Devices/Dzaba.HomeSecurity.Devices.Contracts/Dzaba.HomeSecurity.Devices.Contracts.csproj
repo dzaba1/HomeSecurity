@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- router_protocol.json/router_auth_mode.json are "library" schemas:
+         shared by router.json, create_router.json and update_router.json via
+         $ref, so each is generated exactly once here and the schemas that
+         reference them exclude them (see build/JsonSchema.targets'
+         ExcludedTypeNames note) rather than each regenerating its own copy,
+         which would collide as duplicate types in this shared namespace.
+         Class names carry the filename's snake_case through (Router_protocol)
+         for the same reason as LogsIngestion.Contracts' network_device.json. -->
+    <JsonSchema Include="..\..\..\contracts\json\router_protocol.json" Link="router_protocol.json" OutputFile="Router_protocol.cs" ClassName="Router_protocol" />
+    <JsonSchema Include="..\..\..\contracts\json\router_auth_mode.json" Link="router_auth_mode.json" OutputFile="Router_auth_mode.cs" ClassName="Router_auth_mode" />
+    <JsonSchema Include="..\..\..\contracts\json\router.json" Link="router.json" OutputFile="Router.cs" ClassName="Router" ExcludedTypeNames="Router_protocol,Router_auth_mode" />
+    <JsonSchema Include="..\..\..\contracts\json\create_router.json" Link="create_router.json" OutputFile="CreateRouter.cs" ClassName="CreateRouter" ExcludedTypeNames="Router_protocol,Router_auth_mode" />
+    <JsonSchema Include="..\..\..\contracts\json\update_router.json" Link="update_router.json" OutputFile="UpdateRouter.cs" ClassName="UpdateRouter" ExcludedTypeNames="Router_protocol,Router_auth_mode" />
+    <JsonSchema Include="..\..\..\contracts\json\router_changed_message.json" Link="router_changed_message.json" OutputFile="RouterChangedMessage.cs" ClassName="RouterChangedMessage" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NSwag.MSBuild">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <Import Project="..\..\..\..\build\JsonSchema.targets" />
+
+</Project>
