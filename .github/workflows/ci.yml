@@ -21,3 +21,21 @@ jobs:
       service-name: logs-ingestion-service
       solution-path: src/dotnet/LogsIngestion/Dzaba.HomeSecurity.LogsIngestion.slnx
       dockerfile-path: src/dotnet/LogsIngestion/Dzaba.HomeSecurity.LogsIngestion.Service/Dockerfile
+
+  common-libraries:
+    name: Common libraries
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: 10.0.x
+
+      # Common has no solution of its own; every *.Tests.csproj under it is
+      # discovered, so new test projects are picked up without editing this file.
+      # xargs runs all of them even if one fails, then exits non-zero.
+      - name: Test
+        run: find src/dotnet/Common -name '*.Tests.csproj' -print0 | xargs -0 -n1 dotnet test -c Release
