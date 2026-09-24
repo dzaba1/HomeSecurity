@@ -194,6 +194,50 @@ services:
     networks:
       - backend
 
+  devices-service:
+    build:
+      context: ..
+      dockerfile: src/dotnet/Devices/Dzaba.HomeSecurity.Devices.Service/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_HTTP_PORTS: "8080"
+      # No TLS termination in front of this service in the local stack -
+      # see the comment on Security:UseHttpsRedirection in Program.cs.
+      Security__UseHttpsRedirection: "false"
+      # Its own database (ADR-0016), on the same Postgres server as
+      # Org.Service's. Program.cs's dev-only auto-migrate creates it on first
+      # start, so nothing has to provision it here.
+      ConnectionStrings__DevicesDatabase: Host=postgres-app;Port=5432;Database=${POSTGRES_APP_DB}_devices;Username=${POSTGRES_APP_USER};Password=${POSTGRES_APP_PASSWORD}
+      ConnectionStrings__Redis: redis:6379
+      ConnectionStrings__RabbitMQ: host=rabbitmq;username=${RABBITMQ_DEFAULT_USER};password=${RABBITMQ_DEFAULT_PASS}
+      # appsettings.Development.json points these at localhost (for running
+      # the app bare on the host); that's unreachable from inside this
+      # container's network, so they're overridden back to in-network names.
+      Services__Org__BaseUrl: http://org-service:8080/
+      Authentication__Keycloak__Authority: http://keycloak:8080/realms/home-security
+      Authentication__DeviceTokens__SigningKey: ${DEVICES_DEVICE_TOKENS_SIGNING_KEY}
+    ports:
+      - "8084:8080"
+    depends_on:
+      postgres-app:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      # Not needed for its schema (it migrates its own database) but for the
+      # access-context call-through on a cold permission cache.
+      org-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - backend
+
   adminer:
     image: adminer:6.0.1
     ports:

@@ -22,6 +22,14 @@ jobs:
       solution-path: src/dotnet/LogsIngestion/Dzaba.HomeSecurity.LogsIngestion.slnx
       dockerfile-path: src/dotnet/LogsIngestion/Dzaba.HomeSecurity.LogsIngestion.Service/Dockerfile
 
+  devices-service:
+    name: Devices service
+    uses: ./.github/workflows/dotnet-service-ci.yml
+    with:
+      service-name: devices-service
+      solution-path: src/dotnet/Devices/Dzaba.HomeSecurity.Devices.slnx
+      dockerfile-path: src/dotnet/Devices/Dzaba.HomeSecurity.Devices.Service/Dockerfile
+
   common-libraries:
     name: Common libraries
     runs-on: ubuntu-latest

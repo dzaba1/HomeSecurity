@@ -35,7 +35,7 @@ out of `src/.env` after running the script.
 | Service | URL / port | Purpose |
 |---|---|---|
 | postgres-keycloak | `localhost:5432` | Keycloak's own database |
-| postgres-app | `localhost:5433` | App database (tenants/devices/logs) |
+| postgres-app | `localhost:5433` | App databases: `homesecurity` (Org.Service) and `homesecurity_devices` (Devices.Service, created on its first start) |
 | keycloak | http://localhost:8080 | Identity provider (OIDC) |
 | oauth2-proxy | http://localhost:4180 | Identity-aware proxy in front of the Admin UI |
 | rabbitmq | http://localhost:15672 (UI), `5672` (AMQP) | Message broker |
