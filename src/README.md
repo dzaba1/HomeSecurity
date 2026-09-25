@@ -40,6 +40,7 @@ out of `src/.env` after running the script.
 | oauth2-proxy | http://localhost:4180 | Identity-aware proxy in front of the Admin UI |
 | rabbitmq | http://localhost:15672 (UI), `5672` (AMQP) | Message broker |
 | redis | `localhost:6379` | Permission cache / idempotency store |
+| logs-processor | none (no published port) | Go consumer of the `logs.ingested` queue (`homesecurity.logs-processor`, dead-lettered to `.dlq`); only takes messages off the queue for now. `LOG_LEVEL=debug` in this stack |
 | adminer | http://localhost:8081 | Postgres browser — connect using either postgres service's host/credentials from `.env` |
 | grafana | http://localhost:3000 | Dashboards — Prometheus/Loki/Tempo pre-provisioned as data sources; log in with `GRAFANA_ADMIN_USER`/`GRAFANA_ADMIN_PASSWORD` from `.env` |
 | prometheus | http://localhost:9090 | Metrics storage/query, scrapes otel-collector |

@@ -31,6 +31,14 @@ jobs:
       solution-path: src/dotnet/Devices/Dzaba.HomeSecurity.Devices.slnx
       dockerfile-path: src/dotnet/Devices/Dzaba.HomeSecurity.Devices.Service/Dockerfile
 
+  logs-processor:
+    name: Logs Processor (Go)
+    uses: ./.github/workflows/go-service-ci.yml
+    with:
+      service-name: logs-processor
+      module-path: src/go/LogsProcessor
+      dockerfile-path: src/go/LogsProcessor/Dockerfile
+
   common-libraries:
     name: Common libraries
     runs-on: ubuntu-latest

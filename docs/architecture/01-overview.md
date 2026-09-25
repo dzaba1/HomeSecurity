@@ -91,7 +91,7 @@ own consumer, not a separate service's.
 | Logs Ingestion API | Accepts log batches from agents, validates, publishes to the queue | Custom, thin |
 | RabbitMQ | Message bus: decouples ingestion from processing, carries domain events | Ready container |
 | Redis | Caches computed permissions (shared across services); gives the Processing Worker idempotency against redelivered messages | Ready container |
-| Processing Workers | Enrich, deduplicate, apply detection rules, raise incidents | Custom (this is the product) |
+| Processing Workers | Enrich, deduplicate, apply detection rules, raise incidents. The first one, `logs-processor`, is a Go service ([ADR-0019](../decisions/0019-go-logs-processor-polyglot-consumer.md)) that so far only consumes the queue | Custom (this is the product) |
 | Notification Service | Turns incidents into push notifications | Custom, thin, delegates to FCM/APNs |
 | Org DB | Canonical store for organizations, memberships, roles/permissions | Postgres |
 | Devices DB | Canonical store for routers and network devices — a separate database from Org DB, not shared | Postgres |

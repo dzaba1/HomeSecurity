@@ -217,6 +217,30 @@ services:
     networks:
       - backend
 
+  # Go consumer of the log-ingestion queue - deliberately not .NET, to show
+  # that services on the message bus only share the contract. Nothing calls
+  # it, so no host port is published.
+  logs-processor:
+    build:
+      context: ..
+      dockerfile: src/go/LogsProcessor/Dockerfile
+    environment:
+      RABBITMQ_URL: amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672/
+      # The local stack is a development environment; debug logs each delivery.
+      LOG_LEVEL: debug
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      # The distroless runtime image has no curl; the binary probes itself.
+      test: ["CMD", "/app/logs-processor", "-healthcheck"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - backend
+
   devices-service:
     build:
       context: ..

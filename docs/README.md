@@ -95,8 +95,16 @@ authorization, Redis cache and Data Protection wiring, the RabbitMQ message
 bus, the per-service database provider, HAL and other web-API plumbing,
 observability, and test utilities.
 
+The first non-.NET service, `logs-processor` in `src/go/LogsProcessor`, is a Go
+consumer of the log-ingestion queue — chosen on purpose to show services on the
+message bus can use different technologies and share only the JSON-Schema
+contract ([ADR-0019](decisions/0019-go-logs-processor-polyglot-consumer.md)).
+For now it only takes messages off the queue; its processing method is an
+empty stub.
+
 Not built yet: the Admin UI, the device-token endpoint, agent pairing (the
-`AgentRouterBinding` rows are only created directly in tests), the ingestion
-consumer that detects unknown devices, and push notification delivery. See
+`AgentRouterBinding` rows are only created directly in tests), the actual
+processing of ingested logs (unknown-device detection), and push notification
+delivery. See
 [ADR-0006](decisions/0006-defer-auth-platform-extraction.md) for the current
 stance on splitting auth out of this repo entirely.
