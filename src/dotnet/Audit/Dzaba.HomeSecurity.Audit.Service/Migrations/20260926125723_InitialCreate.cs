@@ -57,7 +57,6 @@ namespace Dzaba.HomeSecurity.Audit.Service.Migrations
                 {
                     TenantId = table.Column<Guid>(type: "uuid", nullable: false),
                     Category = table.Column<string>(type: "character varying(30)", maxLength: 30, nullable: false),
-                    LastSeq = table.Column<long>(type: "bigint", nullable: false),
                     LastHash = table.Column<byte[]>(type: "bytea", nullable: false)
                 },
                 constraints: table =>

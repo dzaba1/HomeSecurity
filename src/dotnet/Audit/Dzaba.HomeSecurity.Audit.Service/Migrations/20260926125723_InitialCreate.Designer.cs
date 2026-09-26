@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Dzaba.HomeSecurity.Audit.Service.Migrations
 {
     [DbContext(typeof(AuditDbContext))]
-    [Migration("20260926115647_InitialCreate")]
+    [Migration("20260926125723_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -138,11 +138,9 @@ namespace Dzaba.HomeSecurity.Audit.Service.Migrations
                         .HasColumnType("character varying(30)");
 
                     b.Property<byte[]>("LastHash")
+                        .IsConcurrencyToken()
                         .IsRequired()
                         .HasColumnType("bytea");
-
-                    b.Property<long>("LastSeq")
-                        .HasColumnType("bigint");
 
                     b.HasKey("TenantId", "Category");
 

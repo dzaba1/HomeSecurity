@@ -1,7 +1,9 @@
 using Dzaba.HomeSecurity.Audit.Service.Data;
+using Dzaba.HomeSecurity.Audit.Service.Ingestion;
 using Dzaba.HomeSecurity.Authorization;
 using Dzaba.HomeSecurity.DbServer;
 using Dzaba.HomeSecurity.Domain;
+using Dzaba.HomeSecurity.MessageBroker.RabbitMQ;
 using Dzaba.HomeSecurity.Observability;
 using Dzaba.HomeSecurity.WebApi;
 using Microsoft.EntityFrameworkCore;
@@ -30,6 +32,16 @@ builder.Services.AddDbContext<AuditDbContext>((sp, options) =>
         ?? throw new InvalidOperationException("Missing ConnectionStrings:AuditDatabase");
     sp.GetRequiredService<IDbServerProvider>().Configure(options, connectionString);
 });
+
+// Audit.Service is a subscriber of the domain events every service publishes
+// (docs/architecture/16-auditing-and-compliance.md): its own queue, bound to
+// each event name, with a dead-letter queue for what can't be stored. Each
+// message is handled in its own scope, so it gets its own AuditDbContext.
+builder.Services.AddDzabaHomeSecurityRabbitMqMessageBus(
+    builder.Configuration.GetConnectionString("RabbitMQ")
+        ?? throw new InvalidOperationException("Missing ConnectionStrings:RabbitMQ"));
+builder.Services.AddTransient<AuditEventIngestor>();
+builder.Services.AddDzabaHomeSecurityRabbitMqSubscription<AuditEventHandler>(AuditSubscription.CreateOptions());
 
 builder.Services.AddHealthChecks()
     .AddNpgSql(sp => sp.GetRequiredService<IConfiguration>().GetConnectionString("AuditDatabase")!, name: "postgres");

@@ -135,11 +135,9 @@ namespace Dzaba.HomeSecurity.Audit.Service.Migrations
                         .HasColumnType("character varying(30)");
 
                     b.Property<byte[]>("LastHash")
+                        .IsConcurrencyToken()
                         .IsRequired()
                         .HasColumnType("bytea");
-
-                    b.Property<long>("LastSeq")
-                        .HasColumnType("bigint");
 
                     b.HasKey("TenantId", "Category");
 

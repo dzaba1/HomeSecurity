@@ -80,6 +80,9 @@ internal sealed class AuditDbContext : DbContext
             e.HasKey(h => new { h.TenantId, h.Category });
 
             e.Property(h => h.Category).HasConversion<string>().HasMaxLength(30);
+            // What serializes writers to one chain: the UPDATE is conditional on
+            // the tip still being what the new event chained onto.
+            e.Property(h => h.LastHash).IsConcurrencyToken();
         });
     }
 }

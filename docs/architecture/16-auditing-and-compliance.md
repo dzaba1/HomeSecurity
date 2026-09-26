@@ -10,9 +10,9 @@ before the "what." Implementation status: the permissions (§7), the event
 envelope contract, the shared publishing library (event publisher,
 current-actor), and the domain events `Org.Service` and `Devices.Service`
 publish are built, as is `Audit.Service`'s storage model (events, actor
-pseudonyms, hash-chain heads, and the append-only database grants); its
-subscriber, its read API, the retention job and the Keycloak webhook are not
-yet.
+pseudonyms, hash-chain heads, and the append-only database grants) and its
+subscriber, which validates and stores each event; its read API, the
+retention job and the Keycloak webhook are not yet.
 
 ## 1. Why this is not just more Serilog output
 
@@ -159,9 +159,22 @@ resolution, made concrete:
   and what changed, never the whole new state, and a subscriber that needs
   current state still calls the owning service's API.
 - **A new `Audit.Service`** subscribes to the events that make up the audit
-  trail (its own quorum queue with a dead-letter queue, binding the event
-  names it records — the same topology as
-  the Go `LogsProcessor` from [ADR-0019](../decisions/0019-go-logs-processor-polyglot-consumer.md)). Per
+  trail: its own quorum queue `homesecurity.audit-service`, bound to every
+  event name in `DomainEventNames` (so a new event joins the trail
+  automatically) plus `identity.#`, with a dead-letter exchange and queue and a
+  delivery limit of 5 — the same topology as
+  the Go `LogsProcessor` from [ADR-0019](../decisions/0019-go-logs-processor-polyglot-consumer.md),
+  provided by a reusable subscription in `Common/Dzaba.HomeSecurity.MessageBroker.RabbitMQ`
+  that hands each message to an `IMessageHandler` in its own DI scope. The
+  handler decides what happens to each message: a well-formed event is stored
+  and acknowledged (a redelivery is acknowledged as a quiet no-op); a message
+  that can never be stored — not JSON, missing or malformed fields, an action
+  that doesn't match the routing key it arrived under — is **rejected** straight
+  to the dead-letter queue instead of being retried; anything else, such as the
+  database being down, is **retried** and, if it never clears, parked in the
+  dead-letter queue by the delivery limit rather than lost. The message body
+  is never logged: an event's extended data is exactly what must not end up in
+  an operational log. Per
   [ADR-0016](../decisions/0016-devices-service-owns-its-own-database.md)'s
   now-established default, it owns its **own database** (an `AuditEvent`
   table, effectively append-only) rather than writing into `Org.Service`'s
@@ -188,11 +201,28 @@ Same idempotency concern as any other RabbitMQ consumer applies here
 pattern in
 [`07-caching-and-idempotency.md`](07-caching-and-idempotency.md#2-idempotent-event-processing),
 `Audit.Service` dedupes with a **unique index on `eventId`** in its own
-database: a redelivered event hits the constraint, is acknowledged, and is
-dropped rather than double-recorded. The database is the store of record
-here and the constraint has to exist regardless, so adding a Redis check in
-front would only introduce a Redis-outage failure mode (fail open ⇒ risk of
-duplicates, fail closed ⇒ stalled audit trail) with no additional safety.
+database: a redelivered event is found by its id (checked first for the common
+case, and caught by the constraint when two instances race), is acknowledged,
+and is dropped rather than double-recorded. The database is the store of
+record here and the constraint has to exist regardless, so adding a Redis
+check in front would only introduce a Redis-outage failure mode (fail open ⇒
+risk of duplicates, fail closed ⇒ stalled audit trail) with no additional
+safety.
+
+Several instances of the service may consume at once, and events for one
+tenant and category can arrive at the same instant, so storing an event must
+also be safe to race. It chains onto the tip of its (tenant, category) hash
+chain and moves the tip in the same transaction that inserts it, and the tip's
+hash is a **concurrency token**: if another writer moved the tip first, this
+attempt fails cleanly, re-reads the tip and retries (a short jittered pause
+between rounds; every round has a winner, so it always makes progress). That
+serializes writers per chain without a database-specific lock, so a chain never
+forks. Racing writers, one event delivered to two instances, a hash surviving
+Postgres's timestamp and `json` handling, and the append-only grants are
+verified against a real Postgres by opt-in integration tests (set
+`AUDIT_TEST_POSTGRES` to a superuser connection string; skipped otherwise) —
+the InMemory provider used elsewhere has no transactions and can't model any
+of it.
 
 ### The admin read API — how a user actually sees this
 
@@ -324,8 +354,9 @@ about me").
   match the stored one), and `metadata` is stored as `json`, not `jsonb`
   (jsonb reorders keys and normalises whitespace, changing the text that was
   hashed). Order is the order
-  events are stored in the audit database, serialized per chain by
-  row-locking a small chain-head row inside the insert transaction. An
+  events are stored in the audit database, serialized per chain by an
+  optimistic concurrency check on a small chain-head row updated in the
+  insert transaction (§3). An
   integrity check re-walks a chain and reports the first event whose hash
   doesn't match; the API exposes it to `audit.view` holders, and a periodic
   job runs the same check. The oldest part of a chain is removed by the
@@ -423,13 +454,18 @@ The raw actor id does travel on the bus in the event, and any other
 subscriber sees it — only `Audit.Service` tokenizes it — so a future
 subscriber that stores events takes on its own erasure obligation.
 
-**Open question — people who are the *target*, not the actor.** Events such
-as `membership.added` and `role.assigned` carry the affected user's id in the
-target (and in `metadata`), and the actor token doesn't touch those. Erasing
-that link (e.g. tokenizing user ids in targets the same way, or dropping them
-from stored metadata once the account is erased) is not designed yet; it has
-to be settled together with the erasure work in §5, before `Audit.Service`
-stores its first event.
+**People who are the *target*, not the actor — decided: stored as-is.**
+Events such as `membership.added` and `role.assigned` carry the affected user's
+id in the target (and in `metadata`), and the actor token doesn't touch those:
+`Audit.Service` stores target and metadata verbatim. That is a deliberate
+limitation, not an oversight. A Keycloak subject is an opaque UUID and the only
+place it maps to a person is Keycloak, so deleting the account already severs
+that link for target ids too, and the retention window (§4) bounds how long
+the rest stays. The stored event no longer reads differently from what was
+published, and the ingestor needn't know which fields happen to hold user ids.
+If a real erasure request ever needs more (tokenizing user ids in targets and
+metadata the same way as actors), it can be added without changing the model:
+it is the same pseudonym table.
 
 ### Lawful basis, breach notification, sub-processors
 

@@ -1,7 +1,8 @@
 # Build context is the repo root (not this project's own folder or even
-# src/dotnet/), like every other service: shared code and, later, schema files
-# live outside this project's folder. See docker-compose.yml's `build.context`
-# for the audit-service entry.
+# src/dotnet/), because the DomainEvents library this service references
+# imports build/JsonSchema.targets and generates its envelope type from
+# src/contracts/json/ - both outside src/dotnet/. See docker-compose.yml's
+# `build.context` for the audit-service entry.
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS base
 # The runtime image ships no HTTP client tool; curl is needed for
@@ -18,6 +19,10 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /source
 
+# Imported directly by the DomainEvents project file, so it must exist before
+# that csproj is even evaluated - i.e. before restore, not just build.
+COPY ["build/JsonSchema.targets", "build/"]
+
 COPY ["src/dotnet/Directory.Build.props", "src/dotnet/Directory.Packages.props", "src/dotnet/"]
 COPY ["src/dotnet/Common/Dzaba.HomeSecurity.Domain/Dzaba.HomeSecurity.Domain.csproj", "src/dotnet/Common/Dzaba.HomeSecurity.Domain/"]
 COPY ["src/dotnet/Common/Dzaba.HomeSecurity.Observability/Dzaba.HomeSecurity.Observability.csproj", "src/dotnet/Common/Dzaba.HomeSecurity.Observability/"]
@@ -25,9 +30,16 @@ COPY ["src/dotnet/Common/Dzaba.HomeSecurity.WebApi/Dzaba.HomeSecurity.WebApi.csp
 COPY ["src/dotnet/Common/Dzaba.HomeSecurity.Authorization/Dzaba.HomeSecurity.Authorization.csproj", "src/dotnet/Common/Dzaba.HomeSecurity.Authorization/"]
 COPY ["src/dotnet/Common/Dzaba.HomeSecurity.Caching.Contracts/Dzaba.HomeSecurity.Caching.Contracts.csproj", "src/dotnet/Common/Dzaba.HomeSecurity.Caching.Contracts/"]
 COPY ["src/dotnet/Common/Dzaba.HomeSecurity.DbServer/Dzaba.HomeSecurity.DbServer.csproj", "src/dotnet/Common/Dzaba.HomeSecurity.DbServer/"]
+COPY ["src/dotnet/Common/Dzaba.HomeSecurity.DeviceAuth/Dzaba.HomeSecurity.DeviceAuth.csproj", "src/dotnet/Common/Dzaba.HomeSecurity.DeviceAuth/"]
+COPY ["src/dotnet/Common/Dzaba.HomeSecurity.DomainEvents/Dzaba.HomeSecurity.DomainEvents.csproj", "src/dotnet/Common/Dzaba.HomeSecurity.DomainEvents/"]
+COPY ["src/dotnet/Common/Dzaba.HomeSecurity.MessageBroker.Contracts/Dzaba.HomeSecurity.MessageBroker.Contracts.csproj", "src/dotnet/Common/Dzaba.HomeSecurity.MessageBroker.Contracts/"]
+COPY ["src/dotnet/Common/Dzaba.HomeSecurity.MessageBroker.RabbitMQ/Dzaba.HomeSecurity.MessageBroker.RabbitMQ.csproj", "src/dotnet/Common/Dzaba.HomeSecurity.MessageBroker.RabbitMQ/"]
 COPY ["src/dotnet/Audit/Dzaba.HomeSecurity.Audit.Service/Dzaba.HomeSecurity.Audit.Service.csproj", "src/dotnet/Audit/Dzaba.HomeSecurity.Audit.Service/"]
 RUN dotnet restore "src/dotnet/Audit/Dzaba.HomeSecurity.Audit.Service/Dzaba.HomeSecurity.Audit.Service.csproj"
 
+# The DomainEvents project generates C# from these at build time (NSwag), so
+# they're needed before `dotnet build`, not just restore.
+COPY src/contracts/json/ src/contracts/json/
 COPY src/dotnet/ src/dotnet/
 
 WORKDIR "/source/src/dotnet/Audit/Dzaba.HomeSecurity.Audit.Service"

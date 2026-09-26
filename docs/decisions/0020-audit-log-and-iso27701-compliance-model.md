@@ -130,9 +130,12 @@ an auditor.
   rather than stacked with an incremental migration for the new permissions.
 - Personal data in event targets: an actor is pseudonymized on erasure, but
   an event whose *target* is a person (`membership.added`, `role.assigned`
-  carry the affected user's id) still names them. Erasing that link is an
-  open question for the retention/erasure work, not solved by the actor
-  token alone.
+  carry the affected user's id) still holds that id, because `Audit.Service`
+  stores target and metadata verbatim. Accepted deliberately: the id is an
+  opaque Keycloak subject that only Keycloak can map to a person, so deleting
+  the account severs the link, and retention bounds the rest. Tokenizing those
+  ids too remains possible later through the same pseudonym table if a real
+  erasure request needs it (see doc 16, section 5).
 - `15-router-credentials.md` and `09-observability.md`'s forward references
   to "the security/audit log stream" now resolve to this document instead of
   an undesigned idea.

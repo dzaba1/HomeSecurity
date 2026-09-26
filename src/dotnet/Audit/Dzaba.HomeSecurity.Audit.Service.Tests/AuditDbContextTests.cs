@@ -117,7 +117,7 @@ public sealed class AuditDbContextTests
         // by the ingestion path, which serves every tenant: not filtered by design.
         using (var context = CreateContext(Guid.NewGuid()))
         {
-            context.ChainHeads.Add(new ChainHead { TenantId = Guid.NewGuid(), Category = AuditCategory.Router, LastSeq = 1, LastHash = [1] });
+            context.ChainHeads.Add(new ChainHead { TenantId = Guid.NewGuid(), Category = AuditCategory.Router, LastHash = [1] });
             await context.SaveChangesAsync();
         }
 
@@ -134,8 +134,8 @@ public sealed class AuditDbContextTests
         using (var context = CreateContext(tenantId))
         {
             context.ChainHeads.AddRange(
-                new ChainHead { TenantId = tenantId, Category = AuditCategory.Access, LastSeq = 1, LastHash = [1] },
-                new ChainHead { TenantId = tenantId, Category = AuditCategory.Router, LastSeq = 2, LastHash = [2] });
+                new ChainHead { TenantId = tenantId, Category = AuditCategory.Access, LastHash = [1] },
+                new ChainHead { TenantId = tenantId, Category = AuditCategory.Router, LastHash = [2] });
             await context.SaveChangesAsync();
         }
 
