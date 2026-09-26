@@ -10,4 +10,4 @@ A companion app periodically checks your router for connected devices and sends 
 - Install and pair the companion app on a device that's regularly on your home network.
 - The app logs into your router in the background and securely reports which devices are connected.
 - Get a push notification when an unknown device joins your network, and mark it as "this is mine" or investigate.
-- Audit trail and GDPR/ISO-27001-aligned compliance are designed, not built yet.
+- Keeps an audit trail of security-relevant activity, aligned with GDPR and ISO 27001.
