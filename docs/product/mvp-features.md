@@ -97,6 +97,13 @@ left out for now — they're natural next steps, not oversights:
   permission levels (that's coming — see
   [`../architecture/04-roles-and-permissions.md`](../architecture/04-roles-and-permissions.md)
   for the design — just not required for the first usable version).
+- A security/audit trail of who did what in your organization (added a
+  router, changed a role, fetched a credential), and handling data-privacy
+  requests (exporting or deleting your data) in a GDPR-aligned way — the
+  design exists (see
+  [`../architecture/16-auditing-and-compliance.md`](../architecture/16-auditing-and-compliance.md)),
+  but it isn't built, and isn't needed for a single-owner household to get
+  value from the MVP.
 - Notification preferences (quiet hours, digesting multiple alerts into one,
   etc.) or alternate channels like email/SMS.
 - Any router vendor–specific integration — the app works by observing what a
