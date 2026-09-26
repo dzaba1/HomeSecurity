@@ -162,11 +162,14 @@ Kept here so the reasoning isn't lost, not because they're needed on day one:
 - **Security/audit logging as a distinct stream** from operational logging
   above (who changed which role, who added/removed a device) — flagged
   during [ADR-0007](../decisions/0007-rabbitmq-as-message-bus.md)'s
-  discussion as a Keycloak-events-to-webhook idea, but not yet designed in
-  detail. Operational logging (this document) answers "is the system
-  healthy"; audit logging answers "who did what" and has different retention
-  and access-control requirements, so it deserves its own design rather than
-  being folded into Serilog's output.
+  discussion as a Keycloak-events-to-webhook idea, and now fully designed
+  (not yet built) in
+  [`16-auditing-and-compliance.md`](16-auditing-and-compliance.md) /
+  [ADR-0020](../decisions/0020-audit-log-and-iso27701-compliance-model.md).
+  Operational logging (this document) answers "is the system healthy";
+  audit logging answers "who did what" and has different retention and
+  access-control requirements, which is why it's a dedicated event stream
+  and service rather than being folded into Serilog's output.
 - **Log-based SLOs** (e.g. "99% of log batches processed within N seconds")
   once real traffic makes a target meaningful to set.
 
@@ -186,3 +189,5 @@ Kept here so the reasoning isn't lost, not because they're needed on day one:
   [`11-deployment-and-availability.md`](11-deployment-and-availability.md)
 - Horizontal scalability (the metrics an HPA/KEDA scaler acts on):
   [`14-scalability.md`](14-scalability.md)
+- Security/audit event stream and compliance model, the deferred item above
+  made concrete: [`16-auditing-and-compliance.md`](16-auditing-and-compliance.md)
