@@ -222,10 +222,10 @@ Notes on this flow:
   what lets an admin rotate the router's password in the Admin UI and have
   every agent pick it up without re-pairing anything.
 - Every fetch of a router's decrypted credential is written to the
-  security/audit log stream from
-  [`09-observability.md`](09-observability.md) (who/what fetched it, when)
-  — never the credential value itself, matching the existing "what never
-  gets logged" rule for device secrets and JWTs.
+  security/audit log stream designed in
+  [`16-auditing-and-compliance.md`](16-auditing-and-compliance.md) (who/what
+  fetched it, when) — never the credential value itself, matching the
+  existing "what never gets logged" rule for device secrets and JWTs.
 
 ### The endpoint as built
 

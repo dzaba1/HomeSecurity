@@ -77,6 +77,9 @@ These apply to every decision recorded here:
 - [`architecture/15-router-credentials.md`](architecture/15-router-credentials.md) —
   how an org admin provisions a router's login in the Admin UI, and how
   agents fetch it, encrypted at rest, to log into the router themselves.
+- [`architecture/16-auditing-and-compliance.md`](architecture/16-auditing-and-compliance.md) —
+  the security/audit event stream, GDPR data-subject rights, and ISO/IEC
+  27001+27701 as the compliance model.
 - [`decisions/`](decisions) — individual ADRs, one decision per file, numbered in
   the order they were made.
 
