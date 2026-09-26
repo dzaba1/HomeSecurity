@@ -43,7 +43,12 @@ erDiagram
   `logs.view`, `org.manage_members`, `router.view`, `router.manage`,
   `device.view`, `device.manage` (the network device from
   [`06-notifications.md`](06-notifications.md); no delete — arrival-only
-  model, see [`15-router-credentials.md`](15-router-credentials.md)).
+  model, see [`15-router-credentials.md`](15-router-credentials.md)),
+  `audit.view` (read the organization's own audit trail) and
+  `data_subject_request.manage` (start/complete a GDPR export or erasure
+  request) — the last two from
+  [`16-auditing-and-compliance.md`](16-auditing-and-compliance.md), granted
+  to `Owner` and `Admin` only by default.
   `device_credential.*` and `device.*` were deliberately kept as two
   distinct pairs rather than one reused `device.*` pair for both meanings —
   a role already granted view access to one shouldn't silently gain it for

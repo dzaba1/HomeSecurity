@@ -128,6 +128,12 @@ sequenceDiagram
   end
 ```
 
+Not every consumer uses Redis for this: `Audit.Service` dedupes with a unique
+index on the event id in its own database instead, since the database is the
+store of record there and adding a Redis check in front would only add a
+Redis-outage failure mode (see
+[`16-auditing-and-compliance.md`](16-auditing-and-compliance.md#3-architecture-one-more-consumer-on-the-existing-bus)).
+
 ## 3. Coarse "something changed" notification events
 
 Separate from both uses above: `Org.Service` publishes `access.changed`
@@ -135,8 +141,10 @@ Separate from both uses above: `Org.Service` publishes `access.changed`
 or role assignment changes, and `Devices.Service` will publish
 `router.changed`/`device.changed` the same way for its own data. **No
 consumer exists for any of these yet** — they're published as a low-cost
-hedge for future integrations (a cache warmer, an audit-log service,
-another product), following the same "publish now, consume later"
+hedge for future integrations (a cache warmer, another product; the audit
+trail is *not* built on these — it has its own `audit.*` events with an
+outbox, see [`16-auditing-and-compliance.md`](16-auditing-and-compliance.md)),
+following the same "publish now, consume later"
 precedent `LogsIngestion.Service` already set with `logs.ingested` (see
 [ADR-0007](../decisions/0007-rabbitmq-as-message-bus.md)).
 

@@ -99,13 +99,26 @@ resolution, made concrete:
   updated, credential fetched) — the same "publish a domain event" pattern
   the notification events in
   [`07-caching-and-idempotency.md`](07-caching-and-idempotency.md#3-coarse-something-changed-notification-events)
-  already established, just to a dedicated `audit` exchange/routing key
-  instead of the coarse `*.changed` ones. These are *not* the same events as
+  already established, just under `audit.<action>` routing keys (e.g.
+  `audit.role.assigned`) on the same `homesecurity.events` exchange instead of
+  the coarse `*.changed` ones — a separate exchange would buy nothing today
+  and would mean making the message-bus abstraction exchange-aware. Each
+  service records the event through a **transactional outbox**: the audit
+  event is inserted into an outbox table in the same database transaction as
+  the change it describes, and a background relay publishes unsent rows to
+  RabbitMQ. That closes the gap the inline-publish pattern used for the
+  `*.changed` events leaves open (broker down after the commit ⇒ event lost),
+  which is acceptable for a "go re-check" hint but not for an audit record.
+  Who is acting comes from a shared `ICurrentActor` (a human's Keycloak
+  subject, or a device's id from its token) rather than a user id threaded
+  through every service method. These are *not* the same events as
   `access.changed`/`router.changed`/`device.changed`: those say "something
   changed, go re-check current state"; audit events are the immutable record
   of the change itself, and are never consumed to reconstruct current
   state.
-- **A new `Audit.Service`** is the sole consumer of the `audit` exchange. Per
+- **A new `Audit.Service`** is the sole consumer of the `audit.#` routing
+  keys (its own quorum queue with a dead-letter queue, the same topology as
+  the Go `LogsProcessor` from [ADR-0019](../decisions/0019-go-logs-processor-polyglot-consumer.md)). Per
   [ADR-0016](../decisions/0016-devices-service-owns-its-own-database.md)'s
   now-established default, it owns its **own database** (an `AuditEvent`
   table, effectively append-only) rather than writing into `Org.Service`'s
@@ -117,9 +130,9 @@ resolution, made concrete:
 ```mermaid
 flowchart LR
   KC["Keycloak\n(event listener SPI)"] -->|webhook| WH["Audit webhook endpoint\n(thin, no interpretation)"]
-  WH -->|publish| EX[("RabbitMQ\naudit exchange")]
-  Org["Org.Service"] -->|publish| EX
-  Dev["Devices.Service"] -->|publish| EX
+  WH -->|"publish audit.*"| EX[("RabbitMQ\nhomesecurity.events")]
+  Org["Org.Service\n(outbox + relay)"] -->|"publish audit.*"| EX
+  Dev["Devices.Service\n(outbox + relay)"] -->|"publish audit.*"| EX
   EX --> AS["Audit.Service\n(consumer + API)"]
   AS --> DB[("Audit DB\n(append-only)")]
   Browser["Admin UI browser"] -->|"session cookie"| BFF["oauth2-proxy (BFF)"]
@@ -127,11 +140,16 @@ flowchart LR
 ```
 
 Same idempotency concern as any other RabbitMQ consumer applies here
-(at-least-once delivery) — `Audit.Service` reuses the `SETNX`-on-message-id
-pattern from
-[`07-caching-and-idempotency.md`](07-caching-and-idempotency.md#2-idempotent-event-processing)
-rather than inventing a second deduplication mechanism, so a redelivered
-event is dropped, not double-recorded.
+(at-least-once delivery, and the outbox relay can itself publish a row twice
+if it crashes before marking it sent). Unlike the `SETNX`-on-message-id
+pattern in
+[`07-caching-and-idempotency.md`](07-caching-and-idempotency.md#2-idempotent-event-processing),
+`Audit.Service` dedupes with a **unique index on `eventId`** in its own
+database: a redelivered event hits the constraint, is acknowledged, and is
+dropped rather than double-recorded. The database is the store of record
+here and the constraint has to exist regardless, so adding a Redis check in
+front would only introduce a Redis-outage failure mode (fail open ⇒ risk of
+duplicates, fail closed ⇒ stalled audit trail) with no additional safety.
 
 ### The admin read API — how a user actually sees this
 
@@ -231,9 +249,30 @@ about me").
 ## 4. Retention, immutability, and access
 
 - **Append-only.** `Audit.Service`'s database role has `INSERT`/`SELECT`
-  only — no `UPDATE`, no `DELETE` — enforced at the Postgres grant level,
-  not just by convention in application code. A purge job (below) is the
-  one exception, run under a separate, more privileged role.
+  only on the event table — no `UPDATE`, no `DELETE` — enforced at the
+  Postgres grant level, not just by convention in application code. A purge
+  job (below) is the one exception, run under a separate, more privileged
+  role.
+- **Tamper-evident, not just tamper-resistant.** Grants stop the application
+  from editing history, but not someone with database-level access. So each
+  stored event also carries `prevHash` and `hash`, where
+  `hash = SHA-256(prevHash ‖ canonical(event))`, forming a chain **per
+  tenant and category** (a chain per category, so purging a short-retention
+  category never has to skip over a long-retention event). Order is the order
+  events are stored in the audit database, serialized per chain by
+  row-locking a small chain-head row inside the insert transaction. An
+  integrity check re-walks a chain and reports the first event whose hash
+  doesn't match; the API exposes it to `audit.view` holders, and a periodic
+  job runs the same check. The oldest part of a chain is removed by the
+  retention purge, so the purge records a checkpoint (the last purged
+  event's hash) and verification starts from it.
+- **Stored shape.** Besides the envelope fields from §2, a stored event has
+  a database sequence number, a `receivedAt` (set by `Audit.Service`;
+  `occurredAt` is set by the producer, so the two together show clock skew or
+  delivery lag), a category derived from the action, and an **actor token**
+  instead of the raw actor id (see §5). Actor tokens are created on first
+  sight of an actor and kept in a separate mapping table, which is *not*
+  append-only.
 - **Retention is per-category, not one global number**, since GDPR's storage
   limitation principle (§5) requires keeping personal data no longer than
   necessary while security/audit needs sometimes justify longer retention:
@@ -244,14 +283,20 @@ about me").
     calls for.
   - Data-subject-request events (export/erasure): proposed 3 years, since
     these are the evidence that a GDPR obligation was actually met.
-  A scheduled job deletes events past their category's retention window —
-  the one sanctioned mutation against an otherwise append-only store.
+  Windows are configuration, not code, so a legal review can change them
+  without a release. A scheduled job deletes events past their category's
+  retention window — the one sanctioned mutation against an otherwise
+  append-only store — under the separate purge role, writes the chain
+  checkpoint described above, and itself records an audit event of what it
+  removed.
 - **Access** is itself audit-worthy: only `audit.view` (new permission, org
   admin/owner by default) can read a tenant's own audit trail via the Admin
   UI, scoped to that tenant exactly like every other permission in
   [`04-roles-and-permissions.md`](04-roles-and-permissions.md) — there is no
   cross-tenant view, including for us as operators, without going through a
-  documented support/legal process (out of scope here).
+  documented support/legal process (out of scope here). Reading the trail is
+  recorded too: `Audit.Service` writes an `audit.viewed` event into its own
+  store for each read.
 
 ## 5. GDPR
 
@@ -282,7 +327,7 @@ device in someone's home.
 | Right | How it's met |
 |---|---|
 | Access | Export endpoint (not yet built) returning the account's own org/device/audit data as a downloadable JSON, reusing the JSON-Schema-first contract approach ([08](08-api-contracts-and-codegen.md)) |
-| Erasure | Deleting an organization cascades: memberships, devices, routers (credentials wiped, not just soft-deleted), push registrations. Audit events referencing the deleted user are **pseudonymized** (actor id replaced with a stable opaque token), not deleted — see "the erasure vs. audit-trail tension" below |
+| Erasure | Deleting an organization cascades: memberships, devices, routers (credentials wiped, not just soft-deleted), push registrations. Audit events referencing the deleted user are **pseudonymized** — the event only ever held an opaque actor token, and erasure deletes the token → identity mapping — not deleted; see "the erasure vs. audit-trail tension" below |
 | Rectification | Already covered by existing PATCH endpoints (device name, org membership) |
 | Portability | The same export as "Access," in a structured format — JSON already qualifies |
 | Object / restrict processing | Not applicable in the same way for a security-monitoring product the user actively opted into (the product's entire function is the processing) — documented here as considered, not silently skipped |
@@ -296,10 +341,22 @@ bounded retention period (§4), is exactly that case, and is the standard
 justification used by any product with an access-control audit log. The
 resolution here is a middle ground, not "ignore erasure requests for audit
 data": the **event stays** (it's evidence the action happened) but the
-**actor identifier is pseudonymized** once the underlying account is erased,
-severing the direct link to the person while preserving the record's
-evidentiary value ("some account performed this role change on this date")
-for the remainder of its retention window.
+**actor is pseudonymized** once the underlying account is erased, severing
+the direct link to the person while preserving the record's evidentiary
+value ("some account performed this role change on this date") for the
+remainder of its retention window.
+
+The mechanism is deliberately *not* "rewrite the actor id in every event":
+on ingest, `Audit.Service` swaps the actor's real id for a stable opaque
+token (one per actor), and keeps the token → real id mapping in a separate
+table. Erasing a person deletes that one mapping row. The event rows are
+never updated, so the append-only grants and the hash chain (§4) stay valid,
+and the read API renders an event whose token has no mapping as
+`{ "id": null, "erased": true }`. Because the token is stable, an auditor can
+still tell that two events came from the same (now anonymous) actor.
+The raw actor id travels on the bus and sits in the producing service's
+outbox only until the relay publishes it, so the "personal data in flight"
+window is short, and outbox rows are deleted after a successful publish.
 
 ### Lawful basis, breach notification, sub-processors
 

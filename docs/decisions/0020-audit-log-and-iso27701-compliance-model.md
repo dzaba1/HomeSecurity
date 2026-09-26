@@ -26,16 +26,43 @@ Two related gaps had been flagged but never actually designed:
 ## Decision
 
 **A dedicated audit-event stream, separate from operational logging, on the
-existing RabbitMQ broker — no second broker.** Every service publishes audit
-events (role/membership changes, router-credential fetches, device
-acknowledgements, device pairing/revocation) to a dedicated `audit`
-exchange; Keycloak's own admin/login events reach the same exchange via its
-built-in event-listener SPI webhook, posted to a thin internal endpoint that
-does no interpretation of its own. A new **`Audit.Service`** is the sole
-consumer, and — following the precedent [ADR-0016](0016-devices-service-owns-its-own-database.md)
+existing RabbitMQ broker — no second broker, and no second exchange.** Every
+service publishes audit events (role/membership changes, router-credential
+fetches, device acknowledgements, device pairing/revocation) to the shared
+`homesecurity.events` exchange under `audit.<action>` routing keys
+(e.g. `audit.role.assigned`); Keycloak's own admin/login events reach the
+same exchange via its built-in event-listener SPI webhook, posted to a thin
+internal endpoint that does no interpretation of its own. A new
+**`Audit.Service`** is the sole consumer (a queue bound to `audit.#`), and —
+following the precedent [ADR-0016](0016-devices-service-owns-its-own-database.md)
 already set — owns its **own, effectively append-only database**, rather
 than writing into `Org.Service`'s or `Devices.Service`'s schema. Full design:
 [`16-auditing-and-compliance.md`](../architecture/16-auditing-and-compliance.md).
+
+Four decisions make that stream trustworthy rather than best-effort:
+
+- **Transactional outbox on the publishing side.** A publishing service
+  writes the audit event into an outbox table *in the same database
+  transaction* as the change it describes; a background relay then publishes
+  it to RabbitMQ. Unlike the coarse `*.changed` notifications (published
+  inline after `SaveChanges`, where a broker outage silently drops the
+  message), an audit event can't be lost between "the change committed" and
+  "the event was published."
+- **Idempotency by database constraint, not Redis.** `Audit.Service` dedupes
+  redelivered messages with a unique index on the event id; a duplicate is
+  acknowledged and dropped. The Redis `SETNX` pattern from
+  [`07-caching-and-idempotency.md`](../architecture/07-caching-and-idempotency.md#2-idempotent-event-processing)
+  isn't used here — it would add a Redis-outage failure mode for no extra
+  safety over the constraint that has to exist anyway.
+- **Tamper-evidence via a hash chain.** Each stored event carries the hash of
+  the previous event in its chain, so an edit or a deletion in the middle of
+  the trail is detectable, going beyond the `INSERT`/`SELECT`-only database
+  grant that prevents it in the first place.
+- **Erasure by unlinking, not rewriting.** Events store an opaque actor
+  token, with the token → real-identity mapping in a separate table. Erasing
+  a person deletes the mapping; the events themselves are never modified
+  (which would break both the append-only grants and the hash chain), yet
+  they no longer point at anyone.
 
 This is deliberately **not** the same mechanism as the coarse
 `access.changed`/`router.changed`/`device.changed` notification events from
@@ -73,12 +100,21 @@ an auditor.
   directions — see
   [`16-auditing-and-compliance.md`](../architecture/16-auditing-and-compliance.md#4-retention-immutability-and-access)
   for the proposed periods.
-- The right to erasure is met by pseudonymizing an erased user's actor
-  identifier in existing audit events rather than deleting the events
-  themselves, since the audit trail's evidentiary value is the reason it's
-  retained at all — a deliberate, documented middle ground rather than
-  either extreme (keeping raw personal data indefinitely, or deleting
-  security-relevant evidence on request).
+- The right to erasure is met by deleting the actor-token mapping for an
+  erased user, leaving the audit events themselves in place, since the audit
+  trail's evidentiary value is the reason it's retained at all — a
+  deliberate, documented middle ground rather than either extreme (keeping
+  raw personal data indefinitely, or deleting security-relevant evidence on
+  request).
+- `Org.Service` and `Devices.Service` each gain an audit outbox table and a
+  relay, and services need to know *who* is acting — a shared "current
+  actor" abstraction (human user or device, resolved from the request's
+  claims) is injected rather than a user id being threaded through every
+  service method.
+- `Org.Service` and `Devices.Service` haven't been deployed anywhere, so
+  their EF migrations are regenerated as a single fresh `InitialCreate`
+  rather than stacked with incremental migrations for the new permissions and
+  outbox tables.
 - `15-router-credentials.md` and `09-observability.md`'s forward references
   to "the security/audit log stream" now resolve to this document instead of
   an undesigned idea.
