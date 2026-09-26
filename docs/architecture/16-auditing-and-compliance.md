@@ -111,9 +111,8 @@ resolution, made concrete:
   table, effectively append-only) rather than writing into `Org.Service`'s
   or `Devices.Service`'s schemas — the audit trail must survive and remain
   queryable even if the service whose action it describes is degraded, and
-  no other service should need write access to it. It exposes one read API
-  (`GET /api/v1/orgs/{orgId}/audit-events`, filterable by date range, actor,
-  action, target), gated by a new `audit.view` permission (§6).
+  no other service should need write access to it. It also exposes an HTTPS
+  **admin read API** — how a user actually sees this — detailed below.
 
 ```mermaid
 flowchart LR
@@ -121,9 +120,10 @@ flowchart LR
   WH -->|publish| EX[("RabbitMQ\naudit exchange")]
   Org["Org.Service"] -->|publish| EX
   Dev["Devices.Service"] -->|publish| EX
-  EX --> AS["Audit.Service\n(consumer)"]
+  EX --> AS["Audit.Service\n(consumer + API)"]
   AS --> DB[("Audit DB\n(append-only)")]
-  Admin["Admin UI"] -->|"GET /audit-events\n(audit.view)"| AS
+  Browser["Admin UI browser"] -->|"session cookie"| BFF["oauth2-proxy (BFF)"]
+  BFF -->|"GET /audit-events\n(user's JWT)"| AS
 ```
 
 Same idempotency concern as any other RabbitMQ consumer applies here
@@ -132,6 +132,101 @@ pattern from
 [`07-caching-and-idempotency.md`](07-caching-and-idempotency.md#2-idempotent-event-processing)
 rather than inventing a second deduplication mechanism, so a redelivered
 event is dropped, not double-recorded.
+
+### The admin read API — how a user actually sees this
+
+`Audit.Service` is not consumer-only: it's a normal fourth admin-facing
+service in the same shape as `Org.Service` and `Devices.Service`, and slots
+into the same request path already drawn in
+[`01-overview.md`](01-overview.md#system-context) — a browser never talks to
+it directly, only through the BFF:
+
+```
+Browser --(HttpOnly session cookie)--> oauth2-proxy --(user's JWT)--> Audit.Service --> Audit DB
+```
+
+Nothing new is invented to make that work — every piece reuses a mechanism
+this system already has:
+
+- **Authentication**: the standard Keycloak `JwtBearer` scheme, exactly like
+  `Org.Service`'s and `Devices.Service`'s admin APIs
+  ([`03-security-and-identity.md`](03-security-and-identity.md)). There's no
+  device-token scheme here at all — agents never call this API, only humans
+  through the Admin UI (or a future third-party integrator).
+- **Authorization**: the new `audit.view` permission (§7), checked the same
+  cross-service way `Devices.Service` already checks `router.manage` —
+  `IPermissionSourceLoader` against the shared Redis cache, falling back to
+  `Org.Service`'s `GET /orgs/{orgId}/access-context` on a miss
+  ([`04-roles-and-permissions.md`](04-roles-and-permissions.md#checking-a-permission-from-a-service-that-doesnt-own-this-data)).
+  `Audit.Service` doesn't own that permission data any more than
+  `Devices.Service` does, so it uses the same abstraction rather than a new
+  one.
+- **URI versioning and HAL**: `/api/v1/...`
+  ([`12-api-versioning.md`](12-api-versioning.md)), and HAL responses
+  ([`13-hateoas-public-api.md`](13-hateoas-public-api.md)) — this is a
+  human-navigated, Admin-UI-facing resource, exactly the category
+  [ADR-0017](../decisions/0017-hateoas-extends-to-devices-service.md)
+  already extended HAL to (it does *not* get the plain-JSON exception that
+  applies to agent-facing/service-to-service endpoints like the
+  router-config fetch, because a user genuinely browses this — paging
+  through it, following links — rather than one system machine-calling
+  another).
+- **Contract-first**: `audit_event.json` under `src/contracts/json/`, same
+  pipeline as every other resource
+  ([`08-api-contracts-and-codegen.md`](08-api-contracts-and-codegen.md)).
+
+| Endpoint | Purpose | Auth |
+|---|---|---|
+| `GET /api/v1/orgs/{orgId}/audit-events` | Paginated, filterable list (`from`, `to`, `actorId`, `actorType`, `action`, `targetType`, `targetId`, `page`) | JWT + `audit.view` |
+| `GET /api/v1/orgs/{orgId}/audit-events/{eventId}` | One event's full detail | JWT + `audit.view` |
+
+A list response is a standard HAL collection — same envelope shape as
+[`13-hateoas-public-api.md`](13-hateoas-public-api.md#the-format-hal), with
+`next`/`prev` doing the pagination work instead of a client hand-building
+`?page=N`:
+
+```json
+{
+  "_links": {
+    "self": { "href": "/api/v1/orgs/9c1e.../audit-events?page=2" },
+    "next": { "href": "/api/v1/orgs/9c1e.../audit-events?page=3" },
+    "prev": { "href": "/api/v1/orgs/9c1e.../audit-events?page=1" },
+    "organization": { "href": "/api/v1/orgs/9c1e..." }
+  },
+  "_embedded": {
+    "auditEvents": [
+      {
+        "eventId": "7b1c...",
+        "occurredAt": "2026-01-01T09:03:00Z",
+        "actor": { "type": "User", "id": "a1b2..." },
+        "action": "role.assigned",
+        "target": { "type": "UserRole", "id": "c3d4..." },
+        "metadata": { "role": "Admin", "grantedTo": "e5f6..." },
+        "_links": {
+          "self": { "href": "/api/v1/orgs/9c1e.../audit-events/7b1c..." }
+        }
+      }
+    ]
+  }
+}
+```
+
+Deliberately **no write/action links** on an audit event's `_links` (no
+`acknowledge`, no `delete`) — unlike the device example in
+[`13-hateoas-public-api.md`](13-hateoas-public-api.md#the-format-hal), a
+link's presence there encodes "is this currently allowed," but nothing about
+an immutable audit record is ever actionable; `_links` here only ever
+carries navigation (`self`, `organization`, pagination), never a capability
+check.
+
+Two things this endpoint deliberately does *not* do, to keep it distinct
+from the GDPR **export** endpoint mentioned in §5: it never returns another
+tenant's data (same tenant-scoping rule as everywhere else,
+[`02-multi-tenancy.md`](02-multi-tenancy.md)), and it's a read-only view for
+an admin auditing their own org, not the mechanism a user's personal-data
+export is built from — those overlap in the data they draw on but answer
+different questions ("what happened in my org" vs. "what data do you hold
+about me").
 
 ## 4. Retention, immutability, and access
 
