@@ -31,6 +31,14 @@ jobs:
       solution-path: src/dotnet/Devices/Dzaba.HomeSecurity.Devices.slnx
       dockerfile-path: src/dotnet/Devices/Dzaba.HomeSecurity.Devices.Service/Dockerfile
 
+  audit-service:
+    name: Audit service
+    uses: ./.github/workflows/dotnet-service-ci.yml
+    with:
+      service-name: audit-service
+      solution-path: src/dotnet/Audit/Dzaba.HomeSecurity.Audit.slnx
+      dockerfile-path: src/dotnet/Audit/Dzaba.HomeSecurity.Audit.Service/Dockerfile
+
   logs-processor:
     name: Logs Processor (Go)
     uses: ./.github/workflows/go-service-ci.yml

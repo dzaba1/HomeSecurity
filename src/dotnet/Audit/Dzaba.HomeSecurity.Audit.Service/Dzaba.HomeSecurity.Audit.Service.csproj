@@ -1,0 +1,35 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>3d8f1c6e-52a4-4b7e-9f0a-6c1e4b2d7a95</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Lets Audit.Service.Tests unit-test internal implementation classes
+         (AuditDbContext, its entities, the hasher) directly, not only through
+         the public HTTP surface. -->
+    <InternalsVisibleTo Include="Dzaba.HomeSecurity.Audit.Service.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Common\Dzaba.HomeSecurity.Authorization\Dzaba.HomeSecurity.Authorization.csproj" />
+    <ProjectReference Include="..\..\Common\Dzaba.HomeSecurity.Domain\Dzaba.HomeSecurity.Domain.csproj" />
+    <ProjectReference Include="..\..\Common\Dzaba.HomeSecurity.DbServer\Dzaba.HomeSecurity.DbServer.csproj" />
+    <ProjectReference Include="..\..\Common\Dzaba.HomeSecurity.Observability\Dzaba.HomeSecurity.Observability.csproj" />
+    <ProjectReference Include="..\..\Common\Dzaba.HomeSecurity.WebApi\Dzaba.HomeSecurity.WebApi.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="AspNetCore.HealthChecks.NpgSql" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+    <PackageReference Include="Serilog.AspNetCore" />
+  </ItemGroup>
+
+</Project>

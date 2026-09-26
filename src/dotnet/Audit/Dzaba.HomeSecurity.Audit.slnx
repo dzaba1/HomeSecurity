@@ -1,0 +1,13 @@
+<Solution>
+  <Project Path="../Common/Dzaba.HomeSecurity.Authorization/Dzaba.HomeSecurity.Authorization.csproj" />
+  <Project Path="../Common/Dzaba.HomeSecurity.Caching.Contracts/Dzaba.HomeSecurity.Caching.Contracts.csproj" />
+  <Project Path="../Common/Dzaba.HomeSecurity.DbServer/Dzaba.HomeSecurity.DbServer.csproj" />
+  <Project Path="../Common/Dzaba.HomeSecurity.DeviceAuth/Dzaba.HomeSecurity.DeviceAuth.csproj" />
+  <Project Path="../Common/Dzaba.HomeSecurity.Domain/Dzaba.HomeSecurity.Domain.csproj" />
+  <Project Path="../Common/Dzaba.HomeSecurity.DomainEvents/Dzaba.HomeSecurity.DomainEvents.csproj" />
+  <Project Path="../Common/Dzaba.HomeSecurity.MessageBroker.Contracts/Dzaba.HomeSecurity.MessageBroker.Contracts.csproj" />
+  <Project Path="../Common/Dzaba.HomeSecurity.Observability/Dzaba.HomeSecurity.Observability.csproj" />
+  <Project Path="../Common/Dzaba.HomeSecurity.WebApi/Dzaba.HomeSecurity.WebApi.csproj" />
+  <Project Path="Dzaba.HomeSecurity.Audit.Service.Tests/Dzaba.HomeSecurity.Audit.Service.Tests.csproj" />
+  <Project Path="Dzaba.HomeSecurity.Audit.Service/Dzaba.HomeSecurity.Audit.Service.csproj" />
+</Solution>

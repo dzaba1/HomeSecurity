@@ -9,8 +9,10 @@ project's [documentation-first habit](../README.md) of settling the "why"
 before the "what." Implementation status: the permissions (§7), the event
 envelope contract, the shared publishing library (event publisher,
 current-actor), and the domain events `Org.Service` and `Devices.Service`
-publish are built; `Audit.Service` itself, the retention job and the Keycloak
-webhook are not yet.
+publish are built, as is `Audit.Service`'s storage model (events, actor
+pseudonyms, hash-chain heads, and the append-only database grants); its
+subscriber, its read API, the retention job and the Keycloak webhook are not
+yet.
 
 ## 1. Why this is not just more Serilog output
 
@@ -294,16 +296,34 @@ about me").
 ## 4. Retention, immutability, and access
 
 - **Append-only.** `Audit.Service`'s database role has `INSERT`/`SELECT`
-  only on the event table — no `UPDATE`, no `DELETE` — enforced at the
-  Postgres grant level, not just by convention in application code. A purge
-  job (below) is the one exception, run under a separate, more privileged
-  role.
+  only on the event table — no `UPDATE`, no `DELETE`, no `TRUNCATE` —
+  enforced at the Postgres grant level, not just by convention in application
+  code. The initial migration creates two `NOLOGIN` group roles: `audit_writer`
+  (insert/select events and pseudonyms, insert/select/update the chain heads)
+  and `audit_purger` (select/delete events, select/delete pseudonyms — the
+  one sanctioned exception, for retention and erasure, run by a separate
+  job under a separate login). Whoever provisions the database makes the
+  service's login a member of `audit_writer` and the job's a member of
+  `audit_purger`; creating the roles needs `CREATEROLE`, so the migration runs
+  as a suitably privileged owner (the superuser in the local stack). This is
+  verified against a real Postgres, not just asserted: as a member of
+  `audit_writer`, `UPDATE`/`DELETE`/`TRUNCATE` on events fail with "permission
+  denied".
 - **Tamper-evident, not just tamper-resistant.** Grants stop the application
   from editing history, but not someone with database-level access. So each
   stored event also carries `prevHash` and `hash`, where
   `hash = SHA-256(prevHash ‖ canonical(event))`, forming a chain **per
   tenant and category** (a chain per category, so purging a short-retention
-  category never has to skip over a long-retention event). Order is the order
+  category never has to skip over a long-retention event). The canonical form
+  is a versioned, length-prefixed encoding of the event's fields (so shifting
+  a boundary between two fields can't produce the same bytes), pinned by a
+  known-answer test because changing it would invalidate every stored hash.
+  Two details make the hash survive a database round trip: `occurredAt` is
+  truncated to whole microseconds *before* hashing and storing (Postgres rounds
+  a 100 ns .NET timestamp, so a hash over the unrounded value would not
+  match the stored one), and `metadata` is stored as `json`, not `jsonb`
+  (jsonb reorders keys and normalises whitespace, changing the text that was
+  hashed). Order is the order
   events are stored in the audit database, serialized per chain by
   row-locking a small chain-head row inside the insert transaction. An
   integrity check re-walks a chain and reports the first event whose hash
