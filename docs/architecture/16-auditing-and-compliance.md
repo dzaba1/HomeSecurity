@@ -4,10 +4,12 @@ This document designs the two things [`09-observability.md`](09-observability.md
 deliberately left as "designed but not built": a **security/audit log** distinct
 from operational logging, and the **compliance model** (GDPR, and the security
 framework the whole system is built to be auditable against) that audit log
-exists to support. Nothing here is implemented yet — this is the design to
-build against when that work is picked up, following this project's
-[documentation-first habit](../README.md) of settling the "why" before the
-"what."
+exists to support. This is the design being built against, following this
+project's [documentation-first habit](../README.md) of settling the "why"
+before the "what." Implementation status: the permissions (§7), the envelope
+contract, and the shared publishing library (outbox, relay, current-actor) are
+built; `Audit.Service` itself, the events the existing services raise, the
+retention job and the Keycloak webhook are not yet.
 
 ## 1. Why this is not just more Serilog output
 
@@ -109,8 +111,20 @@ resolution, made concrete:
   RabbitMQ. That closes the gap the inline-publish pattern used for the
   `*.changed` events leaves open (broker down after the commit ⇒ event lost),
   which is acceptable for a "go re-check" hint but not for an audit record.
+  The relay deletes a row once RabbitMQ has accepted it (so a crash between
+  publish and delete republishes it — the at-least-once case below), skips a
+  row whose payload can't be read without deleting it (it stays visible in
+  the backlog), and a health check reports Degraded — never failing
+  readiness — once the oldest unpublished event is older than a configurable
+  age. All of it lives in one shared library,
+  `Common/Dzaba.HomeSecurity.Audit`: a service calls
+  `modelBuilder.ApplyAuditOutbox()` in its own DbContext, registers
+  `AddDzabaHomeSecurityAuditOutbox<TContext>()`, and records events with
+  `IAuditRecorder.Record(action, targetType, targetId, metadata)` just before
+  its `SaveChangesAsync`.
   Who is acting comes from a shared `ICurrentActor` (a human's Keycloak
-  subject, or a device's id from its token) rather than a user id threaded
+  subject, or a device's id from its token; the system when there is no
+  authenticated request) rather than a user id threaded
   through every service method. These are *not* the same events as
   `access.changed`/`router.changed`/`device.changed`: those say "something
   changed, go re-check current state"; audit events are the immutable record
@@ -189,9 +203,13 @@ this system already has:
   router-config fetch, because a user genuinely browses this — paging
   through it, following links — rather than one system machine-calling
   another).
-- **Contract-first**: `audit_event.json` under `src/contracts/json/`, same
-  pipeline as every other resource
-  ([`08-api-contracts-and-codegen.md`](08-api-contracts-and-codegen.md)).
+- **Contract-first**: two schemas under `src/contracts/json/`, same pipeline
+  as every other resource
+  ([`08-api-contracts-and-codegen.md`](08-api-contracts-and-codegen.md)):
+  `audit_event_message.json` is the bus envelope from §2 (generated into
+  `Common/Dzaba.HomeSecurity.Audit.Contracts`, shared by every publisher and
+  by `Audit.Service`), and `audit_event.json` is the API resource this
+  section's endpoints return.
 
 | Endpoint | Purpose | Auth |
 |---|---|---|

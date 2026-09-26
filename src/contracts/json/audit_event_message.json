@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AuditEventMessage",
+  "description": "The immutable record of one security-relevant action (who did what, to which tenant's data, and when), published under an audit.<action> routing key. Not a notification: unlike the *.changed events it is never used to re-check current state, and Audit.Service stores it verbatim. See docs/architecture/16-auditing-and-compliance.md. metadata is action-specific and must never carry a secret, a JWT, a plaintext credential or a raw log payload.",
+  "type": "object",
+  "required": ["eventId", "occurredAt", "tenantId", "actor", "action", "target", "metadata"],
+  "properties": {
+    "eventId": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Idempotency key: Audit.Service drops a second event with the same id."
+    },
+    "occurredAt": { "type": "string", "format": "date-time", "description": "Set by the producing service when the action happened." },
+    "tenantId": { "type": ["string", "null"], "format": "uuid", "description": "Null for pre-tenant events such as a login." },
+    "actor": {
+      "type": "object",
+      "required": ["type", "id"],
+      "properties": {
+        "type": { "type": "string", "enum": ["User", "Device", "System"] },
+        "id": { "type": "string", "minLength": 1, "maxLength": 200, "description": "Keycloak subject for a User, the agent credential id for a Device." }
+      },
+      "additionalProperties": false
+    },
+    "action": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$",
+      "maxLength": 100,
+      "description": "Dotted lower-case action name, e.g. role.assigned or router.credential.fetched. The routing key is audit.<action>."
+    },
+    "target": {
+      "type": "object",
+      "required": ["type", "id"],
+      "properties": {
+        "type": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "id": { "type": "string", "minLength": 1, "maxLength": 200 }
+      },
+      "additionalProperties": false
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Action-specific detail (identifiers and before/after of what changed); never a secret value.",
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": false
+}

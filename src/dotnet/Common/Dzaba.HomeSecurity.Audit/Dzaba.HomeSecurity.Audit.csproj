@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Lets Audit.Tests unit-test the internal recorder, relay and actor
+         resolver directly, and lets Moq/Castle's dynamic proxy reference
+         those internal types as ILogger<T> generic arguments. -->
+    <InternalsVisibleTo Include="Dzaba.HomeSecurity.Audit.Tests" />
+    <InternalsVisibleTo Include="DynamicProxyGenAssembly2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Dzaba.HomeSecurity.Audit.Contracts\Dzaba.HomeSecurity.Audit.Contracts.csproj" />
+    <ProjectReference Include="..\Dzaba.HomeSecurity.DeviceAuth\Dzaba.HomeSecurity.DeviceAuth.csproj" />
+    <ProjectReference Include="..\Dzaba.HomeSecurity.Domain\Dzaba.HomeSecurity.Domain.csproj" />
+    <ProjectReference Include="..\Dzaba.HomeSecurity.MessageBroker.Contracts\Dzaba.HomeSecurity.MessageBroker.Contracts.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Dzaba.Utils.AspNet" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" />
+  </ItemGroup>
+
+</Project>
