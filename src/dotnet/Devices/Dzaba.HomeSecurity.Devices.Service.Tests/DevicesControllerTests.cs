@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using Dzaba.HomeSecurity.Devices.Contracts;
 using Dzaba.HomeSecurity.Domain;
+using Dzaba.HomeSecurity.DomainEvents;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using DeviceEntity = Dzaba.HomeSecurity.Devices.Service.Data.Entities.Device;
@@ -114,7 +115,7 @@ public sealed class DevicesControllerTests : DevicesServiceTestFixture
     }
 
     [Test]
-    public async Task Patch_WhenMarkedKnown_ThenStatusChangesAndDeviceChangedIsPublished()
+    public async Task Patch_WhenMarkedKnown_ThenStatusChangesAndDeviceUpdatedIsPublished()
     {
         var deviceId = await SeedDeviceAsync();
 
@@ -127,12 +128,34 @@ public sealed class DevicesControllerTests : DevicesServiceTestFixture
         (await db.Devices.SingleAsync()).Status.Should().Be(DeviceStatusEntity.Known);
 
         var published = MessageBus.Published.Should().ContainSingle().Subject;
-        published.RoutingKey.Should().Be("device.changed");
-        var message = published.Message.Should().BeOfType<DeviceChangedMessage>().Subject;
+        published.RoutingKey.Should().Be("device.updated");
+        var message = published.Message.Should().BeOfType<DomainEventMessage>().Subject;
         message.TenantId.Should().Be(orgId);
-        message.DeviceId.Should().Be(deviceId);
-        message.MacAddress.Should().Be("AA:BB:CC:DD:EE:FF");
-        message.Status.Should().Be(Device_status.Known);
+        message.Actor.Id.Should().Be(managerId);
+        message.Target.Type.Should().Be(DomainEventTargetTypes.Device);
+        message.Target.Id.Should().Be(deviceId.ToString());
+        var changes = (IReadOnlyDictionary<string, object?>)((IReadOnlyDictionary<string, object?>)message.Metadata)["changes"]!;
+        changes.Keys.Should().BeEquivalentTo("status");
+        var status = (IReadOnlyDictionary<string, object?>)changes["status"]!;
+        status["from"].Should().Be("Unknown");
+        status["to"].Should().Be("Known");
+        // The MAC address is personal data: the target id identifies the device.
+        JsonSerializer.Serialize(message).Should().NotContain("AA:BB:CC:DD:EE:FF");
+    }
+
+    [Test]
+    public async Task Patch_WhenRenamedAndMarkedKnownTogether_ThenExactlyOneDeviceUpdatedEventCarriesBothChanges()
+    {
+        var deviceId = await SeedDeviceAsync();
+
+        await CreateAuthenticatedClient(managerId)
+            .PatchAsJsonAsync($"{DevicesUrl()}/{deviceId}", new { name = "Dad's phone", status = "Known" });
+
+        var message = MessageBus.Published.Should().ContainSingle().Subject.Message
+            .Should().BeOfType<DomainEventMessage>().Subject;
+        var changes = (IReadOnlyDictionary<string, object?>)((IReadOnlyDictionary<string, object?>)message.Metadata)["changes"]!;
+        changes.Keys.Should().BeEquivalentTo("name", "status");
+        ((IReadOnlyDictionary<string, object?>)changes["name"]!)["to"].Should().Be("Dad's phone");
     }
 
     [Test]

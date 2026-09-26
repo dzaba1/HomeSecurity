@@ -1,10 +1,9 @@
 using System.Security.Claims;
-using Dzaba.HomeSecurity.Audit.Contracts;
 using Dzaba.HomeSecurity.DeviceAuth;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 
-namespace Dzaba.HomeSecurity.Audit.Tests;
+namespace Dzaba.HomeSecurity.DomainEvents.Tests;
 
 [TestFixture]
 public class HttpContextCurrentActorTests

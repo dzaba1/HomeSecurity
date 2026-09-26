@@ -54,10 +54,11 @@ erDiagram
 `PATCH`es `Name`/`Status` (see [`15-router-credentials.md`](15-router-credentials.md)
 for the full endpoint table) — rows are created and `LastSeenAt`/
 `LastSeenViaRouterId` updated only by the ingestion consumer below, never
-by that API. Every `PATCH` also publishes a coarse `device.changed`
-notification event (`{tenantId, deviceId, macAddress, status, changedAt}`)
-— no consumer exists yet; see
-[`07-caching-and-idempotency.md`](07-caching-and-idempotency.md#3-coarse-something-changed-notification-events).
+by that API. Every `PATCH` also publishes one `device.updated` domain event
+whose `metadata.changes` says whether the device was renamed, acknowledged
+(status `Unknown` → `Known`) or both, with the from/to of each — the MAC
+address is deliberately left out, the event's target id identifies the device.
+See [`07-caching-and-idempotency.md`](07-caching-and-idempotency.md#3-domain-events-instead-of-something-changed-notifications).
 
 ## Detection flow
 

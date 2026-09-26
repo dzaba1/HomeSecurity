@@ -5,26 +5,26 @@
 //----------------------
 
 
-namespace Dzaba.HomeSecurity.Audit.Contracts
+namespace Dzaba.HomeSecurity.DomainEvents
 {
     #pragma warning disable // Disable all warnings
 
     /// <summary>
-    /// The immutable record of one security-relevant action (who did what, to which tenant's data, and when), published under an audit.&lt;action&gt; routing key. Not a notification: unlike the *.changed events it is never used to re-check current state, and Audit.Service stores it verbatim. See docs/architecture/16-auditing-and-compliance.md. metadata is action-specific and must never carry a secret, a JWT, a plaintext credential or a raw log payload.
+    /// One thing a service did to a tenant's data, access or credentials (a membership was added, a role was assigned, a router credential was fetched), published by the service that did it under a routing key equal to action. Any number of services may subscribe; Audit.Service is one of them and stores each event verbatim as the record of who did what, to which tenant's data, and when. Not event-carried state transfer: a subscriber that needs current state calls the owning service's API. metadata carries the action-specific extended data and must never carry a secret, a JWT, a plaintext credential or a raw log payload. See docs/architecture/16-auditing-and-compliance.md.
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "11.6.1.0 (Newtonsoft.Json v13.0.0.0)")]
-    public partial class AuditEventMessage
+    public partial class DomainEventMessage
     {
 
         /// <summary>
-        /// Idempotency key: Audit.Service drops a second event with the same id.
+        /// Idempotency key: a subscriber drops a second event with the same id (Audit.Service does so by a unique index).
         /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("eventId")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
         public System.Guid EventId { get; set; }
 
         /// <summary>
-        /// Set by the producing service when the action happened.
+        /// Set by the publishing service when the action happened.
         /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("occurredAt")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
@@ -41,7 +41,7 @@ namespace Dzaba.HomeSecurity.Audit.Contracts
         public Actor Actor { get; set; } = new Actor();
 
         /// <summary>
-        /// Dotted lower-case action name, e.g. role.assigned or router.credential.fetched. The routing key is audit.&lt;action&gt;.
+        /// Dotted lower-case event name, e.g. membership.added or router.credential.fetched. It is also the routing key the event is published under.
         /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("action")]
         [System.ComponentModel.DataAnnotations.Required(AllowEmptyStrings = true)]
@@ -54,7 +54,7 @@ namespace Dzaba.HomeSecurity.Audit.Contracts
         public Target Target { get; set; } = new Target();
 
         /// <summary>
-        /// Action-specific detail (identifiers and before/after of what changed); never a secret value.
+        /// Action-specific extended data (identifiers and the before/after of what changed); never a secret value.
         /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("metadata")]
         [System.ComponentModel.DataAnnotations.Required]

@@ -3,6 +3,7 @@ using System.Runtime.CompilerServices;
 using Dzaba.AspNetUtils;
 using Dzaba.HomeSecurity.Org.Service.Data;
 using Dzaba.HomeSecurity.Domain;
+using Dzaba.HomeSecurity.DomainEvents;
 using Dzaba.HomeSecurity.Org.Service.Mapping;
 using Microsoft.EntityFrameworkCore;
 using OrganizationEntity = Dzaba.HomeSecurity.Org.Service.Data.Entities.Organization;
@@ -17,16 +18,20 @@ internal sealed class OrganizationsService : IOrganizationsService
 {
     private readonly Func<AppDbContext> dbFactory;
     private readonly IMutableTenantContext tenantContext;
+    private readonly IDomainEventPublisher eventPublisher;
     private readonly ILogger<OrganizationsService> logger;
 
-    public OrganizationsService(Func<AppDbContext> dbFactory, IMutableTenantContext tenantContext, ILogger<OrganizationsService> logger)
+    public OrganizationsService(Func<AppDbContext> dbFactory, IMutableTenantContext tenantContext,
+        IDomainEventPublisher eventPublisher, ILogger<OrganizationsService> logger)
     {
         ArgumentNullException.ThrowIfNull(dbFactory);
         ArgumentNullException.ThrowIfNull(tenantContext);
+        ArgumentNullException.ThrowIfNull(eventPublisher);
         ArgumentNullException.ThrowIfNull(logger);
 
         this.dbFactory = dbFactory;
         this.tenantContext = tenantContext;
+        this.eventPublisher = eventPublisher;
         this.logger = logger;
     }
 
@@ -71,6 +76,13 @@ internal sealed class OrganizationsService : IOrganizationsService
         }
 
         logger.LogInformation("Organization {OrganizationId} created by {UserId}", orgId, creatorUserId);
+
+        // Creating an org also makes the caller its first member and Owner;
+        // that is implied by this one event rather than published as two more.
+        await eventPublisher.PublishAsync(DomainEventNames.OrganizationCreated, DomainEventTargetTypes.Organization,
+            orgId.ToString(),
+            new Dictionary<string, object?> { ["identifier"] = request.Identifier, ["name"] = request.Name },
+            orgId, cancellationToken).ConfigureAwait(false);
 
         return entity.ToContract();
     }

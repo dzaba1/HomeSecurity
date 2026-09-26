@@ -59,18 +59,20 @@ validation and permission checks. Two mechanisms cover that gap:
    [`07-caching-and-idempotency.md`](../architecture/07-caching-and-idempotency.md).
    This is the mechanism `Devices.Service` actually relies on for
    correctness.
-2. **Coarse notification events, as a low-cost hedge, not a substitute for
-   (1).** `Org.Service` publishes `access.changed` whenever a user's access
-   in a tenant changes (membership or role assignment), and `Devices.Service`
-   will publish `router.changed`/`device.changed` the same way for its own
-   data. No consumer exists for any of these yet — they're published
-   because designing the integration point made the gap obvious and the
-   seam costs little to add now, following the same "publish now, consume
-   later" precedent `LogsIngestion.Service` already set with `logs.ingested`
-   (see [ADR-0007](0007-rabbitmq-as-message-bus.md)). Deliberately
-   notification events, not event-carried state transfer: a consumer still
-   calls the owning service's API for current data, never reconstructs
-   state from the event stream alone.
+2. **Domain events, as a low-cost hedge, not a substitute for (1).** This
+   started as coarse `access.changed`/`router.changed`/`device.changed`
+   notifications; they were later replaced by one domain event per operation
+   (`membership.added`, `role.assigned`, `router.updated`, …) carrying the
+   extended data — see
+   [ADR-0020](0020-audit-log-and-iso27701-compliance-model.md). Any service
+   may subscribe; the audit service is the first. The reasoning is unchanged:
+   designing the integration point made the gap obvious and the seam costs
+   little to add now, following the same "publish now, consume later"
+   precedent `LogsIngestion.Service` already set with `logs.ingested` (see
+   [ADR-0007](0007-rabbitmq-as-message-bus.md)). Deliberately not
+   event-carried state transfer: a consumer still calls the owning service's
+   API for current data, never reconstructs state from the event stream
+   alone.
 
 An alternative considered and rejected for now: **event-driven replication**
 — `Devices.Service` consuming `Org.Service`'s membership/role-change events

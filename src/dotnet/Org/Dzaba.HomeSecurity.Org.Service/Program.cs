@@ -3,6 +3,7 @@ using Dzaba.HomeSecurity.Caching.Redis;
 using Dzaba.HomeSecurity.Org.Service.Data;
 using Dzaba.HomeSecurity.DbServer;
 using Dzaba.HomeSecurity.Domain;
+using Dzaba.HomeSecurity.DomainEvents;
 using Dzaba.HomeSecurity.MessageBroker.RabbitMQ;
 using Dzaba.HomeSecurity.Observability;
 using Dzaba.HomeSecurity.Org.Service.Services;
@@ -78,12 +79,15 @@ builder.Services.AddDzabaHomeSecurityRedisCache(
         ?? throw new InvalidOperationException("Missing ConnectionStrings:Redis"),
     "degraded");
 
-// Publishes access.changed (MembershipsService/UserRoleAssignmentsService) -
-// a notification-only event with no consumer yet, published as a low-cost
-// hedge for future integrations. See access_changed_message.json.
+// Every operation on organizations, memberships, role assignments and roles
+// is published as one domain event (domain_event_message.json) named for what
+// happened - membership.added, role.assigned, ... - with its extended data.
+// Any service may subscribe; Audit.Service is one of them. See
+// docs/architecture/16-auditing-and-compliance.md.
 var rabbitMqConnectionString = builder.Configuration.GetConnectionString("RabbitMQ")
     ?? throw new InvalidOperationException("Missing ConnectionStrings:RabbitMQ");
 builder.Services.AddDzabaHomeSecurityRabbitMqMessageBus(rabbitMqConnectionString);
+builder.Services.AddDzabaHomeSecurityDomainEvents();
 
 builder.Services.AddTransient<IOrganizationsService, OrganizationsService>();
 builder.Services.AddTransient<IMembershipsService, MembershipsService>();

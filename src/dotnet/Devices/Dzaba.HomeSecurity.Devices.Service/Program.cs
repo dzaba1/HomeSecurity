@@ -9,6 +9,7 @@ using Dzaba.HomeSecurity.Devices.Service.Data;
 using Dzaba.HomeSecurity.Devices.Service.Security;
 using Dzaba.HomeSecurity.Devices.Service.Services;
 using Dzaba.HomeSecurity.Domain;
+using Dzaba.HomeSecurity.DomainEvents;
 using Dzaba.HomeSecurity.MessageBroker.RabbitMQ;
 using Dzaba.HomeSecurity.Observability;
 using Dzaba.HomeSecurity.WebApi;
@@ -104,12 +105,16 @@ builder.Services.AddDbContext<DevicesDbContext>((sp, options) =>
 builder.Services.AddDzabaHomeSecurityRedisDataProtection(ServiceName, "DataProtection-Keys:Devices");
 builder.Services.AddTransient<IRouterSecretProtector, RouterSecretProtector>();
 
-// Publishes router.changed (RoutersService) - a notification-only event with
-// no consumer yet, published as a low-cost hedge for future integrations.
-// See router_changed_message.json.
+// Every router and device operation, and every hand-out of a router
+// credential to an agent, is published as one domain event
+// (domain_event_message.json) named for what happened - router.updated,
+// router.credential.fetched, ... - with its extended data. Any service may
+// subscribe; Audit.Service is one of them. See
+// docs/architecture/16-auditing-and-compliance.md.
 builder.Services.AddDzabaHomeSecurityRabbitMqMessageBus(
     builder.Configuration.GetConnectionString("RabbitMQ")
         ?? throw new InvalidOperationException("Missing ConnectionStrings:RabbitMQ"));
+builder.Services.AddDzabaHomeSecurityDomainEvents();
 
 builder.Services.AddDzabaHomeSecurityHal();
 builder.Services.AddTransient<IRoutersService, RoutersService>();

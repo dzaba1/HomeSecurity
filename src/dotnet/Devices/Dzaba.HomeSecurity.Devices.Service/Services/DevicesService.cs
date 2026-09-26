@@ -4,9 +4,8 @@ using Dzaba.AspNetUtils;
 using Dzaba.HomeSecurity.Devices.Contracts;
 using Dzaba.HomeSecurity.Devices.Service.Data;
 using Dzaba.HomeSecurity.Devices.Service.Mapping;
-using Dzaba.HomeSecurity.Devices.Service.Messages;
 using Dzaba.HomeSecurity.Domain;
-using Dzaba.HomeSecurity.MessageBroker.Contracts;
+using Dzaba.HomeSecurity.DomainEvents;
 using Microsoft.EntityFrameworkCore;
 using Device = Dzaba.HomeSecurity.Devices.Contracts.Device;
 
@@ -16,20 +15,20 @@ internal sealed class DevicesService : IDevicesService
 {
     private readonly DevicesDbContext db;
     private readonly ITenantContext tenantContext;
-    private readonly IMessageBus messageBus;
+    private readonly IDomainEventPublisher eventPublisher;
     private readonly ILogger<DevicesService> logger;
 
-    public DevicesService(DevicesDbContext db, ITenantContext tenantContext, IMessageBus messageBus,
+    public DevicesService(DevicesDbContext db, ITenantContext tenantContext, IDomainEventPublisher eventPublisher,
         ILogger<DevicesService> logger)
     {
         ArgumentNullException.ThrowIfNull(db);
         ArgumentNullException.ThrowIfNull(tenantContext);
-        ArgumentNullException.ThrowIfNull(messageBus);
+        ArgumentNullException.ThrowIfNull(eventPublisher);
         ArgumentNullException.ThrowIfNull(logger);
 
         this.db = db;
         this.tenantContext = tenantContext;
-        this.messageBus = messageBus;
+        this.eventPublisher = eventPublisher;
         this.logger = logger;
     }
 
@@ -65,6 +64,10 @@ internal sealed class DevicesService : IDevicesService
             return null;
         }
 
+        // Before-values, captured ahead of the overwrite below.
+        var previousName = entity.Name;
+        var previousStatus = entity.Status;
+
         if (request.Name is not null)
         {
             // An empty name clears it.
@@ -82,20 +85,25 @@ internal sealed class DevicesService : IDevicesService
         logger.LogInformation("Device {DeviceId} updated in tenant {TenantId}, status is now {Status}",
             deviceId, tenantId, entity.Status);
 
-        // Notification only, not event-carried state transfer - see
-        // device_changed_message.json's own description. No consumer exists
-        // yet; published as a low-cost hedge for future integrations.
-        await messageBus.PublishAsync(RoutingKeys.DeviceChanged,
-            new DeviceChangedMessage
-            {
-                TenantId = tenantId,
-                DeviceId = entity.Id,
-                MacAddress = entity.MacAddress,
-                Status = entity.Status.ToContract(),
-                ChangedAt = DateTimeOffset.UtcNow,
-            },
-            cancellationToken).ConfigureAwait(false);
+        // One event per PATCH, which may rename, acknowledge (status
+        // Unknown -> Known) or both: the changes map says which. The MAC
+        // address is personal data and stays out - the target id identifies
+        // the device.
+        var changes = new Dictionary<string, object?>();
+        AddChange(changes, "name", previousName, entity.Name);
+        AddChange(changes, "status", previousStatus.ToString(), entity.Status.ToString());
+        await eventPublisher.PublishAsync(DomainEventNames.DeviceUpdated, DomainEventTargetTypes.Device, entity.Id.ToString(),
+            new Dictionary<string, object?> { ["changes"] = changes },
+            cancellationToken: cancellationToken).ConfigureAwait(false);
 
         return entity.ToContract();
+    }
+
+    private static void AddChange(Dictionary<string, object?> changes, string field, string? from, string? to)
+    {
+        if (from != to)
+        {
+            changes[field] = new Dictionary<string, object?> { ["from"] = from, ["to"] = to };
+        }
     }
 }

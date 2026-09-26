@@ -6,10 +6,11 @@ from operational logging, and the **compliance model** (GDPR, and the security
 framework the whole system is built to be auditable against) that audit log
 exists to support. This is the design being built against, following this
 project's [documentation-first habit](../README.md) of settling the "why"
-before the "what." Implementation status: the permissions (§7), the envelope
-contract, and the shared publishing library (outbox, relay, current-actor) are
-built; `Audit.Service` itself, the events the existing services raise, the
-retention job and the Keycloak webhook are not yet.
+before the "what." Implementation status: the permissions (§7), the event
+envelope contract, the shared publishing library (event publisher,
+current-actor), and the domain events `Org.Service` and `Devices.Service`
+publish are built; `Audit.Service` itself, the retention job and the Keycloak
+webhook are not yet.
 
 ## 1. Why this is not just more Serilog output
 
@@ -54,12 +55,17 @@ concern).
 | Identity & session | Login succeeded/failed, MFA challenge, password reset, account locked | Keycloak (via event webhook, §3) |
 | Membership & access | User invited/removed, role assigned/revoked, custom role created/edited | `Org.Service` |
 | Router credentials | Router added/updated/deleted, credential fetched by an agent | `Devices.Service` (the fetch-logging [ADR-0015](../decisions/0015-centralized-encrypted-router-credentials.md) already calls for) |
-| Devices | Device acknowledged ("this is mine"), device renamed | `Devices.Service` |
+| Devices | Device updated: acknowledged ("this is mine") and/or renamed | `Devices.Service` |
 | Device pairing | Device secret issued, device revoked | `Org.Service` |
 | Data subject requests | Export requested/completed, erasure requested/completed | Whichever service handles the request (§5) |
 
-Every event carries a common envelope, independent of which service raised
-it — deliberately the smallest shape that answers "who, what, where, when":
+These are not audit-specific messages. Each service publishes every operation
+it performs as a **domain event** named for what happened, and the audit trail
+is what `Audit.Service` makes of the ones it subscribes to — any other service
+may subscribe to the same events. Every event carries a common envelope,
+independent of which service raised it (`domain_event_message.json`) —
+deliberately the smallest shape that answers "who, what, where, when", with
+the event's own extended data in `metadata`:
 
 ```json
 {
@@ -77,9 +83,33 @@ it — deliberately the smallest shape that answers "who, what, where, when":
 already applies to operational logs: no secrets, no JWTs, no plaintext
 router credentials, no raw log payloads — only identifiers and the
 before/after of what changed (e.g. a role's permission-key diff, not a
-password).
+password). Each publisher builds `metadata` from an explicit whitelist of
+fields, never from a request or entity object, and its tests assert that a
+secret never appears in the serialized event.
 
-## 3. Architecture: one more consumer on the existing bus
+### The events published today
+
+The event name is the envelope's `action` and also the routing key.
+
+| Event | Published by | Target | `metadata` |
+|---|---|---|---|
+| `organization.created` | Org | Organization | `identifier`, `name` (the creator becomes first member and Owner — implied, not separate events) |
+| `membership.added` | Org | Membership (user id) | — |
+| `membership.removed` | Org | Membership (user id) | `removedRoleIds` (the role assignments that went with it) |
+| `role.assigned` / `role.unassigned` | Org | UserRole (`userId:roleId`) | `userId`, `roleId`, `roleName` |
+| `role.created` | Org | Role | `name`, `permissionKeys` |
+| `role.updated` | Org | Role | `previousName`, `name`, `addedPermissionKeys`, `removedPermissionKeys` |
+| `role.deleted` | Org | Role | `name`, `unassignedAssignments` (count) |
+| `router.created` | Devices | Router | `name`, `host`, `protocol`, `authMode` |
+| `router.updated` | Devices | Router | `changes` (name/host/protocol/authMode as from/to, only what changed), `usernameChanged`, `secretRotated` |
+| `router.deleted` | Devices | Router | `name`, `host`, `revokedAgentBindings` (count) |
+| `router.credential.fetched` | Devices | Router | `deviceCredentialId` — actor is the fetching device |
+| `device.updated` | Devices | Device | `changes` (name and/or status as from/to); one event per PATCH, so a combined rename + acknowledge is one event. The MAC address is deliberately not included |
+
+Not yet published, because the code path doesn't exist: device pairing secret
+issued/revoked, and data-subject requests.
+
+## 3. Architecture: one more subscriber on the existing bus
 
 No second broker, no Kafka — this was already decided, in passing, while
 choosing RabbitMQ itself
@@ -96,42 +126,39 @@ resolution, made concrete:
   onto RabbitMQ in the common envelope shape above. That endpoint is the one
   bit of glue code this needs; it does no interpretation of the event
   itself.
-- **`Org.Service`, `Devices.Service`, and any future service** publish audit
-  events directly for their own domain actions (role assigned, router
-  updated, credential fetched) — the same "publish a domain event" pattern
-  the notification events in
-  [`07-caching-and-idempotency.md`](07-caching-and-idempotency.md#3-coarse-something-changed-notification-events)
-  already established, just under `audit.<action>` routing keys (e.g.
-  `audit.role.assigned`) on the same `homesecurity.events` exchange instead of
-  the coarse `*.changed` ones — a separate exchange would buy nothing today
-  and would mean making the message-bus abstraction exchange-aware. Each
-  service records the event through a **transactional outbox**: the audit
-  event is inserted into an outbox table in the same database transaction as
-  the change it describes, and a background relay publishes unsent rows to
-  RabbitMQ. That closes the gap the inline-publish pattern used for the
-  `*.changed` events leaves open (broker down after the commit ⇒ event lost),
-  which is acceptable for a "go re-check" hint but not for an audit record.
-  The relay deletes a row once RabbitMQ has accepted it (so a crash between
-  publish and delete republishes it — the at-least-once case below), skips a
-  row whose payload can't be read without deleting it (it stays visible in
-  the backlog), and a health check reports Degraded — never failing
-  readiness — once the oldest unpublished event is older than a configurable
-  age. All of it lives in one shared library,
-  `Common/Dzaba.HomeSecurity.Audit`: a service calls
-  `modelBuilder.ApplyAuditOutbox()` in its own DbContext, registers
-  `AddDzabaHomeSecurityAuditOutbox<TContext>()`, and records events with
-  `IAuditRecorder.Record(action, targetType, targetId, metadata)` just before
-  its `SaveChangesAsync`.
-  Who is acting comes from a shared `ICurrentActor` (a human's Keycloak
-  subject, or a device's id from its token; the system when there is no
-  authenticated request) rather than a user id threaded
-  through every service method. These are *not* the same events as
-  `access.changed`/`router.changed`/`device.changed`: those say "something
-  changed, go re-check current state"; audit events are the immutable record
-  of the change itself, and are never consumed to reconstruct current
-  state.
-- **A new `Audit.Service`** is the sole consumer of the `audit.#` routing
-  keys (its own quorum queue with a dead-letter queue, the same topology as
+- **`Org.Service`, `Devices.Service`, and any future service** publish each
+  operation they perform as one domain event (the table above) — the same
+  "publish now, consume later" pattern
+  [`07-caching-and-idempotency.md`](07-caching-and-idempotency.md#3-domain-events-instead-of-something-changed-notifications)
+  describes, and the replacement for the earlier coarse
+  `access.changed`/`router.changed`/`device.changed` notifications, which had
+  no consumer. The routing key is the event name (`role.assigned`) on the
+  same `homesecurity.events` exchange — a separate exchange would buy nothing
+  today and would mean making the message-bus abstraction exchange-aware — so
+  the audit trail isn't a second, parallel stream that could disagree with
+  the first: it is one subscriber of the only one. Events are published
+  inline, right after the change is saved; a broker outage at that moment
+  fails the request with the change committed, which is accepted for now
+  (a transactional outbox was considered and rejected as more machinery than
+  this stage calls for — see
+  [ADR-0020](../decisions/0020-audit-log-and-iso27701-compliance-model.md)).
+  The one deliberate exception is the router-credential hand-out, which
+  publishes *before* returning the credential so that a failure to record it
+  fails the request instead of handing out a credential nobody recorded.
+  All the plumbing lives in one small shared library,
+  `Common/Dzaba.HomeSecurity.DomainEvents`: the envelope type generated from
+  `domain_event_message.json`, the event-name and target-type constants, an
+  `IDomainEventPublisher` (`PublishAsync(eventName, targetType, targetId,
+  metadata)`, which fills in the event id, timestamp, tenant and actor) and
+  `AddDzabaHomeSecurityDomainEvents()` to register it. Who is acting comes from
+  a shared `ICurrentActor` (a human's Keycloak subject, or a device's id from
+  its token; the system when there is no authenticated request) rather than a
+  user id threaded through every service method. Events say what happened
+  and what changed, never the whole new state, and a subscriber that needs
+  current state still calls the owning service's API.
+- **A new `Audit.Service`** subscribes to the events that make up the audit
+  trail (its own quorum queue with a dead-letter queue, binding the event
+  names it records — the same topology as
   the Go `LogsProcessor` from [ADR-0019](../decisions/0019-go-logs-processor-polyglot-consumer.md)). Per
   [ADR-0016](../decisions/0016-devices-service-owns-its-own-database.md)'s
   now-established default, it owns its **own database** (an `AuditEvent`
@@ -144,18 +171,18 @@ resolution, made concrete:
 ```mermaid
 flowchart LR
   KC["Keycloak\n(event listener SPI)"] -->|webhook| WH["Audit webhook endpoint\n(thin, no interpretation)"]
-  WH -->|"publish audit.*"| EX[("RabbitMQ\nhomesecurity.events")]
-  Org["Org.Service\n(outbox + relay)"] -->|"publish audit.*"| EX
-  Dev["Devices.Service\n(outbox + relay)"] -->|"publish audit.*"| EX
-  EX --> AS["Audit.Service\n(consumer + API)"]
+  WH -->|"publish identity.* events"| EX[("RabbitMQ\nhomesecurity.events")]
+  Org["Org.Service"] -->|"publish membership.added,\nrole.assigned, ..."| EX
+  Dev["Devices.Service"] -->|"publish router.updated,\nrouter.credential.fetched, ..."| EX
+  EX --> AS["Audit.Service\n(subscriber + API)"]
+  EX -.->|"any other subscriber"| Other["Future services"]
   AS --> DB[("Audit DB\n(append-only)")]
   Browser["Admin UI browser"] -->|"session cookie"| BFF["oauth2-proxy (BFF)"]
   BFF -->|"GET /audit-events\n(user's JWT)"| AS
 ```
 
 Same idempotency concern as any other RabbitMQ consumer applies here
-(at-least-once delivery, and the outbox relay can itself publish a row twice
-if it crashes before marking it sent). Unlike the `SETNX`-on-message-id
+(at-least-once delivery). Unlike the `SETNX`-on-message-id
 pattern in
 [`07-caching-and-idempotency.md`](07-caching-and-idempotency.md#2-idempotent-event-processing),
 `Audit.Service` dedupes with a **unique index on `eventId`** in its own
@@ -206,9 +233,9 @@ this system already has:
 - **Contract-first**: two schemas under `src/contracts/json/`, same pipeline
   as every other resource
   ([`08-api-contracts-and-codegen.md`](08-api-contracts-and-codegen.md)):
-  `audit_event_message.json` is the bus envelope from §2 (generated into
-  `Common/Dzaba.HomeSecurity.Audit.Contracts`, shared by every publisher and
-  by `Audit.Service`), and `audit_event.json` is the API resource this
+  `domain_event_message.json` is the bus envelope from §2 (generated into
+  `Common/Dzaba.HomeSecurity.DomainEvents`, shared by every publisher and by
+  `Audit.Service`), and `audit_event.json` is the API resource this
   section's endpoints return.
 
 | Endpoint | Purpose | Auth |
@@ -372,9 +399,17 @@ never updated, so the append-only grants and the hash chain (§4) stay valid,
 and the read API renders an event whose token has no mapping as
 `{ "id": null, "erased": true }`. Because the token is stable, an auditor can
 still tell that two events came from the same (now anonymous) actor.
-The raw actor id travels on the bus and sits in the producing service's
-outbox only until the relay publishes it, so the "personal data in flight"
-window is short, and outbox rows are deleted after a successful publish.
+The raw actor id does travel on the bus in the event, and any other
+subscriber sees it — only `Audit.Service` tokenizes it — so a future
+subscriber that stores events takes on its own erasure obligation.
+
+**Open question — people who are the *target*, not the actor.** Events such
+as `membership.added` and `role.assigned` carry the affected user's id in the
+target (and in `metadata`), and the actor token doesn't touch those. Erasing
+that link (e.g. tokenizing user ids in targets the same way, or dropping them
+from stored metadata once the account is erased) is not designed yet; it has
+to be settled together with the erasure work in §5, before `Audit.Service`
+stores its first event.
 
 ### Lawful basis, breach notification, sub-processors
 
@@ -461,8 +496,9 @@ Joining the catalog in [`04-roles-and-permissions.md`](04-roles-and-permissions.
   [`09-observability.md`](09-observability.md)
 - RabbitMQ as the shared bus, and why not a second broker:
   [ADR-0007](../decisions/0007-rabbitmq-as-message-bus.md)
-- The coarse `*.changed` notification events this is not the same as:
-  [`07-caching-and-idempotency.md`](07-caching-and-idempotency.md#3-coarse-something-changed-notification-events)
+- The domain events (which replaced the coarse `*.changed` notifications)
+  this trail is built from, and how they relate to state:
+  [`07-caching-and-idempotency.md`](07-caching-and-idempotency.md#3-domain-events-instead-of-something-changed-notifications)
 - Per-service database ownership, the pattern `Audit.Service` follows:
   [ADR-0016](../decisions/0016-devices-service-owns-its-own-database.md)
 - Roles/permissions catalog `audit.view` and `data_subject_request.manage`

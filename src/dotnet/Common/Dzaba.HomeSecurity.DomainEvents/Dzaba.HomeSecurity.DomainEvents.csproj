@@ -7,10 +7,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- Lets Audit.Tests unit-test the internal recorder, relay and actor
+    <!-- Lets DomainEvents.Tests unit-test the internal publisher and actor
          resolver directly, and lets Moq/Castle's dynamic proxy reference
          those internal types as ILogger<T> generic arguments. -->
-    <InternalsVisibleTo Include="Dzaba.HomeSecurity.Audit.Tests" />
+    <InternalsVisibleTo Include="Dzaba.HomeSecurity.DomainEvents.Tests" />
     <InternalsVisibleTo Include="DynamicProxyGenAssembly2" />
   </ItemGroup>
 
@@ -19,7 +19,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Dzaba.HomeSecurity.Audit.Contracts\Dzaba.HomeSecurity.Audit.Contracts.csproj" />
+    <JsonSchema Include="..\..\..\contracts\json\domain_event_message.json" Link="domain_event_message.json" OutputFile="DomainEventMessage.cs" ClassName="DomainEventMessage" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Dzaba.HomeSecurity.DeviceAuth\Dzaba.HomeSecurity.DeviceAuth.csproj" />
     <ProjectReference Include="..\Dzaba.HomeSecurity.Domain\Dzaba.HomeSecurity.Domain.csproj" />
     <ProjectReference Include="..\Dzaba.HomeSecurity.MessageBroker.Contracts\Dzaba.HomeSecurity.MessageBroker.Contracts.csproj" />
@@ -27,7 +30,12 @@
 
   <ItemGroup>
     <PackageReference Include="Dzaba.Utils.AspNet" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore" />
+    <PackageReference Include="NSwag.MSBuild">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
   </ItemGroup>
+
+  <Import Project="..\..\..\..\build\JsonSchema.targets" />
 
 </Project>

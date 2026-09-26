@@ -6,6 +6,7 @@
   <Project Path="../Common/Dzaba.HomeSecurity.DbServer/Dzaba.HomeSecurity.DbServer.csproj" />
   <Project Path="../Common/Dzaba.HomeSecurity.DeviceAuth/Dzaba.HomeSecurity.DeviceAuth.csproj" />
   <Project Path="../Common/Dzaba.HomeSecurity.Domain/Dzaba.HomeSecurity.Domain.csproj" />
+  <Project Path="../Common/Dzaba.HomeSecurity.DomainEvents/Dzaba.HomeSecurity.DomainEvents.csproj" />
   <Project Path="../Common/Dzaba.HomeSecurity.MessageBroker.Contracts/Dzaba.HomeSecurity.MessageBroker.Contracts.csproj" />
   <Project Path="../Common/Dzaba.HomeSecurity.MessageBroker.RabbitMQ/Dzaba.HomeSecurity.MessageBroker.RabbitMQ.csproj" />
   <Project Path="../Common/Dzaba.HomeSecurity.Observability/Dzaba.HomeSecurity.Observability.csproj" />

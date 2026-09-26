@@ -8,9 +8,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="AutoFixture" />
     <PackageReference Include="coverlet.collector" />
+    <PackageReference Include="Dzaba.TestUtils" />
     <PackageReference Include="FluentAssertions" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="Moq" />
     <PackageReference Include="NUnit" />
     <PackageReference Include="NUnit.Analyzers">
       <PrivateAssets>all</PrivateAssets>
@@ -24,7 +27,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Dzaba.HomeSecurity.Audit\Dzaba.HomeSecurity.Audit.csproj" />
+    <ProjectReference Include="..\Dzaba.HomeSecurity.DomainEvents\Dzaba.HomeSecurity.DomainEvents.csproj" />
+    <ProjectReference Include="..\Dzaba.HomeSecurity.TestUtils\Dzaba.HomeSecurity.TestUtils.csproj" />
   </ItemGroup>
 
 </Project>

@@ -4,6 +4,7 @@ using Dzaba.AspNetUtils;
 using Dzaba.HomeSecurity.Authorization;
 using Dzaba.HomeSecurity.Org.Service.Data;
 using Dzaba.HomeSecurity.Domain;
+using Dzaba.HomeSecurity.DomainEvents;
 using Dzaba.HomeSecurity.Org.Service.Mapping;
 using Microsoft.EntityFrameworkCore;
 using RoleEntity = Dzaba.HomeSecurity.Org.Service.Data.Entities.Role;
@@ -18,19 +19,22 @@ internal sealed class RolesService : IRolesService
     private readonly Func<AppDbContext> dbFactory;
     private readonly ITenantContext tenantContext;
     private readonly IPermissionEvaluator permissionEvaluator;
+    private readonly IDomainEventPublisher eventPublisher;
     private readonly ILogger<RolesService> logger;
 
     public RolesService(Func<AppDbContext> dbFactory, ITenantContext tenantContext,
-        IPermissionEvaluator permissionEvaluator, ILogger<RolesService> logger)
+        IPermissionEvaluator permissionEvaluator, IDomainEventPublisher eventPublisher, ILogger<RolesService> logger)
     {
         ArgumentNullException.ThrowIfNull(dbFactory);
         ArgumentNullException.ThrowIfNull(tenantContext);
         ArgumentNullException.ThrowIfNull(permissionEvaluator);
+        ArgumentNullException.ThrowIfNull(eventPublisher);
         ArgumentNullException.ThrowIfNull(logger);
 
         this.dbFactory = dbFactory;
         this.tenantContext = tenantContext;
         this.permissionEvaluator = permissionEvaluator;
+        this.eventPublisher = eventPublisher;
         this.logger = logger;
     }
 
@@ -68,6 +72,14 @@ internal sealed class RolesService : IRolesService
 
         logger.LogInformation("Role {RoleId} created in organization {OrganizationId}", entity.Id, tenantContext.TenantId);
 
+        await eventPublisher.PublishAsync(DomainEventNames.RoleCreated, DomainEventTargetTypes.Role, entity.Id.ToString(),
+            new Dictionary<string, object?>
+            {
+                ["name"] = request.Name,
+                ["permissionKeys"] = request.PermissionKeys.Distinct().Order().ToArray(),
+            },
+            cancellationToken: cancellationToken).ConfigureAwait(false);
+
         // No cache invalidation needed - a brand-new role has no UserRole
         // assignments yet, so no cached permission set can reference it.
         entity.RolePermissions = request.PermissionKeys.Distinct()
@@ -99,6 +111,10 @@ internal sealed class RolesService : IRolesService
             .ToArrayAsync(cancellationToken)
             .ConfigureAwait(false);
 
+        // The before/after of what changed, captured before the old rows go.
+        var previousName = entity.Name;
+        var previousKeys = entity.RolePermissions.Select(rp => rp.PermissionKey).ToHashSet();
+
         entity.Name = request.Name;
         db.RolePermissions.RemoveRange(entity.RolePermissions);
         var newPermissions = request.PermissionKeys.Distinct()
@@ -114,6 +130,17 @@ internal sealed class RolesService : IRolesService
         }
 
         logger.LogInformation("Role {RoleId} updated in organization {OrganizationId}", roleId, tenantContext.TenantId);
+
+        var newKeys = newPermissions.Select(rp => rp.PermissionKey).ToHashSet();
+        await eventPublisher.PublishAsync(DomainEventNames.RoleUpdated, DomainEventTargetTypes.Role, roleId.ToString(),
+            new Dictionary<string, object?>
+            {
+                ["previousName"] = previousName,
+                ["name"] = request.Name,
+                ["addedPermissionKeys"] = newKeys.Except(previousKeys).Order().ToArray(),
+                ["removedPermissionKeys"] = previousKeys.Except(newKeys).Order().ToArray(),
+            },
+            cancellationToken: cancellationToken).ConfigureAwait(false);
 
         entity.RolePermissions = newPermissions;
         return entity.ToContract();
@@ -151,6 +178,14 @@ internal sealed class RolesService : IRolesService
         }
 
         logger.LogInformation("Role {RoleId} deleted from organization {OrganizationId}", roleId, tenantContext.TenantId);
+
+        await eventPublisher.PublishAsync(DomainEventNames.RoleDeleted, DomainEventTargetTypes.Role, roleId.ToString(),
+            new Dictionary<string, object?>
+            {
+                ["name"] = entity.Name,
+                ["unassignedAssignments"] = affectedUserRoles.Length,
+            },
+            cancellationToken: cancellationToken).ConfigureAwait(false);
 
         return true;
     }

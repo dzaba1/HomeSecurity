@@ -6,6 +6,7 @@ using Dzaba.HomeSecurity.Devices.Contracts;
 using Dzaba.HomeSecurity.Devices.Service.Data.Entities;
 using Dzaba.HomeSecurity.Devices.Service.Security;
 using Dzaba.HomeSecurity.Domain;
+using Dzaba.HomeSecurity.DomainEvents;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -79,16 +80,32 @@ public sealed class RoutersControllerTests : DevicesServiceTestFixture
     }
 
     [Test]
-    public async Task Create_WhenValid_ThenPublishesRouterChangedCreated()
+    public async Task Create_WhenValid_ThenPublishesRouterCreatedByTheCaller()
     {
         var routerId = await CreateRouterAsync(CreateAuthenticatedClient(managerId));
 
         var published = MessageBus.Published.Should().ContainSingle().Subject;
-        published.RoutingKey.Should().Be("router.changed");
-        var message = published.Message.Should().BeOfType<RouterChangedMessage>().Subject;
+        published.RoutingKey.Should().Be("router.created");
+        var message = published.Message.Should().BeOfType<DomainEventMessage>().Subject;
         message.TenantId.Should().Be(orgId);
-        message.RouterId.Should().Be(routerId);
-        message.Action.Should().Be(RouterChangedMessageAction.Created);
+        message.Actor.Type.Should().Be(ActorType.User);
+        message.Actor.Id.Should().Be(managerId);
+        message.Target.Type.Should().Be(DomainEventTargetTypes.Router);
+        message.Target.Id.Should().Be(routerId.ToString());
+        var metadata = (IReadOnlyDictionary<string, object?>)message.Metadata;
+        metadata["name"].Should().Be("Living room");
+        metadata["host"].Should().Be("192.168.1.1");
+        metadata["protocol"].Should().Be("WebScrape");
+        metadata["authMode"].Should().Be("HttpBasic");
+    }
+
+    [Test]
+    public async Task Create_WhenValid_ThenThePublishedEventNeverCarriesTheSecretOrTheLoginName()
+    {
+        await CreateRouterAsync(CreateAuthenticatedClient(managerId));
+
+        var json = JsonSerializer.Serialize(MessageBus.Published.Single().Message);
+        json.Should().NotContain(Secret).And.NotContain("admin");
     }
 
     [Test]
@@ -244,16 +261,44 @@ public sealed class RoutersControllerTests : DevicesServiceTestFixture
     }
 
     [Test]
-    public async Task Update_WhenValid_ThenPublishesRouterChangedUpdated()
+    public async Task Update_WhenRenamedAndTheSecretIsRotated_ThenPublishesRouterUpdatedWithTheChangeAndNoSecret()
     {
         var client = CreateAuthenticatedClient(managerId);
         var routerId = await CreateRouterAsync(client);
 
         await client.PutAsJsonAsync($"{RoutersUrl()}/{routerId}",
-            new { name = "Renamed", host = "192.168.1.1", protocol = "WebScrape", authMode = "HttpBasic", username = "admin" });
+            new { name = "Renamed", host = "192.168.1.1", protocol = "WebScrape", authMode = "HttpBasic", username = "admin", secret = "rotated-secret" });
 
-        MessageBus.Published.Select(p => p.Message).OfType<RouterChangedMessage>()
-            .Should().Contain(m => m.RouterId == routerId && m.Action == RouterChangedMessageAction.Updated);
+        var published = MessageBus.Published.Single(p => p.RoutingKey == "router.updated");
+        var message = published.Message.Should().BeOfType<DomainEventMessage>().Subject;
+        message.TenantId.Should().Be(orgId);
+        message.Actor.Id.Should().Be(managerId);
+        message.Target.Id.Should().Be(routerId.ToString());
+        var metadata = (IReadOnlyDictionary<string, object?>)message.Metadata;
+        var changes = (IReadOnlyDictionary<string, object?>)metadata["changes"]!;
+        changes.Keys.Should().BeEquivalentTo("name");
+        var name = (IReadOnlyDictionary<string, object?>)changes["name"]!;
+        name["from"].Should().Be("Living room");
+        name["to"].Should().Be("Renamed");
+        metadata["secretRotated"].Should().Be(true);
+        metadata["usernameChanged"].Should().Be(false);
+        JsonSerializer.Serialize(message).Should().NotContain("rotated-secret").And.NotContain(Secret);
+    }
+
+    [Test]
+    public async Task Update_WhenNothingChanges_ThenPublishesRouterUpdatedWithAnEmptyChangeSet()
+    {
+        var client = CreateAuthenticatedClient(managerId);
+        var routerId = await CreateRouterAsync(client);
+
+        await client.PutAsJsonAsync($"{RoutersUrl()}/{routerId}",
+            new { name = "Living room", host = "192.168.1.1", protocol = "WebScrape", authMode = "HttpBasic", username = "admin" });
+
+        var message = MessageBus.Published.Single(p => p.RoutingKey == "router.updated").Message
+            .Should().BeOfType<DomainEventMessage>().Subject;
+        var metadata = (IReadOnlyDictionary<string, object?>)message.Metadata;
+        ((IReadOnlyDictionary<string, object?>)metadata["changes"]!).Should().BeEmpty();
+        metadata["secretRotated"].Should().Be(false);
     }
 
     [Test]
@@ -303,8 +348,12 @@ public sealed class RoutersControllerTests : DevicesServiceTestFixture
         (await verify.Routers.CountAsync()).Should().Be(0);
         (await verify.AgentRouterBindings.CountAsync()).Should().Be(0);
         (await verify.Devices.SingleAsync(d => d.Id == deviceId)).LastSeenViaRouterId.Should().BeNull();
-        MessageBus.Published.Select(p => p.Message).OfType<RouterChangedMessage>()
-            .Should().Contain(m => m.RouterId == routerId && m.Action == RouterChangedMessageAction.Deleted);
+        var message = MessageBus.Published.Single(p => p.RoutingKey == "router.deleted").Message
+            .Should().BeOfType<DomainEventMessage>().Subject;
+        message.Target.Id.Should().Be(routerId.ToString());
+        var metadata = (IReadOnlyDictionary<string, object?>)message.Metadata;
+        metadata["name"].Should().Be("Living room");
+        metadata["revokedAgentBindings"].Should().Be(1);
     }
 
     [Test]

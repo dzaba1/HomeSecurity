@@ -4,10 +4,9 @@ using Dzaba.AspNetUtils;
 using Dzaba.HomeSecurity.Authorization;
 using Dzaba.HomeSecurity.Org.Service.Data;
 using Dzaba.HomeSecurity.Domain;
-using Dzaba.HomeSecurity.MessageBroker.Contracts;
+using Dzaba.HomeSecurity.DomainEvents;
 using Dzaba.HomeSecurity.Org.Contracts;
 using Dzaba.HomeSecurity.Org.Service.Mapping;
-using Dzaba.HomeSecurity.Org.Service.Messages;
 using Microsoft.EntityFrameworkCore;
 using UserRoleEntity = Dzaba.HomeSecurity.Org.Service.Data.Entities.UserRole;
 using UserRoleAssignment = Dzaba.HomeSecurity.Org.Contracts.UserRoleAssignment;
@@ -20,22 +19,23 @@ internal sealed class UserRoleAssignmentsService : IUserRoleAssignmentsService
     private readonly Func<AppDbContext> dbFactory;
     private readonly ITenantContext tenantContext;
     private readonly IPermissionEvaluator permissionEvaluator;
-    private readonly IMessageBus messageBus;
+    private readonly IDomainEventPublisher eventPublisher;
     private readonly ILogger<UserRoleAssignmentsService> logger;
 
     public UserRoleAssignmentsService(Func<AppDbContext> dbFactory, ITenantContext tenantContext,
-        IPermissionEvaluator permissionEvaluator, IMessageBus messageBus, ILogger<UserRoleAssignmentsService> logger)
+        IPermissionEvaluator permissionEvaluator, IDomainEventPublisher eventPublisher,
+        ILogger<UserRoleAssignmentsService> logger)
     {
         ArgumentNullException.ThrowIfNull(dbFactory);
         ArgumentNullException.ThrowIfNull(tenantContext);
         ArgumentNullException.ThrowIfNull(permissionEvaluator);
-        ArgumentNullException.ThrowIfNull(messageBus);
+        ArgumentNullException.ThrowIfNull(eventPublisher);
         ArgumentNullException.ThrowIfNull(logger);
 
         this.dbFactory = dbFactory;
         this.tenantContext = tenantContext;
         this.permissionEvaluator = permissionEvaluator;
-        this.messageBus = messageBus;
+        this.eventPublisher = eventPublisher;
         this.logger = logger;
     }
 
@@ -84,7 +84,7 @@ internal sealed class UserRoleAssignmentsService : IUserRoleAssignmentsService
         logger.LogInformation("Role {RoleId} assigned to user {UserId} in organization {OrganizationId}",
             request.RoleId, request.UserId, tenantId);
 
-        await PublishAccessChangedAsync(tenantId, request.UserId, cancellationToken).ConfigureAwait(false);
+        await PublishAsync(db, DomainEventNames.RoleAssigned, request.UserId, request.RoleId, cancellationToken).ConfigureAwait(false);
 
         return entity.ToContract();
     }
@@ -112,16 +112,23 @@ internal sealed class UserRoleAssignmentsService : IUserRoleAssignmentsService
         logger.LogInformation("Role {RoleId} unassigned from user {UserId} in organization {OrganizationId}",
             roleId, userId, tenantId);
 
-        await PublishAccessChangedAsync(tenantId, userId, cancellationToken).ConfigureAwait(false);
+        await PublishAsync(db, DomainEventNames.RoleUnassigned, userId, roleId, cancellationToken).ConfigureAwait(false);
 
         return true;
     }
 
-    // Notification only, not event-carried state transfer - see
-    // access_changed_message.json's own description. No consumer exists
-    // yet; published as a low-cost hedge for future integrations.
-    private Task PublishAccessChangedAsync(Guid tenantId, string userId, CancellationToken cancellationToken) =>
-        messageBus.PublishAsync(RoutingKeys.AccessChanged,
-            new AccessChangedMessage { TenantId = tenantId, UserId = userId, ChangedAt = DateTimeOffset.UtcNow },
-            cancellationToken);
+    // The role's name is looked up so the event reads "Admin", not a bare id.
+    // The target is the assignment itself, identified by its (user, role) key.
+    private async Task PublishAsync(AppDbContext db, string eventName, string userId, Guid roleId, CancellationToken cancellationToken)
+    {
+        var roleName = await db.Roles
+            .Where(r => r.Id == roleId)
+            .Select(r => r.Name)
+            .FirstOrDefaultAsync(cancellationToken)
+            .ConfigureAwait(false);
+
+        await eventPublisher.PublishAsync(eventName, DomainEventTargetTypes.UserRole, $"{userId}:{roleId}",
+            new Dictionary<string, object?> { ["userId"] = userId, ["roleId"] = roleId, ["roleName"] = roleName },
+            cancellationToken: cancellationToken).ConfigureAwait(false);
+    }
 }

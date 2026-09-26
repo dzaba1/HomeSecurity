@@ -25,29 +25,49 @@ Two related gaps had been flagged but never actually designed:
 
 ## Decision
 
-**A dedicated audit-event stream, separate from operational logging, on the
-existing RabbitMQ broker — no second broker, and no second exchange.** Every
-service publishes audit events (role/membership changes, router-credential
-fetches, device acknowledgements, device pairing/revocation) to the shared
-`homesecurity.events` exchange under `audit.<action>` routing keys
-(e.g. `audit.role.assigned`); Keycloak's own admin/login events reach the
-same exchange via its built-in event-listener SPI webhook, posted to a thin
-internal endpoint that does no interpretation of its own. A new
-**`Audit.Service`** is the sole consumer (a queue bound to `audit.#`), and —
+**Every service publishes each operation it performs as a domain event, on
+the existing RabbitMQ broker — no second broker, and no second exchange —
+and `Audit.Service` is one of the subscribers.** A service publishes
+`membership.added`, `role.assigned`, `router.credential.fetched`, … to the
+shared `homesecurity.events` exchange, under a routing key equal to the event
+name, wrapped in one common envelope (event id, timestamp, tenant, actor,
+target, and an open `metadata` object holding that event's extended data —
+`domain_event_message.json`). The events are not audit-specific: any number
+of services can subscribe to the ones they care about (a cache warmer, a
+notifier), and a service that wants to know what happened no longer needs a
+second, weaker "something changed" message alongside. Keycloak's own
+admin/login events reach the same exchange via its built-in event-listener
+SPI webhook, posted to a thin internal endpoint that does no interpretation
+of its own. A new **`Audit.Service`** subscribes to the events that make up
+the audit trail (its own queue, binding the event names it records), and —
 following the precedent [ADR-0016](0016-devices-service-owns-its-own-database.md)
 already set — owns its **own, effectively append-only database**, rather
 than writing into `Org.Service`'s or `Devices.Service`'s schema. Full design:
 [`16-auditing-and-compliance.md`](../architecture/16-auditing-and-compliance.md).
 
-Four decisions make that stream trustworthy rather than best-effort:
+This **replaces** the earlier coarse `access.changed`, `router.changed` and
+`device.changed` notification events: none of them had a consumer, and each
+domain event says strictly more (who, what, before/after) at the same call
+site, so keeping both would mean two messages per operation that could
+disagree. `logs.ingested`, which the Go processor consumes, is unaffected.
+The rule from [`07-caching-and-idempotency.md`](../architecture/07-caching-and-idempotency.md#3-domain-events-instead-of-something-changed-notifications)
+still holds for subscribers — an event says what happened, not the new
+state, so a subscriber that needs current state calls the owning service's
+API — it just no longer needs a second message.
 
-- **Transactional outbox on the publishing side.** A publishing service
-  writes the audit event into an outbox table *in the same database
-  transaction* as the change it describes; a background relay then publishes
-  it to RabbitMQ. Unlike the coarse `*.changed` notifications (published
-  inline after `SaveChanges`, where a broker outage silently drops the
-  message), an audit event can't be lost between "the change committed" and
-  "the event was published."
+Publishing is **inline, after the change has been saved**, exactly as the
+replaced notifications were, and a broker outage while publishing is out of
+scope for now: the change stays committed and the request fails. A
+transactional outbox (write the event in the same database transaction, relay
+it afterwards) was designed and rejected as more machinery than this stage
+calls for; it can be added behind the same publisher if a lost audit event
+ever becomes a real risk. One deliberate exception in the other direction:
+the router-credential hand-out publishes *before* returning the credential,
+so a failure to publish fails the request instead of handing out a credential
+nobody recorded.
+
+Three decisions make the audit trail trustworthy rather than best-effort:
+
 - **Idempotency by database constraint, not Redis.** `Audit.Service` dedupes
   redelivered messages with a unique index on the event id; a duplicate is
   acknowledged and dropped. The Redis `SETNX` pattern from
@@ -63,14 +83,6 @@ Four decisions make that stream trustworthy rather than best-effort:
   a person deletes the mapping; the events themselves are never modified
   (which would break both the append-only grants and the hash chain), yet
   they no longer point at anyone.
-
-This is deliberately **not** the same mechanism as the coarse
-`access.changed`/`router.changed`/`device.changed` notification events from
-[`07-caching-and-idempotency.md`](../architecture/07-caching-and-idempotency.md#3-coarse-something-changed-notification-events):
-those say "something changed, go re-check current state" and have no
-consumer yet; audit events are the immutable record of the change itself,
-retained on their own schedule, and never used to reconstruct current
-state.
 
 **ISO/IEC 27701 (the Privacy Information Management System extension to
 ISO/IEC 27001) is adopted as the GDPR compliance model**, rather than a
@@ -106,15 +118,21 @@ an auditor.
   deliberate, documented middle ground rather than either extreme (keeping
   raw personal data indefinitely, or deleting security-relevant evidence on
   request).
-- `Org.Service` and `Devices.Service` each gain an audit outbox table and a
-  relay, and services need to know *who* is acting — a shared "current
-  actor" abstraction (human user or device, resolved from the request's
-  claims) is injected rather than a user id being threaded through every
-  service method.
+- Publishing services need to know *who* is acting — a shared "current
+  actor" abstraction (human user, device or system, resolved from the
+  request's claims) is injected rather than a user id being threaded through
+  every service method. It lives, with the envelope and a small publisher, in
+  `Common/Dzaba.HomeSecurity.DomainEvents`.
+- Existing services carry no audit-specific storage: publishing an event
+  needs no schema change, so no migration beyond the permission seed.
 - `Org.Service` and `Devices.Service` haven't been deployed anywhere, so
-  their EF migrations are regenerated as a single fresh `InitialCreate`
-  rather than stacked with incremental migrations for the new permissions and
-  outbox tables.
+  their EF migrations were regenerated as a single fresh `InitialCreate`
+  rather than stacked with an incremental migration for the new permissions.
+- Personal data in event targets: an actor is pseudonymized on erasure, but
+  an event whose *target* is a person (`membership.added`, `role.assigned`
+  carry the affected user's id) still names them. Erasing that link is an
+  open question for the retention/erasure work, not solved by the actor
+  token alone.
 - `15-router-credentials.md` and `09-observability.md`'s forward references
   to "the security/audit log stream" now resolve to this document instead of
   an undesigned idea.

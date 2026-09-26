@@ -1,9 +1,8 @@
 using Dzaba.AspNetUtils;
-using Dzaba.HomeSecurity.Audit.Contracts;
 using Dzaba.HomeSecurity.DeviceAuth;
 using Microsoft.AspNetCore.Http;
 
-namespace Dzaba.HomeSecurity.Audit;
+namespace Dzaba.HomeSecurity.DomainEvents;
 
 internal sealed class HttpContextCurrentActor : ICurrentActor
 {
@@ -38,7 +37,7 @@ internal sealed class HttpContextCurrentActor : ICurrentActor
         if (string.IsNullOrEmpty(userId))
         {
             // Attributing an authenticated action to "system" would put a
-            // false statement in the audit trail.
+            // false statement in the record of who did what.
             throw new InvalidOperationException("The authenticated principal has no subject to record as the audit actor.");
         }
 

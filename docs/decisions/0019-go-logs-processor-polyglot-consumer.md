@@ -39,7 +39,7 @@ shares with the C# producer is the JSON Schema in `src/contracts/json/`.
   every non-.NET consumer depend on a C# type name. `RabbitMqMessageBus` therefore
   publishes every domain event to one explicitly named durable topic exchange,
   `homesecurity.events` (`ExchangeNames.Events`), and the routing key
-  (`logs.ingested`, `device.changed`, ...) identifies the event. This changes the
+  (`logs.ingested`, `membership.added`, ...) identifies the event. This changes the
   exchange for the other publishers too (Org, Devices) - they all go through the
   same bus class - and no consumer of the old per-type exchanges exists.
 - **Libraries:** `amqp091-go` for RabbitMQ and the standard library's `log/slog`

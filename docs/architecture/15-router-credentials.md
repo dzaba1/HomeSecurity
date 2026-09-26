@@ -203,11 +203,13 @@ sequenceDiagram
   A->>R: Authenticate per authMode (Basic/Digest header or form login), poll for connected devices
 ```
 
-Every create/update/delete of a `Router` also publishes a coarse
-`router.changed` notification event (`{tenantId, routerId, action,
-changedAt}`) — no consumer exists yet; see
-[`07-caching-and-idempotency.md`](07-caching-and-idempotency.md#3-coarse-something-changed-notification-events)
-for why this is published anyway.
+Every create/update/delete of a `Router` also publishes one domain event
+(`router.created`, `router.updated`, `router.deleted`) whose `metadata` holds
+an explicit whitelist — name, host, protocol, auth mode, and for an update
+only what changed as from/to plus `usernameChanged` and `secretRotated`
+booleans. The secret and the login name never travel in an event. See
+[`07-caching-and-idempotency.md`](07-caching-and-idempotency.md#3-domain-events-instead-of-something-changed-notifications)
+and [`16-auditing-and-compliance.md`](16-auditing-and-compliance.md).
 
 Notes on this flow:
 
@@ -221,11 +223,14 @@ Notes on this flow:
   short-lived JWT is re-minted rather than cached indefinitely — this is
   what lets an admin rotate the router's password in the Admin UI and have
   every agent pick it up without re-pairing anything.
-- Every fetch of a router's decrypted credential is written to the
-  security/audit log stream designed in
-  [`16-auditing-and-compliance.md`](16-auditing-and-compliance.md) (who/what
-  fetched it, when) — never the credential value itself, matching the
-  existing "what never gets logged" rule for device secrets and JWTs.
+- Every fetch of a router's decrypted credential is published as a
+  `router.credential.fetched` domain event, recorded by the audit trail
+  designed in [`16-auditing-and-compliance.md`](16-auditing-and-compliance.md)
+  (which device fetched which router, when) — never the credential value
+  itself, matching the existing "what never gets logged" rule for device
+  secrets and JWTs. It is published *before* the credential is returned, so
+  if publishing fails the request fails rather than handing out a credential
+  nobody recorded.
 
 ### The endpoint as built
 
@@ -251,8 +256,10 @@ Notes on this flow:
   token; `403` for a missing scope or another device's id.
 - **`Cache-Control: no-store`** on the response, since the body carries a
   plaintext secret.
-- **Audit**: each hand-out logs the router, device and tenant ids at
-  `Information`; the secret is never logged.
+- **Audit**: each hand-out publishes a `router.credential.fetched` event
+  (actor: the device from its token; target: the router; metadata: the
+  credential id) and logs the router, device and tenant ids at
+  `Information`; the secret is in neither.
 
 ## Rotation & revocation
 

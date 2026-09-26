@@ -1,10 +1,10 @@
-namespace Dzaba.HomeSecurity.Audit;
+namespace Dzaba.HomeSecurity.DomainEvents;
 
 /// <summary>
-/// The envelope's <c>target.type</c> values: what kind of thing an audited
-/// action was done to.
+/// The envelope's <c>target.type</c> values: what kind of thing an event's
+/// operation was done to.
 /// </summary>
-public static class AuditTargetTypes
+public static class DomainEventTargetTypes
 {
     public const string Organization = "Organization";
     public const string Membership = "Membership";

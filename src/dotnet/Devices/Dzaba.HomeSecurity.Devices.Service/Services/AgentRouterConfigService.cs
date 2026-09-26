@@ -3,6 +3,7 @@ using Dzaba.HomeSecurity.Devices.Service.Data;
 using Dzaba.HomeSecurity.Devices.Service.Mapping;
 using Dzaba.HomeSecurity.Devices.Service.Security;
 using Dzaba.HomeSecurity.Domain;
+using Dzaba.HomeSecurity.DomainEvents;
 using Microsoft.EntityFrameworkCore;
 
 namespace Dzaba.HomeSecurity.Devices.Service.Services;
@@ -11,17 +12,20 @@ internal sealed class AgentRouterConfigService : IAgentRouterConfigService
 {
     private readonly DbContextOptions<DevicesDbContext> dbOptions;
     private readonly IRouterSecretProtector secretProtector;
+    private readonly IDomainEventPublisher eventPublisher;
     private readonly ILogger<AgentRouterConfigService> logger;
 
     public AgentRouterConfigService(DbContextOptions<DevicesDbContext> dbOptions, IRouterSecretProtector secretProtector,
-        ILogger<AgentRouterConfigService> logger)
+        IDomainEventPublisher eventPublisher, ILogger<AgentRouterConfigService> logger)
     {
         ArgumentNullException.ThrowIfNull(dbOptions);
         ArgumentNullException.ThrowIfNull(secretProtector);
+        ArgumentNullException.ThrowIfNull(eventPublisher);
         ArgumentNullException.ThrowIfNull(logger);
 
         this.dbOptions = dbOptions;
         this.secretProtector = secretProtector;
+        this.eventPublisher = eventPublisher;
         this.logger = logger;
     }
 
@@ -57,10 +61,20 @@ internal sealed class AgentRouterConfigService : IAgentRouterConfigService
 
         var config = router.ToRouterConfig(secretProtector.Unprotect(tenantId, router.EncryptedSecret));
 
-        // An audit trail of who was handed a router credential - the secret
-        // itself is deliberately never logged.
         logger.LogInformation("Router {RouterId} config handed to device {DeviceId} in tenant {TenantId}",
             router.Id, deviceCredentialId, tenantId);
+
+        // Who was handed a router credential, and when - ids only, the secret
+        // itself never leaves this method except in the response. Published
+        // before the config is returned, so a failure to publish fails the
+        // request instead of handing out a credential nobody recorded. The
+        // actor (this device) comes from the token; the tenant is passed
+        // explicitly because this endpoint has no {orgId} for the request's
+        // tenant context to be set from.
+        await eventPublisher.PublishAsync(DomainEventNames.RouterCredentialFetched, DomainEventTargetTypes.Router,
+            router.Id.ToString(),
+            new Dictionary<string, object?> { ["deviceCredentialId"] = deviceCredentialId },
+            tenantId, cancellationToken).ConfigureAwait(false);
 
         return config;
     }

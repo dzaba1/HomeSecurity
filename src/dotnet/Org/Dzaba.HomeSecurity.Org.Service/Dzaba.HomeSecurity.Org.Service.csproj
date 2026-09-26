@@ -21,6 +21,7 @@
     <ProjectReference Include="..\..\Common\Dzaba.HomeSecurity.MessageBroker.Contracts\Dzaba.HomeSecurity.MessageBroker.Contracts.csproj" />
     <ProjectReference Include="..\..\Common\Dzaba.HomeSecurity.MessageBroker.RabbitMQ\Dzaba.HomeSecurity.MessageBroker.RabbitMQ.csproj" />
     <ProjectReference Include="..\..\Common\Dzaba.HomeSecurity.Domain\Dzaba.HomeSecurity.Domain.csproj" />
+    <ProjectReference Include="..\..\Common\Dzaba.HomeSecurity.DomainEvents\Dzaba.HomeSecurity.DomainEvents.csproj" />
     <ProjectReference Include="..\..\Common\Dzaba.HomeSecurity.Observability\Dzaba.HomeSecurity.Observability.csproj" />
     <ProjectReference Include="..\..\Common\Dzaba.HomeSecurity.WebApi\Dzaba.HomeSecurity.WebApi.csproj" />
     <ProjectReference Include="..\..\Common\Dzaba.HomeSecurity.DbServer\Dzaba.HomeSecurity.DbServer.csproj" />

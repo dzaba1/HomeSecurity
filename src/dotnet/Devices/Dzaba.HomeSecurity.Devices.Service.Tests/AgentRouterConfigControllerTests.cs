@@ -4,6 +4,7 @@ using System.Text.Json;
 using Dzaba.HomeSecurity.Devices.Service.Authorization;
 using Dzaba.HomeSecurity.Devices.Service.Data.Entities;
 using Dzaba.HomeSecurity.Domain;
+using Dzaba.HomeSecurity.DomainEvents;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 
@@ -71,6 +72,34 @@ public sealed class AgentRouterConfigControllerTests : DevicesServiceTestFixture
         body.GetProperty("secret").GetString().Should().Be(Secret);
         body.TryGetProperty("_links", out _).Should().BeFalse("the agent API is plain JSON, not HAL");
         response.Headers.CacheControl!.NoStore.Should().BeTrue();
+    }
+
+    [Test]
+    public async Task Get_WhenTheAgentIsHandedItsConfig_ThenPublishesRouterCredentialFetchedByThatDeviceWithNoSecret()
+    {
+        var routerId = await CreateRouterAsync();
+        await BindAsync(orgId, agentId, routerId);
+
+        await CreateDeviceClient(orgId, agentId, AgentAuth.RouterReadScope).GetAsync(ConfigUrl(agentId));
+
+        var message = MessageBus.Published.Single(p => p.RoutingKey == "router.credential.fetched").Message
+            .Should().BeOfType<DomainEventMessage>().Subject;
+        message.TenantId.Should().Be(orgId, "the tenant comes from the device token, not an {orgId} route segment");
+        message.Actor.Type.Should().Be(ActorType.Device);
+        message.Actor.Id.Should().Be(agentId.ToString());
+        message.Target.Type.Should().Be(DomainEventTargetTypes.Router);
+        message.Target.Id.Should().Be(routerId.ToString());
+        ((IReadOnlyDictionary<string, object?>)message.Metadata)["deviceCredentialId"].Should().Be(agentId);
+        JsonSerializer.Serialize(message).Should().NotContain(Secret);
+    }
+
+    [Test]
+    public async Task Get_WhenNoCredentialIsHandedOut_ThenNothingIsPublished()
+    {
+        var response = await CreateDeviceClient(orgId, agentId, AgentAuth.RouterReadScope).GetAsync(ConfigUrl(agentId));
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        MessageBus.Published.Should().NotContain(p => p.RoutingKey == "router.credential.fetched");
     }
 
     [Test]

@@ -4,10 +4,9 @@ using Dzaba.AspNetUtils;
 using Dzaba.HomeSecurity.Devices.Contracts;
 using Dzaba.HomeSecurity.Devices.Service.Data;
 using Dzaba.HomeSecurity.Devices.Service.Mapping;
-using Dzaba.HomeSecurity.Devices.Service.Messages;
 using Dzaba.HomeSecurity.Devices.Service.Security;
 using Dzaba.HomeSecurity.Domain;
-using Dzaba.HomeSecurity.MessageBroker.Contracts;
+using Dzaba.HomeSecurity.DomainEvents;
 using Microsoft.EntityFrameworkCore;
 using RouterEntity = Dzaba.HomeSecurity.Devices.Service.Data.Entities.Router;
 using Router = Dzaba.HomeSecurity.Devices.Contracts.Router;
@@ -19,22 +18,22 @@ internal sealed class RoutersService : IRoutersService
     private readonly DevicesDbContext db;
     private readonly ITenantContext tenantContext;
     private readonly IRouterSecretProtector secretProtector;
-    private readonly IMessageBus messageBus;
+    private readonly IDomainEventPublisher eventPublisher;
     private readonly ILogger<RoutersService> logger;
 
     public RoutersService(DevicesDbContext db, ITenantContext tenantContext, IRouterSecretProtector secretProtector,
-        IMessageBus messageBus, ILogger<RoutersService> logger)
+        IDomainEventPublisher eventPublisher, ILogger<RoutersService> logger)
     {
         ArgumentNullException.ThrowIfNull(db);
         ArgumentNullException.ThrowIfNull(tenantContext);
         ArgumentNullException.ThrowIfNull(secretProtector);
-        ArgumentNullException.ThrowIfNull(messageBus);
+        ArgumentNullException.ThrowIfNull(eventPublisher);
         ArgumentNullException.ThrowIfNull(logger);
 
         this.db = db;
         this.tenantContext = tenantContext;
         this.secretProtector = secretProtector;
-        this.messageBus = messageBus;
+        this.eventPublisher = eventPublisher;
         this.logger = logger;
     }
 
@@ -76,7 +75,17 @@ internal sealed class RoutersService : IRoutersService
 
         logger.LogInformation("Router {RouterId} created in tenant {TenantId}", entity.Id, tenantId);
 
-        await PublishRouterChangedAsync(tenantId, entity.Id, RouterChangedMessageAction.Created, cancellationToken).ConfigureAwait(false);
+        // Extended data is an explicit whitelist: the request also holds the
+        // secret, so nothing is ever built from the request or entity itself.
+        await eventPublisher.PublishAsync(DomainEventNames.RouterCreated, DomainEventTargetTypes.Router, entity.Id.ToString(),
+            new Dictionary<string, object?>
+            {
+                ["name"] = entity.Name,
+                ["host"] = entity.Host,
+                ["protocol"] = entity.Protocol.ToString(),
+                ["authMode"] = entity.AuthMode?.ToString(),
+            },
+            cancellationToken: cancellationToken).ConfigureAwait(false);
 
         return entity.ToContract();
     }
@@ -93,6 +102,11 @@ internal sealed class RoutersService : IRoutersService
         }
 
         var tenantId = tenantContext.TenantId;
+
+        // Before-values, captured ahead of the overwrite below.
+        var (previousName, previousHost, previousProtocol, previousAuthMode, previousUsername) =
+            (entity.Name, entity.Host, entity.Protocol, entity.AuthMode, entity.Username);
+
         entity.Name = request.Name;
         entity.Host = request.Host;
         entity.Protocol = request.Protocol.ToEntity();
@@ -112,7 +126,22 @@ internal sealed class RoutersService : IRoutersService
         logger.LogInformation("Router {RouterId} updated in tenant {TenantId} (secret rotated: {SecretRotated})",
             routerId, tenantId, request.Secret is not null);
 
-        await PublishRouterChangedAsync(tenantId, routerId, RouterChangedMessageAction.Updated, cancellationToken).ConfigureAwait(false);
+        // Only what changed, as from/to. The login name and the secret are
+        // reported as booleans only: that they changed matters, their values
+        // never travel.
+        var changes = new Dictionary<string, object?>();
+        AddChange(changes, "name", previousName, entity.Name);
+        AddChange(changes, "host", previousHost, entity.Host);
+        AddChange(changes, "protocol", previousProtocol.ToString(), entity.Protocol.ToString());
+        AddChange(changes, "authMode", previousAuthMode?.ToString(), entity.AuthMode?.ToString());
+        await eventPublisher.PublishAsync(DomainEventNames.RouterUpdated, DomainEventTargetTypes.Router, routerId.ToString(),
+            new Dictionary<string, object?>
+            {
+                ["changes"] = changes,
+                ["usernameChanged"] = previousUsername != entity.Username,
+                ["secretRotated"] = request.Secret is not null,
+            },
+            cancellationToken: cancellationToken).ConfigureAwait(false);
 
         return entity.ToContract();
     }
@@ -131,9 +160,10 @@ internal sealed class RoutersService : IRoutersService
         // loaded, so relying on it would silently depend on which
         // IDbServerProvider is configured. Removing the bindings is also what
         // immediately ends any agent's access to this router's credential.
-        db.AgentRouterBindings.RemoveRange(await db.AgentRouterBindings
+        var bindings = await db.AgentRouterBindings
             .Where(b => b.RouterId == routerId)
-            .ToArrayAsync(cancellationToken).ConfigureAwait(false));
+            .ToArrayAsync(cancellationToken).ConfigureAwait(false);
+        db.AgentRouterBindings.RemoveRange(bindings);
 
         foreach (var device in await db.Devices
             .Where(d => d.LastSeenViaRouterId == routerId)
@@ -148,7 +178,14 @@ internal sealed class RoutersService : IRoutersService
 
         logger.LogInformation("Router {RouterId} deleted from tenant {TenantId}", routerId, tenantId);
 
-        await PublishRouterChangedAsync(tenantId, routerId, RouterChangedMessageAction.Deleted, cancellationToken).ConfigureAwait(false);
+        await eventPublisher.PublishAsync(DomainEventNames.RouterDeleted, DomainEventTargetTypes.Router, routerId.ToString(),
+            new Dictionary<string, object?>
+            {
+                ["name"] = entity.Name,
+                ["host"] = entity.Host,
+                ["revokedAgentBindings"] = bindings.Length,
+            },
+            cancellationToken: cancellationToken).ConfigureAwait(false);
 
         return true;
     }
@@ -182,12 +219,11 @@ internal sealed class RoutersService : IRoutersService
         }
     }
 
-    // Notification only, not event-carried state transfer - see
-    // router_changed_message.json's own description. No consumer exists yet;
-    // published as a low-cost hedge for future integrations.
-    private Task PublishRouterChangedAsync(Guid tenantId, Guid routerId, RouterChangedMessageAction action,
-        CancellationToken cancellationToken) =>
-        messageBus.PublishAsync(RoutingKeys.RouterChanged,
-            new RouterChangedMessage { TenantId = tenantId, RouterId = routerId, Action = action, ChangedAt = DateTimeOffset.UtcNow },
-            cancellationToken);
+    private static void AddChange(Dictionary<string, object?> changes, string field, string? from, string? to)
+    {
+        if (from != to)
+        {
+            changes[field] = new Dictionary<string, object?> { ["from"] = from, ["to"] = to };
+        }
+    }
 }

@@ -132,32 +132,41 @@ Not every consumer uses Redis for this: `Audit.Service` dedupes with a unique
 index on the event id in its own database instead, since the database is the
 store of record there and adding a Redis check in front would only add a
 Redis-outage failure mode (see
-[`16-auditing-and-compliance.md`](16-auditing-and-compliance.md#3-architecture-one-more-consumer-on-the-existing-bus)).
+[`16-auditing-and-compliance.md`](16-auditing-and-compliance.md#3-architecture-one-more-subscriber-on-the-existing-bus)).
 
-## 3. Coarse "something changed" notification events
+## 3. Domain events instead of "something changed" notifications
 
-Separate from both uses above: `Org.Service` publishes `access.changed`
-(`{tenantId, userId, changedAt}`) to RabbitMQ whenever a user's membership
-or role assignment changes, and `Devices.Service` will publish
-`router.changed`/`device.changed` the same way for its own data. **No
-consumer exists for any of these yet** — they're published as a low-cost
-hedge for future integrations (a cache warmer, another product; the audit
-trail is *not* built on these — it has its own `audit.*` events with an
-outbox, see [`16-auditing-and-compliance.md`](16-auditing-and-compliance.md)),
-following the same "publish now, consume later"
-precedent `LogsIngestion.Service` already set with `logs.ingested` (see
+Separate from both uses above: every operation `Org.Service` and
+`Devices.Service` perform on their own data is published to RabbitMQ as one
+domain event named for what happened — `membership.added`, `role.assigned`,
+`router.updated`, `device.updated`, … — with the extended data of that
+operation in a common envelope (`domain_event_message.json`; the full list
+and the audit use are in
+[`16-auditing-and-compliance.md`](16-auditing-and-compliance.md)). They
+replace the earlier coarse `access.changed`/`router.changed`/`device.changed`
+notifications: **no consumer of those ever existed**, and a domain event
+carries everything they did and more, so a service publishes one message per
+operation rather than two. `Audit.Service` is the first subscriber; a cache
+warmer or another product would be another, binding just the event names it
+cares about — the same "publish now, consume later" precedent
+`LogsIngestion.Service` set with `logs.ingested` (see
 [ADR-0007](../decisions/0007-rabbitmq-as-message-bus.md)).
 
-These are deliberately **notification events, not event-carried state
-transfer**: the payload says "something about this changed, go re-check,"
-never "here is the new state." A future consumer still calls the owning
-service's API (or reads the shared permission cache) for current data —
-this keeps the owning service the single source of truth and avoids ever
-having two divergent copies of "what this user can do" or "what this
-router's config is." See
+These are still deliberately **not event-carried state transfer**: an event
+says what happened and (in `metadata`) what changed — a role's added and
+removed permission keys, a router's name from/to — never "here is the whole
+new state." A subscriber that needs current data still calls the owning
+service's API (or reads the shared permission cache), which keeps the owning
+service the single source of truth and avoids ever having two divergent
+copies of "what this user can do" or "what this router's config is." See
 [ADR-0016](../decisions/0016-devices-service-owns-its-own-database.md) for
 why this exists alongside, not instead of, the permission cache's
 call-through mechanism above.
+
+Events are published inline after the change has been saved, so a broker
+outage while publishing fails the request with the change already committed;
+that is accepted for now (see
+[ADR-0020](../decisions/0020-audit-log-and-iso27701-compliance-model.md)).
 
 ## Designed but not built for v1
 

@@ -28,8 +28,8 @@ namespace Dzaba.HomeSecurity.Org.Service.Tests;
 /// per-user key-ring file on disk, which is both needless I/O per test and,
 /// once tests run in parallel (see the assembly-level [Parallelizable]),
 /// a genuine race on that shared file. Also swaps the real RabbitMQ-backed
-/// IMessageBus for FakeMessageBus - MembershipsService/UserRoleAssignmentsService
-/// publish access.changed on every mutation now, so every such test would
+/// IMessageBus for FakeMessageBus - every service mutation publishes a domain
+/// event (membership.added, role.assigned, ...) now, so every such test would
 /// otherwise need a real broker.
 /// </summary>
 public abstract class OrgServiceTestFixture : AuthenticatedControllerTestFixture<Program>
