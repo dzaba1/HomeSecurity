@@ -61,7 +61,9 @@ public sealed class AppDbContext : DbContext
                 new Permission { Key = PermissionKeys.RouterView, Description = "View router metadata (never the secret)" },
                 new Permission { Key = PermissionKeys.RouterManage, Description = "Create, update, and delete routers" },
                 new Permission { Key = PermissionKeys.DeviceView, Description = "View network devices" },
-                new Permission { Key = PermissionKeys.DeviceManage, Description = "Rename/acknowledge network devices" });
+                new Permission { Key = PermissionKeys.DeviceManage, Description = "Rename/acknowledge network devices" },
+                new Permission { Key = PermissionKeys.AuditView, Description = "View the organization's audit trail" },
+                new Permission { Key = PermissionKeys.DataSubjectRequestManage, Description = "Start and complete data export/erasure requests" });
         });
 
         modelBuilder.Entity<Role>(e =>
@@ -98,6 +100,8 @@ public sealed class AppDbContext : DbContext
                 new { RoleId = SystemRoles.OwnerId, PermissionKey = PermissionKeys.RouterManage },
                 new { RoleId = SystemRoles.OwnerId, PermissionKey = PermissionKeys.DeviceView },
                 new { RoleId = SystemRoles.OwnerId, PermissionKey = PermissionKeys.DeviceManage },
+                new { RoleId = SystemRoles.OwnerId, PermissionKey = PermissionKeys.AuditView },
+                new { RoleId = SystemRoles.OwnerId, PermissionKey = PermissionKeys.DataSubjectRequestManage },
                 new { RoleId = SystemRoles.AdminId, PermissionKey = PermissionKeys.DeviceCredentialView },
                 new { RoleId = SystemRoles.AdminId, PermissionKey = PermissionKeys.DeviceCredentialDelete },
                 new { RoleId = SystemRoles.AdminId, PermissionKey = PermissionKeys.LogsView },
@@ -106,6 +110,8 @@ public sealed class AppDbContext : DbContext
                 new { RoleId = SystemRoles.AdminId, PermissionKey = PermissionKeys.RouterManage },
                 new { RoleId = SystemRoles.AdminId, PermissionKey = PermissionKeys.DeviceView },
                 new { RoleId = SystemRoles.AdminId, PermissionKey = PermissionKeys.DeviceManage },
+                new { RoleId = SystemRoles.AdminId, PermissionKey = PermissionKeys.AuditView },
+                new { RoleId = SystemRoles.AdminId, PermissionKey = PermissionKeys.DataSubjectRequestManage },
                 new { RoleId = SystemRoles.MemberId, PermissionKey = PermissionKeys.DeviceCredentialView },
                 new { RoleId = SystemRoles.MemberId, PermissionKey = PermissionKeys.LogsView },
                 new { RoleId = SystemRoles.MemberId, PermissionKey = PermissionKeys.DeviceView },

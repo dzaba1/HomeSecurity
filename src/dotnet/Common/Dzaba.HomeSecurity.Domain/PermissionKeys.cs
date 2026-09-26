@@ -24,6 +24,8 @@ public static class PermissionKeys
     public const string RouterManage = "router.manage";
     public const string DeviceView = "device.view";
     public const string DeviceManage = "device.manage";
+    public const string AuditView = "audit.view";
+    public const string DataSubjectRequestManage = "data_subject_request.manage";
 
     public static readonly IReadOnlyList<string> All =
     [
@@ -34,6 +36,8 @@ public static class PermissionKeys
         RouterView,
         RouterManage,
         DeviceView,
-        DeviceManage
+        DeviceManage,
+        AuditView,
+        DataSubjectRequestManage
     ];
 }

@@ -143,6 +143,16 @@ namespace Dzaba.HomeSecurity.Org.Service.Migrations
                         {
                             Key = "device.manage",
                             Description = "Rename/acknowledge network devices"
+                        },
+                        new
+                        {
+                            Key = "audit.view",
+                            Description = "View the organization's audit trail"
+                        },
+                        new
+                        {
+                            Key = "data_subject_request.manage",
+                            Description = "Start and complete data export/erasure requests"
                         });
                 });
 
@@ -245,6 +255,16 @@ namespace Dzaba.HomeSecurity.Org.Service.Migrations
                         },
                         new
                         {
+                            RoleId = new Guid("00000000-0000-0000-0000-000000000001"),
+                            PermissionKey = "audit.view"
+                        },
+                        new
+                        {
+                            RoleId = new Guid("00000000-0000-0000-0000-000000000001"),
+                            PermissionKey = "data_subject_request.manage"
+                        },
+                        new
+                        {
                             RoleId = new Guid("00000000-0000-0000-0000-000000000002"),
                             PermissionKey = "device_credential.view"
                         },
@@ -282,6 +302,16 @@ namespace Dzaba.HomeSecurity.Org.Service.Migrations
                         {
                             RoleId = new Guid("00000000-0000-0000-0000-000000000002"),
                             PermissionKey = "device.manage"
+                        },
+                        new
+                        {
+                            RoleId = new Guid("00000000-0000-0000-0000-000000000002"),
+                            PermissionKey = "audit.view"
+                        },
+                        new
+                        {
+                            RoleId = new Guid("00000000-0000-0000-0000-000000000002"),
+                            PermissionKey = "data_subject_request.manage"
                         },
                         new
                         {

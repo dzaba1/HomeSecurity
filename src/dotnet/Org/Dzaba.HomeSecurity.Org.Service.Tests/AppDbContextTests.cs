@@ -28,9 +28,9 @@ public class AppDbContextTests : DataTestFixture
         created.Should().BeFalse();
         (await context.Organizations.ToListAsync()).Should().BeEmpty();
         (await context.Memberships.ToListAsync()).Should().BeEmpty();
-        (await context.Permissions.ToListAsync()).Should().HaveCount(8);
+        (await context.Permissions.ToListAsync()).Should().HaveCount(PermissionKeys.All.Count);
         (await context.Roles.ToListAsync()).Should().HaveCount(4);
-        (await context.RolePermissions.ToListAsync()).Should().HaveCount(22);
+        (await context.RolePermissions.ToListAsync()).Should().HaveCount(26);
         (await context.UserRoles.ToListAsync()).Should().BeEmpty();
         (await context.DeviceCredentials.ToListAsync()).Should().BeEmpty();
     }
@@ -67,7 +67,7 @@ public class AppDbContextTests : DataTestFixture
             (await context.Organizations.FindAsync(tenantId)).Should().NotBeNull();
             (await context.Permissions.FindAsync("device_credential.view")).Should().NotBeNull();
             (await context.Roles.CountAsync()).Should().Be(5); // 4 system + 1 custom
-            (await context.RolePermissions.CountAsync()).Should().Be(23); // 22 system + 1 custom
+            (await context.RolePermissions.CountAsync()).Should().Be(27); // 26 system + 1 custom
             (await context.UserRoles.CountAsync()).Should().Be(1);
             (await context.Memberships.CountAsync()).Should().Be(1);
             (await context.DeviceCredentials.CountAsync()).Should().Be(1);
@@ -115,12 +115,12 @@ public class AppDbContextTests : DataTestFixture
 
         using (var context = CreateContext(tenantA))
         {
-            (await context.RolePermissions.CountAsync()).Should().Be(23); // 22 system + 1 custom
+            (await context.RolePermissions.CountAsync()).Should().Be(27); // 26 system + 1 custom
         }
 
         using (var context = CreateContext(tenantB))
         {
-            (await context.RolePermissions.CountAsync()).Should().Be(22); // system only
+            (await context.RolePermissions.CountAsync()).Should().Be(26); // system only
         }
     }
 
@@ -227,15 +227,7 @@ public class AppDbContextTests : DataTestFixture
 
         var keys = await context.Permissions.Select(p => p.Key).ToListAsync();
 
-        keys.Should().BeEquivalentTo(
-            PermissionKeys.DeviceCredentialView,
-            PermissionKeys.DeviceCredentialDelete,
-            PermissionKeys.LogsView,
-            PermissionKeys.OrgManageMembers,
-            PermissionKeys.RouterView,
-            PermissionKeys.RouterManage,
-            PermissionKeys.DeviceView,
-            PermissionKeys.DeviceManage);
+        keys.Should().BeEquivalentTo(PermissionKeys.All);
     }
 
     [Test]
@@ -253,7 +245,7 @@ public class AppDbContextTests : DataTestFixture
     }
 
     [Test]
-    public async Task RolePermissions_WhenQueried_ThenOwnerGrantsAllEightPermissions()
+    public async Task RolePermissions_WhenQueried_ThenOwnerGrantsEveryPermissionInTheCatalog()
     {
         using var context = CreateContext(Guid.NewGuid());
 
@@ -262,19 +254,11 @@ public class AppDbContextTests : DataTestFixture
             .Select(rp => rp.PermissionKey)
             .ToListAsync();
 
-        keys.Should().BeEquivalentTo(
-            PermissionKeys.DeviceCredentialView,
-            PermissionKeys.DeviceCredentialDelete,
-            PermissionKeys.LogsView,
-            PermissionKeys.OrgManageMembers,
-            PermissionKeys.RouterView,
-            PermissionKeys.RouterManage,
-            PermissionKeys.DeviceView,
-            PermissionKeys.DeviceManage);
+        keys.Should().BeEquivalentTo(PermissionKeys.All);
     }
 
     [Test]
-    public async Task RolePermissions_WhenQueried_ThenAdminGrantsAllEightPermissions()
+    public async Task RolePermissions_WhenQueried_ThenAdminGrantsEveryPermissionInTheCatalog()
     {
         using var context = CreateContext(Guid.NewGuid());
 
@@ -283,15 +267,7 @@ public class AppDbContextTests : DataTestFixture
             .Select(rp => rp.PermissionKey)
             .ToListAsync();
 
-        keys.Should().BeEquivalentTo(
-            PermissionKeys.DeviceCredentialView,
-            PermissionKeys.DeviceCredentialDelete,
-            PermissionKeys.LogsView,
-            PermissionKeys.OrgManageMembers,
-            PermissionKeys.RouterView,
-            PermissionKeys.RouterManage,
-            PermissionKeys.DeviceView,
-            PermissionKeys.DeviceManage);
+        keys.Should().BeEquivalentTo(PermissionKeys.All);
     }
 
     [Test]

@@ -151,6 +151,8 @@ namespace Dzaba.HomeSecurity.Org.Service.Migrations
                 columns: new[] { "Key", "Description" },
                 values: new object[,]
                 {
+                    { "audit.view", "View the organization's audit trail" },
+                    { "data_subject_request.manage", "Start and complete data export/erasure requests" },
                     { "device_credential.delete", "Delete agent device credentials" },
                     { "device_credential.view", "View agent device credentials" },
                     { "device.manage", "Rename/acknowledge network devices" },
@@ -177,6 +179,8 @@ namespace Dzaba.HomeSecurity.Org.Service.Migrations
                 columns: new[] { "PermissionKey", "RoleId" },
                 values: new object[,]
                 {
+                    { "audit.view", new Guid("00000000-0000-0000-0000-000000000001") },
+                    { "data_subject_request.manage", new Guid("00000000-0000-0000-0000-000000000001") },
                     { "device_credential.delete", new Guid("00000000-0000-0000-0000-000000000001") },
                     { "device_credential.view", new Guid("00000000-0000-0000-0000-000000000001") },
                     { "device.manage", new Guid("00000000-0000-0000-0000-000000000001") },
@@ -185,6 +189,8 @@ namespace Dzaba.HomeSecurity.Org.Service.Migrations
                     { "org.manage_members", new Guid("00000000-0000-0000-0000-000000000001") },
                     { "router.manage", new Guid("00000000-0000-0000-0000-000000000001") },
                     { "router.view", new Guid("00000000-0000-0000-0000-000000000001") },
+                    { "audit.view", new Guid("00000000-0000-0000-0000-000000000002") },
+                    { "data_subject_request.manage", new Guid("00000000-0000-0000-0000-000000000002") },
                     { "device_credential.delete", new Guid("00000000-0000-0000-0000-000000000002") },
                     { "device_credential.view", new Guid("00000000-0000-0000-0000-000000000002") },
                     { "device.manage", new Guid("00000000-0000-0000-0000-000000000002") },
